@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "wayou.vscode-todo-highlight",
+    "steoates.autoimport",
+    "irongeek.vscode-env",
+    "tamasfe.even-better-toml",
+    "expo.vscode-expo-tools",
+    "biomejs.biome"
+  ]
+}

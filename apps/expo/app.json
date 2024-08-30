@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "dishify",
+    "slug": "dishify",
+    "scheme": "dishify",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "enabled": false
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dishify.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.dishify.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "85fc6ccd-0ce1-4e4d-804c-b15df989f97e"
+      }
+    },
+    "owner": "kevin-kidd",
+    "plugins": ["expo-router"],
+    "experiments": {
+      "tsconfigPaths": true,
+      "typedRoutes": true
+    }
+  }
+}

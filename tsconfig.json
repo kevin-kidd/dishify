@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      "app/*": ["./packages/app/*"],
+      "@dishify/api/*": ["./packages/api/*"],
+      "@dishify/ui/*": ["./packages/ui/*"]
+    },
+  },
+  "extends": "expo/tsconfig.base"
+}

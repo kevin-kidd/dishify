@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig",
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    "baseUrl": ".",
+    "paths": {
+      "app/*": ["../../packages/app/*"],
+      "@dishify/api/*": ["../../packages/api/*"],
+      "@dishify/ui/*": ["../../packages/ui/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+}

@@ -1,0 +1,12 @@
+name = "dishify-api"
+compatibility_date = "2023-10-30"
+send_metrics = false
+node_compat = true
+main = "src/worker.ts"
+account_id = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "production"
+database_id = ""
+migrations_dir = "migrations"

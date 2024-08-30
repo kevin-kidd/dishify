@@ -1,0 +1,33 @@
+{
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true,
+        "image": "latest"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview"
+    },
+    "production": {
+      "channel": "production",
+      "distribution": "store",
+      "android": {
+        "buildType": "app-bundle",
+        "bun": "1.0.15"
+      },
+      "ios": {
+        "bun": "1.0.15"
+      }
+    }
+  },
+  "cli": {
+    "promptToConfigurePushNotifications": false
+  }
+}

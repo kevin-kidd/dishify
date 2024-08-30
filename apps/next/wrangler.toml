@@ -1,0 +1,10 @@
+name = "dishify"
+compatibility_date = "2023-10-30"
+send_metrics = false
+node_compat = true
+route = "dishify.app/*"
+workers_dev = false
+
+[env.preview]
+name = "dishify-preview"
+workers_dev = true
