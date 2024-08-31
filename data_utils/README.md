@@ -6,20 +6,26 @@ This directory contains utility scripts for processing and preparing recipe data
 
 ### 1. process-recipe-names.py
 
-This script processes raw recipe names from a CSV file, cleaning and standardizing them.
+This script processes raw recipe names from CSV files, cleaning and standardizing them.
 
-**Usage:** ```python process-recipe-names.py <input_file> [options]```
+**Usage:** `python process-recipe-names.py <input_files> [options]`
+
+**Input:** Comma-separated list of input CSV file names with optional column names (format: filename:column_name or just filename)
 
 **Options:**
 
 - `--output`, `-o`: Name of the output file without extension (saved in data/sanitized directory)
 - `--format`, `-f`: Output file format (csv or json, default: csv)
-- `--column`, `-c`: Name of the column to process (default: name)
+- `--default-column`, `-d`: Default column name to use if not specified for a file (default: name)
 
-**Example:**
+**Examples:**
 
 ```bash
-python process-recipe-names.py recipes.csv -o processed_recipes -f json -c recipe_name
+python process-recipe-names.py recipes1.csv,recipes2:ingredient_name -o processed_recipes -f json
+```
+
+```bash
+python process-recipe-names.py file1:recipe_name,file2,file3.csv:title -d ingredient
 ```
 
 ### 2. generate-sql.py
@@ -31,11 +37,12 @@ This script generates an SQL file with INSERT statements for the processed recip
 **Options:**
 
 - `--output`, `-o`: Name of the output SQL file (default: seed.sql)
+- `--table`, `-t`: Name of the table to insert into (default: recipes)
 
 **Example:**
 
 ```bash
-python generate-sql.py processed_recipes.json -o recipe_seed.sql
+python generate-sql.py processed_recipes.json -o recipe_seed.sql -t english_recipes
 ```
 
 ## Workflow
@@ -47,9 +54,8 @@ python generate-sql.py processed_recipes.json -o recipe_seed.sql
 
 ## Data Sources
 
-The initial dataset used in this project is from Food.com, available on Kaggle:
-
 - [Food.com Recipes and User Interactions](https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions?select=RAW_recipes.csv)
+- [RecipeNLG](https://www.kaggle.com/datasets/paultimothymooney/recipenlg?select=RecipeNLG_dataset.csv)
 
 ## Note
 
