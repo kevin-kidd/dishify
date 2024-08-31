@@ -21,26 +21,27 @@ import { Skeleton } from "@dishify/ui/src/elements/skeleton";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getSearchUrl } from "app/utils/helpers";
 import { trpc } from "app/utils/trpc";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View, ScrollView } from "react-native";
 import { Link } from "solito/link";
-import { z } from "zod";
 import { skipToken } from "@tanstack/react-query";
+import { DishNameSchema, type DishName } from "@dishify/api/schemas/dish-name";
+import * as Burnt from "burnt";
 
 export function HomeScreen() {
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  } = useForm<DishName>({
+    resolver: zodResolver(DishNameSchema),
     defaultValues: {
       dishName: "",
     },
   });
   const [currentRecipe, setCurrentRecipe] = useState("");
-  const { data, isFetching } = trpc.recipe.generate.useQuery(
+  const { data, isFetching, error } = trpc.recipe.generate.useQuery(
     currentRecipe ? { dishName: currentRecipe } : skipToken,
     {
       refetchOnWindowFocus: false,
@@ -50,6 +51,15 @@ export function HomeScreen() {
       retryDelay: 1000,
     }
   );
+  useEffect(() => {
+    if (error) {
+      Burnt.toast({
+        title: "Error",
+        preset: "error",
+        message: error.message,
+      });
+    }
+  }, [error]);
   const onSubmit = handleSubmit((data) => {
     setCurrentRecipe(data.dishName);
   });
@@ -58,7 +68,7 @@ export function HomeScreen() {
     <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="bg-background p-4">
       <View className="container mx-auto w-full space-y-4">
         <H1>Dishify</H1>
-        <Form className="mb-4 flex flex-row gap-x-2 items-center">
+        <Form className="mb-4 flex flex-row gap-x-2 items-center" onSubmit={onSubmit}>
           <Controller
             name="dishName"
             control={control}
@@ -68,11 +78,11 @@ export function HomeScreen() {
             render={({ field: { onChange, onBlur, name, value } }) => (
               <FormInput
                 type="text"
-                autoComplete="email"
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
-                autoCorrect={false}
+                autoCorrect={true}
+                maxLength={80}
                 error={errors.dishName?.message}
                 placeholder="Enter a dish name"
                 id={name}
@@ -86,7 +96,7 @@ export function HomeScreen() {
         <View className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>Recipe</CardTitle>
+              <CardTitle>Recipe {data && `- ${data?.dishName}`}</CardTitle>
             </CardHeader>
             <CardContent>
               {!!currentRecipe && isFetching ? (
@@ -138,7 +148,7 @@ export function HomeScreen() {
                       <Span className="mr-4">
                         {item.quantity} {item.item}
                       </Span>
-                      <View className="flex space-x-2">
+                      <View className="flex flex-row space-x-2">
                         <Link
                           href={getSearchUrl("walmart", item.item)}
                           target="_blank"
@@ -146,11 +156,10 @@ export function HomeScreen() {
                         >
                           <Button variant="outline" size="icon" className="w-20 h-10 p-0">
                             <Image
-                              src="/walmart-logo.png"
+                              src="/shop-logos/walmart-logo.svg"
                               alt="Walmart"
-                              className="w-full h-full object-contain"
-                              width={200}
-                              height={100}
+                              className="w-full h-full"
+                              fill={true}
                             />
                           </Button>
                         </Link>
@@ -161,11 +170,10 @@ export function HomeScreen() {
                         >
                           <Button variant="outline" size="icon" className="w-20 h-10 p-0">
                             <Image
-                              src="/amazon-logo.png"
+                              src="/shop-logos/amazon-logo.png"
                               alt="Amazon"
-                              className="w-full h-full object-contain"
-                              width={200}
-                              height={100}
+                              className="w-full h-full"
+                              fill={true}
                             />
                           </Button>
                         </Link>
@@ -176,11 +184,10 @@ export function HomeScreen() {
                         >
                           <Button variant="outline" size="icon" className="w-20 h-10 p-0">
                             <Image
-                              src="/wholefoods-logo.png"
+                              src="/shop-logos/wholefoods-logo.png"
                               alt="Whole Foods"
-                              className="w-full h-full object-contain"
-                              width={200}
-                              height={100}
+                              className="w-full h-full"
+                              fill={true}
                             />
                           </Button>
                         </Link>
@@ -196,9 +203,3 @@ export function HomeScreen() {
     </ScrollView>
   );
 }
-
-const formSchema = z.object({
-  dishName: z.string().min(3, "Dish name must be at least 3 characters"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
