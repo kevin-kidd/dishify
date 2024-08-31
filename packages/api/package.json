@@ -16,21 +16,22 @@
     "clean": "rm -rf .turbo node_modules"
   },
   "dependencies": {
-    "@hono/trpc-server": "^0.1.0",
-    "@trpc/server": "^10.43.2",
+    "@hono/trpc-server": "0.3.2",
+    "@trpc/server": "11.0.0-rc.490",
     "@tsndr/cloudflare-worker-jwt": "2.2.7",
     "drizzle-orm": "^0.29.0",
     "drizzle-valibot": "beta",
-    "hono": "^3.9.2",
+    "hono": "4.5.10",
     "miniflare": "3.20231025.1",
-    "superjson": "1.13.3",
-    "valibot": "^0.20.1"
+    "superjson": "2.2.1",
+    "valibot": "^0.20.1",
+    "groq-sdk": "0.6.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231025.0",
     "drizzle-kit": "^0.20.1",
     "bun-types": "^1.0.8",
-    "typescript": "^5.2.2",
-    "wrangler": "3.22.3"
+    "typescript": "5.5.4",
+    "wrangler": "3.73.0"
   }
 }
