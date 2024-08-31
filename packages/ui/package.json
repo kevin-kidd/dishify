@@ -9,8 +9,8 @@
     "clean": "rm -rf node_modules"
   },
   "dependencies": {
-    "burnt": "^0.12.1",
-    "nativewind": "4.0.13",
+    "burnt": "0.12.2",
+    "nativewind": "4.1.1",
     "tailwind-merge": "2.0.0",
     "clsx": "2.0.0",
     "@dishify/api": "workspace:*",

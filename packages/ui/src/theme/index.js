@@ -108,8 +108,8 @@ const theme = {
     ({ addBase }) => addBase({ ":root": "--card: 	#ffffff" }),
     ({ addBase }) => addBase({ ":root": "--card-foreground: 	#020817" }),
   ],
-}
+};
 
 module.exports = {
   theme,
-}
+};

@@ -1,21 +1,19 @@
-import { Svg, Path, G, Defs, ClipPath, Use, SvgProps } from "react-native-svg"
-import { cssInterop } from "nativewind"
+import { Svg, Path, G, Defs, ClipPath, Use, type SvgProps } from "react-native-svg";
+import { cssInterop } from "nativewind";
 
 cssInterop(Svg, {
   className: {
     target: "style",
     nativeStyleToProp: { width: true, height: true },
   },
-})
+});
 cssInterop(Path, {
   target: "fill",
-})
+});
 
-export type IconProps = SvgProps & { className: string; fill?: string }
+export type IconProps = SvgProps & { className: string; fill?: string };
 
-{
-  /* General Icons */
-}
+/* General Icons */
 export const LeftArrow = ({ className, fill = "#000000", ...rest }: IconProps) => (
   <Svg viewBox="0 0 10 19" fill="none" className={className} {...rest}>
     <Path
@@ -23,11 +21,9 @@ export const LeftArrow = ({ className, fill = "#000000", ...rest }: IconProps) =
       fill={fill}
     />
   </Svg>
-)
+);
 
-{
-  /* Social Icons */
-}
+/* Social Icons */
 export const GoogleIcon = ({ className, fill = "#000000", ...rest }: IconProps) => (
   <Svg viewBox="0 0 32 32" className={className} {...rest}>
     <Defs>
@@ -46,7 +42,7 @@ export const GoogleIcon = ({ className, fill = "#000000", ...rest }: IconProps) 
       <Path d="M48 48L17 24l-4-3 35-10z" clipPath="url(#B)" fill="#4285f4" />
     </G>
   </Svg>
-)
+);
 export const LinkedInIcon = ({ className, fill = "#000000", ...rest }: IconProps) => (
   <Svg viewBox="0 0 72 72" className={className} {...rest}>
     <G fill="none" fillRule="evenodd">
@@ -60,4 +56,4 @@ export const LinkedInIcon = ({ className, fill = "#000000", ...rest }: IconProps
       />
     </G>
   </Svg>
-)
+);

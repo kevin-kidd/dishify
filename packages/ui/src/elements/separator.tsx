@@ -1,13 +1,13 @@
-import * as React from "react"
-import * as SeparatorPrimitive from "@rn-primitives/separator"
-import { cn } from "../utils"
-import { ViewProps } from "react-native"
+import * as React from "react";
+import * as SeparatorPrimitive from "@rn-primitives/separator";
+import { cn } from "../utils";
+import { ViewProps } from "react-native";
 
 type SeparatorProps = ViewProps & {
-  asChild?: boolean
-  orientation?: "horizontal" | "vertical"
-  decorative?: boolean
-}
+  asChild?: boolean;
+  orientation?: "horizontal" | "vertical";
+  decorative?: boolean;
+};
 
 const Separator = React.forwardRef<
   React.ElementRef<typeof SeparatorPrimitive.Root>,
@@ -24,7 +24,7 @@ const Separator = React.forwardRef<
     )}
     {...props}
   />
-))
-Separator.displayName = SeparatorPrimitive.Root.displayName
+));
+Separator.displayName = SeparatorPrimitive.Root.displayName;
 
-export { Separator }
+export { Separator };

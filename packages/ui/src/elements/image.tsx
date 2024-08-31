@@ -1,14 +1,21 @@
-import { ComponentProps } from "react"
-import { SolitoImage } from "solito/image"
-import { View } from "react-native"
+import { ComponentProps } from "react";
+import { SolitoImage } from "solito/image";
+import { View } from "react-native";
+import { ImageProps as NextImageProps } from "next/image";
+import { ImageProps as RNImageProps } from "react-native";
 
-export function Image({
-  className,
-  ...rest
-}: ComponentProps<typeof SolitoImage> & { className: string }) {
+type CommonImageProps = {
+  className?: string;
+  src: NextImageProps["src"] | RNImageProps["source"];
+  alt?: string;
+};
+
+type ImageProps = CommonImageProps & Omit<ComponentProps<typeof SolitoImage>, "src">;
+
+export function Image({ className, src, alt, ...rest }: ImageProps) {
   return (
     <View className={className}>
-      <SolitoImage {...rest} />
+      <SolitoImage {...rest} src={src as any} alt={alt} />
     </View>
-  )
+  );
 }

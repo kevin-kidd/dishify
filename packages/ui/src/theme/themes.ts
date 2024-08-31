@@ -1,4 +1,4 @@
-import { vars } from "react-native-css-interop"
+import { vars } from "react-native-css-interop";
 
 export const themes = {
   default: {
@@ -59,4 +59,4 @@ export const themes = {
       "--secondary": "0 100% 50%",
     }),
   },
-}
+};
