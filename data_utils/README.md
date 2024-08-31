@@ -8,19 +8,15 @@ This directory contains utility scripts for processing and preparing recipe data
 
 This script processes raw recipe names from a CSV file, cleaning and standardizing them.
 
-Usage:
+**Usage:** ```python process-recipe-names.py <input_file> [options]```
 
-```bash
-python process-recipe-names.py <input_file> [options]
-```
-
-Options:
+**Options:**
 
 - `--output`, `-o`: Name of the output file without extension (saved in data/sanitized directory)
 - `--format`, `-f`: Output file format (csv or json, default: csv)
 - `--column`, `-c`: Name of the column to process (default: name)
 
-Example:
+**Example:**
 
 ```bash
 python process-recipe-names.py recipes.csv -o processed_recipes -f json -c recipe_name
@@ -30,17 +26,13 @@ python process-recipe-names.py recipes.csv -o processed_recipes -f json -c recip
 
 This script generates an SQL file with INSERT statements for the processed recipe names.
 
-Usage:
+**Usage:** `python generate-sql.py <input_file> [options]`
 
-```bash
-python generate-sql.py <input_file> [options]
-```
-
-Options:
+**Options:**
 
 - `--output`, `-o`: Name of the output SQL file (default: seed.sql)
 
-Example:
+**Example:**
 
 ```bash
 python generate-sql.py processed_recipes.json -o recipe_seed.sql
