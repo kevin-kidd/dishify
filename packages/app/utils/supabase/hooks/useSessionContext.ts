@@ -1,1 +1,1 @@
-export { useSessionContext } from "@supabase/auth-helpers-react"
+export { useSessionContext } from "@supabase/auth-helpers-react";

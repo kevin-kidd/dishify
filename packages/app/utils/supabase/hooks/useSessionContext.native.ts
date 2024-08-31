@@ -1,9 +1,9 @@
-import { atom, useAtom } from "jotai"
-import type { Session } from "@supabase/supabase-js"
+import { atom, useAtom } from "jotai";
+import type { Session } from "@supabase/supabase-js";
 
 export const useSessionContext = () => {
-  const [session] = useSession()
-  const [isLoading] = useIsLoadingSession()
+  const [session] = useSession();
+  const [isLoading] = useIsLoadingSession();
 
   // TODO: Load profile information from external sources here
   // Ex: profile photo, display name, etc.
@@ -12,17 +12,17 @@ export const useSessionContext = () => {
     session,
     user: session?.user,
     isLoading,
-  }
-}
+  };
+};
 
-const sessionAtom = atom<Session | null>(null)
+const sessionAtom = atom<Session | null>(null);
 
 export function useSession() {
-  return [...useAtom(sessionAtom)] as const
+  return [...useAtom(sessionAtom)] as const;
 }
 
-const isLoadingSessionAtom = atom(true)
+const isLoadingSessionAtom = atom(true);
 
 export function useIsLoadingSession() {
-  return [...useAtom(isLoadingSessionAtom)] as const
+  return [...useAtom(isLoadingSessionAtom)] as const;
 }

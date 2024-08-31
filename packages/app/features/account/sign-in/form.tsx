@@ -1,11 +1,11 @@
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Text } from "react-native"
-import { Button, Form, FormInput, cn } from "@dishify/ui"
-import { useAtomValue } from "jotai"
-import { appColorSchemeAtom } from "app/atoms/theme"
-import * as Burnt from "burnt"
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Text } from "react-native";
+import { Button, Form, FormInput, cn } from "@dishify/ui";
+import { useAtomValue } from "jotai";
+import { appColorSchemeAtom } from "app/atoms/theme";
+import * as Burnt from "burnt";
 
 export function SignInForm() {
   const {
@@ -18,16 +18,16 @@ export function SignInForm() {
       email: "",
       password: "",
     },
-  })
-  const appColorScheme = useAtomValue(appColorSchemeAtom)
+  });
+  const appColorScheme = useAtomValue(appColorSchemeAtom);
   const onSubmit = handleSubmit((data) => {
     Burnt.toast({
       title: "Success",
       preset: "done",
       message: "You have successfully signed in!",
-    })
-    console.log(data)
-  })
+    });
+    console.log(data);
+  });
   return (
     <Form className="flex flex-col gap-y-4 mt-4">
       <Controller
@@ -82,15 +82,15 @@ export function SignInForm() {
         </Text>
       </Button>
     </Form>
-  )
+  );
 }
 
 type SignInFormValues = {
-  email: string
-  password: string
-}
+  email: string;
+  password: string;
+};
 
 const formSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email"),
   password: z.string().min(1, "Password is required"),
-})
+});

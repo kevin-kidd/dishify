@@ -1,40 +1,40 @@
-import React, { useEffect } from "react"
-import { View, Appearance, Text } from "react-native"
-import { themes } from "@dishify/ui/src/theme/themes"
-import useHasMounted from "app/utils/hooks/useHasMounted"
-import { useAtom, useAtomValue } from "jotai"
-import { appColorSchemeAtom, appThemeAtom } from "app/atoms/theme"
-import { Button, cn } from "@dishify/ui"
-import { ColorSchemeVariant } from "app/utils/theme"
-import { isWeb } from "@tamagui/constants"
-import { vars } from "nativewind"
+import React, { useEffect } from "react";
+import { View, Appearance, Text } from "react-native";
+import { themes } from "@dishify/ui/src/theme/themes";
+import useHasMounted from "app/utils/hooks/useHasMounted";
+import { useAtom, useAtomValue } from "jotai";
+import { appColorSchemeAtom, appThemeAtom } from "app/atoms/theme";
+import { Button, cn } from "@dishify/ui";
+import { ColorSchemeVariant } from "app/utils/theme";
+import { isWeb } from "@tamagui/constants";
+import { vars } from "nativewind";
 
 export const ThemeProvider = ({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }): React.ReactNode => {
-  const appTheme = useAtomValue(appThemeAtom)
-  const [appColorScheme, setAppColorScheme] = useAtom(appColorSchemeAtom)
-  const hasMounted = useHasMounted()
+  const appTheme = useAtomValue(appThemeAtom);
+  const [appColorScheme, setAppColorScheme] = useAtom(appColorSchemeAtom);
+  const hasMounted = useHasMounted();
   function toggleColorScheme() {
-    setAppColorScheme((prev) => (prev === "dark" ? "light" : "dark"))
+    setAppColorScheme((prev) => (prev === "dark" ? "light" : "dark"));
   }
   useEffect(() => {
     const systemThemeChangeListener = Appearance.addChangeListener(() => {
-      setAppColorScheme(Appearance.getColorScheme() as ColorSchemeVariant)
-    })
+      setAppColorScheme(Appearance.getColorScheme() as ColorSchemeVariant);
+    });
     return () => {
-      systemThemeChangeListener.remove()
-    }
-  }, [setAppColorScheme])
+      systemThemeChangeListener.remove();
+    };
+  }, [setAppColorScheme]);
   useEffect(() => {
     if (hasMounted && appColorScheme === "system") {
-      setAppColorScheme(Appearance.getColorScheme() as ColorSchemeVariant)
+      setAppColorScheme(Appearance.getColorScheme() as ColorSchemeVariant);
     }
-  }, [appColorScheme, hasMounted, setAppColorScheme])
-  const theme = themes[appTheme][appColorScheme === "system" ? "light" : appColorScheme]
-  if (!hasMounted) return null // Prevents flash of unstyled content
+  }, [appColorScheme, hasMounted, setAppColorScheme]);
+  const theme = themes[appTheme][appColorScheme === "system" ? "light" : appColorScheme];
+  if (!hasMounted) return null; // Prevents flash of unstyled content
   return (
     <View className="flex-1" style={theme}>
       {children}
@@ -50,5 +50,5 @@ export const ThemeProvider = ({
         </Button>
       )}
     </View>
-  )
-}
+  );
+};

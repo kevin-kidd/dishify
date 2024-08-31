@@ -1,7 +1,7 @@
-import { atom, useAtom } from "jotai"
+import { atom, useAtom } from "jotai";
 
-const sheetOpenAtom = atom(false)
+const sheetOpenAtom = atom(false);
 
 export function useSheetOpen() {
-  return [...useAtom(sheetOpenAtom)] as const
+  return [...useAtom(sheetOpenAtom)] as const;
 }

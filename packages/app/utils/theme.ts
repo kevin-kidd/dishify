@@ -1,11 +1,11 @@
-import { themes } from "@dishify/ui/src/theme/themes"
+import { themes } from "@dishify/ui/src/theme/themes";
 
 export const ColorSchemeVariant = {
   light: "light",
   dark: "dark",
   system: "system",
-} as const
+} as const;
 
-export type ColorSchemeVariant = keyof typeof ColorSchemeVariant
+export type ColorSchemeVariant = keyof typeof ColorSchemeVariant;
 
-export type ThemeVariant = keyof typeof themes
+export type ThemeVariant = keyof typeof themes;

@@ -3,7 +3,7 @@
  * Different prefixes for public environments across Expo & Next.js currently block this.
  */
 
-import { object, parse, string } from "valibot"
+import { object, parse, string } from "valibot";
 
 const envSchema = object({
   NODE_ENV: string(),
@@ -18,6 +18,6 @@ const envSchema = object({
   NEXT_PUBLIC_SUPPORT_EMAIL: string(),
   // Web Metadata
   NEXT_PUBLIC_METADATA_NAME: string(),
-})
+});
 
-export const env = parse(envSchema, process.env)
+export const env = parse(envSchema, process.env);

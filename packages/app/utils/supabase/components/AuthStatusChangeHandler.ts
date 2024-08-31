@@ -1,6 +1,6 @@
-import { useAuthRedirect } from "app/utils/supabase/hooks/useAuthRedirect"
+import { useAuthRedirect } from "app/utils/supabase/hooks/useAuthRedirect";
 
 export const AuthStatusChangeHandler = () => {
-  useAuthRedirect()
-  return null
-}
+  useAuthRedirect();
+  return null;
+};

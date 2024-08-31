@@ -9,7 +9,7 @@ import {
   TooltipGroup,
   TooltipTrigger,
   UnorderedList,
-} from "@dishify/ui"
+} from "@dishify/ui";
 
 export function OAuthButtons() {
   return (
@@ -31,7 +31,7 @@ export function OAuthButtons() {
         </ListItem>
       </UnorderedList>
     </TooltipGroup>
-  )
+  );
 }
 
 function OAuthButton({
@@ -39,9 +39,9 @@ function OAuthButton({
   Icon,
   label,
 }: {
-  onPress: () => void
-  Icon: (props: IconProps) => JSX.Element
-  label: string
+  onPress: () => void;
+  Icon: (props: IconProps) => JSX.Element;
+  label: string;
 }) {
   return (
     <Tooltip>
@@ -57,5 +57,5 @@ function OAuthButton({
       </TooltipTrigger>
       <TooltipContent position="top">{label}</TooltipContent>
     </Tooltip>
-  )
+  );
 }

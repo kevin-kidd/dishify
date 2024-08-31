@@ -4,4 +4,4 @@
  * https://github.com/vercel/next.js/issues/12557
  **/
 
-export {}
+export {};

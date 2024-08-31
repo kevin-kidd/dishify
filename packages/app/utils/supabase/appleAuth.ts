@@ -1,5 +1,5 @@
-import { AppleAuthenticationScope, signInAsync } from "expo-apple-authentication"
-import { CryptoDigestAlgorithm, digestStringAsync, randomUUID } from "expo-crypto"
+import { AppleAuthenticationScope, signInAsync } from "expo-apple-authentication";
+import { CryptoDigestAlgorithm, digestStringAsync, randomUUID } from "expo-crypto";
 
 /**
  * Initiates the auth flow for the native Apple Sign In.
@@ -8,16 +8,16 @@ import { CryptoDigestAlgorithm, digestStringAsync, randomUUID } from "expo-crypt
  */
 
 export async function initiateAppleSignIn() {
-  const rawNonce = randomUUID()
-  const hashedNonce = await digestStringAsync(CryptoDigestAlgorithm.SHA256, rawNonce)
+  const rawNonce = randomUUID();
+  const hashedNonce = await digestStringAsync(CryptoDigestAlgorithm.SHA256, rawNonce);
 
   const credential = await signInAsync({
     requestedScopes: [AppleAuthenticationScope.FULL_NAME, AppleAuthenticationScope.EMAIL],
     nonce: hashedNonce,
-  })
+  });
 
-  const token = credential.identityToken
-  if (!token) throw new Error("No id token")
+  const token = credential.identityToken;
+  if (!token) throw new Error("No id token");
 
-  return { token, nonce: rawNonce }
+  return { token, nonce: rawNonce };
 }
