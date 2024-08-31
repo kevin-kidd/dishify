@@ -1,13 +1,13 @@
 # Dishify
 
 ![GitHub license](https://img.shields.io/github/license/kevin-kidd/dishify)
-![Expo SDK version](https://img.shields.io/badge/Expo%20SDK-49.0.16-blue)
+![Expo SDK version](https://img.shields.io/badge/Expo%20SDK-51.0.31-blue)
 ![Next.js version](https://img.shields.io/badge/Next.js-14.2.7-blue)
-![React Native version](https://img.shields.io/badge/React%20Native-0.74.3-blue)
+![React Native version](https://img.shields.io/badge/React%20Native-0.75.2-blue)
 ![Tailwind CSS version](https://img.shields.io/badge/Tailwind%20CSS-3.0.24-blue)
-![tRPC version](https://img.shields.io/badge/tRPC-10.43.2-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.2.2-blue)
-![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-3.22.3-orange)
+![tRPC version](https://img.shields.io/badge/tRPC-11.0.0-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.5.4-blue)
+![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-3.73.0-orange)
 ![Next.js Deployment](https://github.com/kevin-kidd/dishify/actions/workflows/next.yml/badge.svg)
 ![Backend Deployment](https://github.com/kevin-kidd/dishify/actions/workflows/backend.yml/badge.svg)
 ![Expo Deployment](https://github.com/kevin-kidd/dishify/actions/workflows/expo.yml/badge.svg)
