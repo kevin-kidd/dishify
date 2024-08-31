@@ -129,45 +129,61 @@ def parse_arguments():
     Returns:
         argparse.Namespace: Parsed command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="Process recipe names from a CSV file.")
-    parser.add_argument("input", help="Name of the input CSV file (in data/raw directory)")
+    parser = argparse.ArgumentParser(description="Process recipe names from CSV files.")
+    parser.add_argument("input", help="Comma-separated list of input CSV file names with optional column names (format: filename:column_name or just filename)")
     parser.add_argument("--output", "-o", help="Name of the output file without extension (will be saved in data/sanitized directory)")
     parser.add_argument("--format", "-f", choices=["csv", "json"], default="csv",
                         help="Output file format (default: csv)")
-    parser.add_argument("--column", "-c", default="name",
-                        help="Name of the column to process (default: name)")
+    parser.add_argument("--default-column", "-d", default="name",
+                        help="Default column name to use if not specified for a file (default: name)")
     return parser.parse_args()
 
 if __name__ == "__main__":
     # Parse command-line arguments
     args = parse_arguments()
 
-    input_file_name = args.input
+    input_files = []
+    for item in args.input.split(','):
+        parts = item.strip().split(':')
+        if len(parts) == 1:
+            input_files.append((parts[0], args.default_column))
+        elif len(parts) == 2:
+            input_files.append((parts[0], parts[1]))
+        else:
+            print(f"Error: Invalid input format '{item}'. Use 'filename:column_name' or just 'filename'.")
+            exit(1)
+
+    input_files = [(name if name.endswith('.csv') else f"{name}.csv", column) for name, column in input_files]
     output_file_name = args.output
-    column_name = args.column
     output_format = args.format
 
     # Apply the correct file extension based on the format
     if output_file_name:
         output_file_name = f"{output_file_name}.{output_format}"
     else:
-        input_name_without_ext = os.path.splitext(input_file_name)[0]
-        output_file_name = f"processed_{input_name_without_ext}.{output_format}"
+        output_file_name = f"processed_recipes.{output_format}"
 
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # Process recipe names
-    processed_names = process_recipe_names(input_file_name, column_name)
+    # Process recipe names from all input files
+    all_processed_names = set()
+    for input_file_name, column_name in input_files:
+        print(f"Processing {input_file_name} (column: {column_name})...")
+        processed_names = process_recipe_names(input_file_name, column_name)
+        all_processed_names.update(processed_names)
+
+    # Convert set back to list
+    all_processed_names = list(all_processed_names)
 
     # Save processed names to file
     if output_format == "csv":
-        save_to_csv(processed_names, output_file_name)
+        save_to_csv(all_processed_names, output_file_name)
     else:
-        save_to_json(processed_names, output_file_name)
+        save_to_json(all_processed_names, output_file_name)
 
     # Print summary
-    print(f"\nProcessed {len(processed_names)} unique recipe names.")
+    print(f"\nProcessed {len(all_processed_names)} unique recipe names from {len(input_files)} files.")
     print("First 5 processed names:")
-    for name in processed_names[:5]:
+    for name in all_processed_names[:5]:
         print(name)
