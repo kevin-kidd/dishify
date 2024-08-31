@@ -1,13 +1,13 @@
-import { Button } from "@dishify/ui"
-import Head from "next/head"
-import Link from "next/link"
-import { useRouter } from "next/router"
-import { SolitoImage } from "solito/image"
+import { Button } from "@dishify/ui";
+import Head from "next/head";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { SolitoImage } from "solito/image";
 
-const customerCareEmail = process.env.NEXT_PUBLIC_CUSTOMER_CARE_EMAIL
+const customerCareEmail = process.env.NEXT_PUBLIC_CUSTOMER_CARE_EMAIL;
 
 export default function Page() {
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <>
@@ -28,5 +28,5 @@ export default function Page() {
         <Button onPress={() => router.reload()}>Try Again</Button>
       </main>
     </>
-  )
+  );
 }

@@ -1,16 +1,16 @@
-import NextDocument, { DocumentContext, Head, Html, Main, NextScript } from "next/document"
-import { Children } from "react"
-import { AppRegistry } from "react-native"
+import NextDocument, { DocumentContext, Head, Html, Main, NextScript } from "next/document";
+import { Children } from "react";
+import { AppRegistry } from "react-native";
 
 export default class Document extends NextDocument {
   static async getInitialProps(ctx: DocumentContext) {
-    AppRegistry.registerComponent("Main", () => Main)
+    AppRegistry.registerComponent("Main", () => Main);
     // @ts-ignore
-    const { getStyleElement } = AppRegistry.getApplication("Main")
-    const styles = [getStyleElement()]
+    const { getStyleElement } = AppRegistry.getApplication("Main");
+    const styles = [getStyleElement()];
 
-    const initialProps = await NextDocument.getInitialProps(ctx)
-    return { ...initialProps, styles: Children.toArray(styles) }
+    const initialProps = await NextDocument.getInitialProps(ctx);
+    return { ...initialProps, styles: Children.toArray(styles) };
   }
 
   render() {
@@ -24,6 +24,6 @@ export default class Document extends NextDocument {
           <NextScript />
         </body>
       </Html>
-    )
+    );
   }
 }

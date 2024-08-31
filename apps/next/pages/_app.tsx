@@ -1,19 +1,19 @@
-import "raf/polyfill"
-import "setimmediate"
+import "raf/polyfill";
+import "setimmediate";
 
-import { Provider } from "app/provider"
-import { trpc } from "app/utils/trpc/index.web"
-import Head from "next/head"
-import type { SolitoAppProps } from "solito"
-import type { Session } from "@supabase/supabase-js"
-import "../global.css"
+import { Provider } from "app/provider";
+import { trpc } from "app/utils/trpc/index.web";
+import Head from "next/head";
+import type { SolitoAppProps } from "solito";
+import type { Session } from "@supabase/supabase-js";
+import "../global.css";
 
-const title = `${process.env.NEXT_PUBLIC_METADATA_NAME}`
-const description = `${process.env.NEXT_PUBLIC_METADATA_DESCRIPTION}`
-const url = `${process.env.NEXT_PUBLIC_APP_URL}`
+const title = `${process.env.NEXT_PUBLIC_METADATA_NAME}`;
+const description = `${process.env.NEXT_PUBLIC_METADATA_DESCRIPTION}`;
+const url = `${process.env.NEXT_PUBLIC_APP_URL}`;
 
 const App = ({ Component, pageProps }: SolitoAppProps<{ initialSession: Session | null }>) => {
-  const getLayout = Component.getLayout || ((page) => page)
+  const getLayout = Component.getLayout || ((page) => page);
   return (
     <>
       <Metadata />
@@ -21,10 +21,10 @@ const App = ({ Component, pageProps }: SolitoAppProps<{ initialSession: Session 
         {getLayout(<Component {...pageProps} />)}
       </Provider>
     </>
-  )
-}
+  );
+};
 
-export default trpc.withTRPC(App)
+export default trpc.withTRPC(App);
 
 const Metadata = () => (
   <Head>
@@ -227,4 +227,4 @@ const Metadata = () => (
       href="/pwa/splash-screens/8.3__iPad_Mini_portrait.png"
     />
   </Head>
-)
+);
