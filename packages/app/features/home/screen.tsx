@@ -68,7 +68,7 @@ export function HomeScreen() {
     <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="bg-background p-4">
       <View className="container mx-auto w-full space-y-4">
         <H1>Dishify</H1>
-        <Form className="mb-4 flex flex-row gap-x-2 items-center" onSubmit={onSubmit}>
+        <Form className="mb-4 flex flex-col sm:flex-row gap-2 items-center" onSubmit={onSubmit}>
           <Controller
             name="dishName"
             control={control}
@@ -84,12 +84,13 @@ export function HomeScreen() {
                 autoCorrect={true}
                 maxLength={80}
                 error={errors.dishName?.message}
+                className="w-full"
                 placeholder="Enter a dish name"
                 id={name}
               />
             )}
           />
-          <Button onPress={onSubmit} disabled={!!currentRecipe && isFetching}>
+          <Button onPress={onSubmit} disabled={!!currentRecipe && isFetching} className="w-full sm:w-auto">
             <Text>{!!currentRecipe && isFetching ? "Generating..." : "Generate Recipe"}</Text>
           </Button>
         </Form>
