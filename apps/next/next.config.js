@@ -1,31 +1,31 @@
-const million = require("million/compiler");
-const { withExpo } = require("@expo/next-adapter");
+const million = require("million/compiler")
+const { withExpo } = require("@expo/next-adapter")
 const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
-});
+})
 const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
   sw: "service-worker.js",
   swcMinify: true,
-});
+})
 
 const boolVals = {
   true: true,
   false: false,
-};
+}
 
 const disableBrowserLogs =
-  boolVals[process.env.DISABLE_BROWSER_LOGS] ?? process.env.NODE_ENV === "production";
+  boolVals[process.env.DISABLE_BROWSER_LOGS] ?? process.env.NODE_ENV === "production"
 
 const enableMillionJS =
-  boolVals[process.env.ENABLE_MILLION_JS] ?? process.env.NODE_ENV === "production";
+  boolVals[process.env.ENABLE_MILLION_JS] ?? process.env.NODE_ENV === "production"
 
 // Enabling might cause FOUC on page refreshes
-const optimizeCss = true;
+const optimizeCss = true
 
-const plugins = [withPWA, withExpo, withBundleAnalyzer];
+const plugins = [withPWA, withExpo, withBundleAnalyzer]
 
 module.exports = () => {
   /** @type {import('next').NextConfig} */
@@ -59,6 +59,7 @@ module.exports = () => {
       "burnt",
       "@rn-primitives/slot",
       "@rn-primitives/separator",
+      "glin-profanity",
     ],
     experimental: {
       optimizeCss,
@@ -69,22 +70,22 @@ module.exports = () => {
     compiler: {
       removeConsole: disableBrowserLogs,
     },
-  };
+  }
 
   for (const plugin of plugins) {
     config = {
       ...config,
       ...plugin(config),
-    };
+    }
   }
 
   const millionConfig = {
     auto: true,
     mute: true,
-  };
+  }
 
   if (enableMillionJS) {
-    return million.next(config, millionConfig);
+    return million.next(config, millionConfig)
   }
-  return config;
-};
+  return config
+}
