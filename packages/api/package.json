@@ -25,7 +25,8 @@
     "miniflare": "3.20231025.1",
     "superjson": "2.2.1",
     "valibot": "^0.20.1",
-    "groq-sdk": "0.6.1"
+    "groq-sdk": "0.6.1",
+    "glin-profanity": "1.1.7"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231025.0",
