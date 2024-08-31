@@ -1,5 +1,5 @@
 module.exports = function (api) {
-  api.cache.forever()
+  api.cache.forever();
   return {
     presets: [["babel-preset-expo", { jsxImportSource: "nativewind" }], "nativewind/babel"],
     plugins: [
@@ -19,5 +19,5 @@ module.exports = function (api) {
       require.resolve("jotai/babel/plugin-react-refresh"),
       require.resolve("react-native-reanimated/plugin"),
     ],
-  }
-}
+  };
+};

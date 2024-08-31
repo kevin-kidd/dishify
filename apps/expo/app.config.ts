@@ -1,4 +1,4 @@
-import { ConfigContext, ExpoConfig } from "@expo/config"
+import { ConfigContext, ExpoConfig } from "@expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -22,4 +22,4 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   runtimeVersion: {
     policy: "sdkVersion",
   },
-})
+});

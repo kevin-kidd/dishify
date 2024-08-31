@@ -1,7 +1,7 @@
 // @ts-expect-error - no types
-import nativewind from "nativewind/preset"
-import type { Config } from "tailwindcss"
-import { theme } from "@dishify/ui/src/theme"
+import nativewind from "nativewind/preset";
+import type { Config } from "tailwindcss";
+import { theme } from "@dishify/ui/src/theme";
 
 /**
  * @type {import('tailwindcss').Config}
@@ -12,4 +12,4 @@ module.exports = {
   theme: {
     ...theme,
   },
-} satisfies Config
+} satisfies Config;
