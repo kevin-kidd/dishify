@@ -2,5 +2,5 @@
 /// <reference types="nativewind/types" />
 
 declare module "nativewind/jsx-runtime" {
-  export default any
+  export default any;
 }

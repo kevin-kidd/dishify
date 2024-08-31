@@ -1,4 +1,4 @@
-const { theme } = require("@dishify/ui/src/theme")
+const { theme } = require("@dishify/ui/src/theme");
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -8,4 +8,4 @@ module.exports = {
   theme: {
     ...theme,
   },
-}
+};

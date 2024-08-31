@@ -3,4 +3,4 @@ export const redirectToSignIn = {
     destination: "/sign-in",
     permanent: false,
   },
-}
+};
