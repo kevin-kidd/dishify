@@ -3,15 +3,18 @@ import { createContext } from "@dishify/api/src/context";
 import { appRouter } from "@dishify/api/src/router";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 
 type Bindings = {
   DB: D1Database;
   JWT_VERIFICATION_KEY: string;
   APP_URL: string;
-  GROQ_API_KEY: string;
+  AI: Ai;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+app.use(logger());
 
 // Setup CORS for the frontend
 app.use("/trpc/*", async (c, next) => {
@@ -33,12 +36,7 @@ app.use("/trpc/*", async (c, next) => {
   return await trpcServer({
     router: appRouter,
     createContext: async (opts): Promise<Record<string, unknown>> => {
-      const context = await createContext(
-        c.env.DB,
-        c.env.JWT_VERIFICATION_KEY,
-        c.env.GROQ_API_KEY,
-        opts
-      );
+      const context = await createContext(c.env.DB, c.env.JWT_VERIFICATION_KEY, c.env.AI, opts);
       return { ...context };
     },
   })(c, next);
