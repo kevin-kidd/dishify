@@ -1,7 +1,8 @@
 // Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require("@expo/metro-config");
 const { withNativeWind } = require("nativewind/metro");
-const path = require("path");
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
+const path = require("node:path");
 
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(__dirname, "../..");
@@ -36,3 +37,7 @@ module.exports = withNativeWind(config, {
   input: "./app/global.css",
   configPath: "./tailwind.config.ts",
 });
+
+const sentryConfig = getSentryExpoConfig(__dirname);
+
+module.exports = sentryConfig;

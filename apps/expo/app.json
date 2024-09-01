@@ -28,11 +28,21 @@
     },
     "extra": {
       "eas": {
-        "projectId": "85fc6ccd-0ce1-4e4d-804c-b15df989f97e"
+        "projectId": "9872f924-faba-46a9-81ab-6592cab621b7"
       }
     },
-    "owner": "kevin-kidd",
-    "plugins": ["expo-router"],
+    "owner": "harrisonkevin",
+    "plugins": [
+      "expo-router",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "dishify",
+          "project": "dishify-mobile",
+          "url": "https://sentry.io/"
+        }
+      ]
+    ],
     "experiments": {
       "tsconfigPaths": true,
       "typedRoutes": true
