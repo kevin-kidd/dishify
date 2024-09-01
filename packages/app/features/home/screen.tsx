@@ -90,7 +90,11 @@ export function HomeScreen() {
               />
             )}
           />
-          <Button onPress={onSubmit} disabled={!!currentRecipe && isFetching} className="w-full sm:w-auto">
+          <Button
+            onPress={onSubmit}
+            disabled={!!currentRecipe && isFetching}
+            className="w-full sm:w-auto"
+          >
             <Text>{!!currentRecipe && isFetching ? "Generating..." : "Generate Recipe"}</Text>
           </Button>
         </Form>
