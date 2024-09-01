@@ -31,6 +31,9 @@ const expoFileContent = envFileContent
     if (line.startsWith("PUBLIC_")) {
       return line.replace(/^PUBLIC_/, "EXPO_PUBLIC_");
     }
+    if (line.startsWith("SENTRY_AUTH_TOKEN")) {
+      return line;
+    }
   })
   .join("\n");
 const expoNoTelemetry = "EXPO_NO_TELEMETRY=true";
@@ -45,6 +48,9 @@ const nextFileContent = envFileContent
   .map((line) => {
     if (line.startsWith("PUBLIC_")) {
       return line.replace(/^PUBLIC_/, "NEXT_PUBLIC_");
+    }
+    if (line.startsWith("SENTRY_AUTH_TOKEN")) {
+      return line;
     }
   })
   .join("\n");
