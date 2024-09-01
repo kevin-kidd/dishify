@@ -6,16 +6,11 @@ import {
   SpanishRecipeNameTable,
 } from "../../db/schema";
 import { publicProcedure } from "../../trpc";
-import { z } from "zod";
 import { like } from "drizzle-orm";
+import { AutoCompleteRequestSchema } from "../../../schemas/autocomplete";
 
 export const autocomplete = publicProcedure
-  .input(
-    z.object({
-      query: z.string(),
-      language: z.enum(["en", "es", "de", "fr", "it"]),
-    })
-  )
+  .input(AutoCompleteRequestSchema)
   .query(async ({ ctx: { db }, input: { query, language } }) => {
     let table: RecipeNameTable;
     switch (language) {
