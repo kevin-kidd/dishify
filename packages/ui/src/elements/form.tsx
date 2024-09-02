@@ -1,7 +1,5 @@
-import { ComponentProps } from "react";
-import { TextInput, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { withWebTag } from "../utils/web-tag";
-import { isWeb } from "@tamagui/constants";
 
 export const Form = withWebTag(View, "form");
 
@@ -9,27 +7,15 @@ export const Label = withWebTag(Text, "label", "text-sm font-semibold text-prima
 
 export const ErrorLabel = withWebTag(Text, "label", "text-xs text-red-500 2xl:text-sm");
 
-export const FormInput = ({
-  label,
-  optional,
-  error,
-  id,
-  type,
-  onChangeText,
-  onBlur,
-  placeholder,
-  ...props
-}: ComponentProps<typeof TextInput> & {
-  id: string;
-  type: string;
-  onChangeText: (...event: unknown[]) => void;
-  onBlur: () => void;
+interface FormInputProps {
   label?: string;
   optional?: boolean;
   error?: string;
-}) => {
-  const inputClasses =
-    "px-3 py-2 rounded-md bg-background border-2 border-input flex flex-row ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-primary h-10 w-full";
+  id: string;
+  children: React.ReactNode;
+}
+
+export const FormInput = ({ label, optional, error, id, children }: FormInputProps) => {
   return (
     <View className="flex-1 w-full flex-col gap-1">
       {(!!label || !!error) && (
@@ -44,30 +30,7 @@ export const FormInput = ({
           ) : null}
         </View>
       )}
-
-      {/* Text Input */}
-      {isWeb ? (
-        <input
-          type={type}
-          id={id}
-          onChange={(e) => onChangeText(e.target.value)}
-          onBlur={onBlur}
-          autoComplete={props.autoComplete}
-          autoCorrect={props.autoCorrect?.toString()}
-          className={inputClasses}
-          placeholder={placeholder}
-        />
-      ) : (
-        <TextInput
-          {...props}
-          onChangeText={onChangeText}
-          onBlur={onBlur}
-          className={inputClasses}
-          placeholder={placeholder}
-        >
-          {props.children}
-        </TextInput>
-      )}
+      {children}
     </View>
   );
 };
