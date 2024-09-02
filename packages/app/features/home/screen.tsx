@@ -21,14 +21,15 @@ import { Skeleton } from "@dishify/ui/src/elements/skeleton";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getSearchUrl } from "app/utils/helpers";
 import { trpc } from "app/utils/trpc";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { View, ScrollView } from "react-native";
+import { View, ScrollView, Keyboard, type Pressable } from "react-native";
 import { Link } from "solito/link";
 import { skipToken } from "@tanstack/react-query";
 import { DishNameSchema, type DishName } from "@dishify/api/schemas/dish-name";
 import * as Burnt from "burnt";
 import { AutocompleteInput, Input } from "@dishify/ui/src/elements/input";
+import { isWeb } from "@tamagui/constants";
 
 export function HomeScreen() {
   const {
@@ -41,6 +42,7 @@ export function HomeScreen() {
       dishName: "",
     },
   });
+  const submitButtonRef = useRef<React.ElementRef<typeof Pressable>>(null);
 
   const [currentRecipe, setCurrentRecipe] = useState("");
   const { data, isFetching, error } = trpc.recipe.generate.useQuery(
@@ -65,9 +67,9 @@ export function HomeScreen() {
       },
       {
         enabled: false,
+        placeholderData: (prevData) => prevData,
       }
     );
-  const utils = trpc.useUtils();
   useEffect(() => {
     if (error) {
       Burnt.toast({
@@ -82,6 +84,11 @@ export function HomeScreen() {
   };
   const onSubmit = handleSubmit((data) => {
     setCurrentRecipe(data.dishName);
+    if (isWeb) {
+      submitButtonRef.current?.focus();
+    } else {
+      Keyboard.dismiss();
+    }
   });
 
   return (
@@ -98,7 +105,7 @@ export function HomeScreen() {
             render={({ field: { onChange, onBlur, name, value } }) => (
               <FormInput error={errors.dishName?.message} id={name}>
                 <AutocompleteInput
-                  onSelect={onChange}
+                  onSelect={(selectedValue) => onChange(selectedValue)}
                   getOptions={getOptions}
                   autocompleteOptions={autocompleteOptions}
                 >
@@ -114,24 +121,13 @@ export function HomeScreen() {
                   />
                 </AutocompleteInput>
               </FormInput>
-              // <FormInput
-              //   type="text"
-              //   onBlur={onBlur}
-              //   onChangeText={onChange}
-              //   value={value}
-              //   autoCorrect={true}
-              //   maxLength={80}
-              //   error={errors.dishName?.message}
-              //   className="w-full"
-              //   placeholder="Enter a dish name"
-              //   id={name}
-              // />
             )}
           />
           <Button
             onPress={onSubmit}
             disabled={!!currentRecipe && isFetching}
             className="w-full sm:w-auto"
+            ref={submitButtonRef}
           >
             <Text>{!!currentRecipe && isFetching ? "Generating..." : "Generate Recipe"}</Text>
           </Button>
