@@ -9,7 +9,7 @@
     "migrate": "wrangler d1 migrations apply dishify_production",
     "migrate:local": "wrangler d1 migrations apply dishify_preview --local",
     "seed": "wrangler d1 execute dishify_production --file=./seed/seed.sql",
-    "seed:local": "wrangler d1 execute dishify_preview --local --file=./seed/seed.sql",
+    "seed:local": "ts-node seed-local.ts",
     "studio": "drizzle-kit studio",
     "deploy": "wrangler deploy --minify src/worker.ts",
     "postinstall": "bun generate",
