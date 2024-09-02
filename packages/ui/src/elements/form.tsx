@@ -17,7 +17,7 @@ interface FormInputProps {
 
 export const FormInput = ({ label, optional, error, id, children }: FormInputProps) => {
   return (
-    <View className="flex-1 w-full flex-col gap-1">
+    <View className="flex-1 w-full flex-col gap-1 z-10">
       {(!!label || !!error) && (
         <View className="mb-1 flex-1 flex-row items-end justify-between">
           <Label htmlFor={id}>{label}</Label>
