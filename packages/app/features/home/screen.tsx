@@ -22,12 +22,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { getSearchUrl } from "app/utils/helpers";
 import { trpc } from "app/utils/trpc";
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { View, ScrollView } from "react-native";
 import { Link } from "solito/link";
 import { skipToken } from "@tanstack/react-query";
 import { DishNameSchema, type DishName } from "@dishify/api/schemas/dish-name";
 import * as Burnt from "burnt";
+import { AutocompleteInput, Input } from "@dishify/ui/src/elements/input";
 
 export function HomeScreen() {
   const {
@@ -40,6 +41,7 @@ export function HomeScreen() {
       dishName: "",
     },
   });
+
   const [currentRecipe, setCurrentRecipe] = useState("");
   const { data, isFetching, error } = trpc.recipe.generate.useQuery(
     currentRecipe ? { dishName: currentRecipe } : skipToken,
@@ -51,6 +53,21 @@ export function HomeScreen() {
       retryDelay: 1000,
     }
   );
+  const dishName = useWatch({
+    control,
+    name: "dishName",
+  });
+  const { data: autocompleteOptions, refetch: refetchAutocomplete } =
+    trpc.recipe.autocomplete.useQuery(
+      {
+        query: dishName,
+        language: "en",
+      },
+      {
+        enabled: false,
+      }
+    );
+  const utils = trpc.useUtils();
   useEffect(() => {
     if (error) {
       Burnt.toast({
@@ -60,6 +77,9 @@ export function HomeScreen() {
       });
     }
   }, [error]);
+  const getOptions = async () => {
+    await refetchAutocomplete();
+  };
   const onSubmit = handleSubmit((data) => {
     setCurrentRecipe(data.dishName);
   });
@@ -76,18 +96,36 @@ export function HomeScreen() {
               required: true,
             }}
             render={({ field: { onChange, onBlur, name, value } }) => (
-              <FormInput
-                type="text"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                autoCorrect={true}
-                maxLength={80}
-                error={errors.dishName?.message}
-                className="w-full"
-                placeholder="Enter a dish name"
-                id={name}
-              />
+              <FormInput error={errors.dishName?.message} id={name}>
+                <AutocompleteInput
+                  onSelect={onChange}
+                  getOptions={getOptions}
+                  autocompleteOptions={autocompleteOptions}
+                >
+                  <Input
+                    type="text"
+                    id={name}
+                    value={value}
+                    onBlur={onBlur}
+                    onChange={onChange}
+                    placeholder="Enter a dish name"
+                    autoCorrect={true}
+                    maxLength={80}
+                  />
+                </AutocompleteInput>
+              </FormInput>
+              // <FormInput
+              //   type="text"
+              //   onBlur={onBlur}
+              //   onChangeText={onChange}
+              //   value={value}
+              //   autoCorrect={true}
+              //   maxLength={80}
+              //   error={errors.dishName?.message}
+              //   className="w-full"
+              //   placeholder="Enter a dish name"
+              //   id={name}
+              // />
             )}
           />
           <Button
