@@ -1,4 +1,4 @@
-import { themes } from "@dishify/ui/src/theme/themes";
+import type { themes } from "@dishify/ui/src/theme/themes";
 
 export const ColorSchemeVariant = {
   light: "light",
