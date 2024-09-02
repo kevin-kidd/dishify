@@ -51,5 +51,8 @@ export const generate = publicProcedure
       console.error("Failed to validate recipe response", { response, request: messages });
       throw new Error(`Failed to fetch recipe: ${dishName}. Please try again.`);
     }
+
+    // TODO: if successful, save recipe to database if new recipe
+
     return validatedResponse.data;
   });
