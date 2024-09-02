@@ -11,7 +11,15 @@ interface InputProps extends TextInputProps {
   onBlur: () => void;
 }
 
-export function Input({ id, onChange, onBlur, placeholder, type = "text", ...props }: InputProps) {
+export function Input({
+  id,
+  onChange,
+  onBlur,
+  placeholder,
+  value,
+  type = "text",
+  ...props
+}: InputProps) {
   const inputClasses =
     "px-3 py-2 rounded-md bg-background border-2 border-input flex flex-row ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-primary h-10 w-full";
   const nativeOnChange = type === "text" ? { onChangeText: onChange } : { onChange };
@@ -19,6 +27,7 @@ export function Input({ id, onChange, onBlur, placeholder, type = "text", ...pro
     <input
       type={type}
       id={id}
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}
       autoComplete={props.autoComplete}
@@ -30,6 +39,7 @@ export function Input({ id, onChange, onBlur, placeholder, type = "text", ...pro
     <TextInput
       {...props}
       {...nativeOnChange}
+      value={value}
       onBlur={onBlur}
       className={inputClasses}
       placeholder={placeholder}
@@ -66,7 +76,11 @@ export function AutocompleteInput({
 
   const handleInputChange = (text: string) => {
     debouncedSearch(text);
-    children.props.onChange?.(text);
+    if (isWeb) {
+      children.props.onChange?.(text);
+    } else {
+      children.props.onChangeText?.(text);
+    }
   };
 
   const handleSelectOption = (option: string) => {
@@ -75,15 +89,22 @@ export function AutocompleteInput({
     children.props.onChange?.(option);
   };
 
+  const handleBlur = () => {
+    setShowDropdown(false);
+    children.props.onBlur?.();
+  };
+
   const inputWithAutocomplete = React.cloneElement(children, {
     onChange: handleInputChange,
+    onBlur: handleBlur,
   });
+  console.log(autocompleteOptions);
 
   return (
     <View className="relative">
       {inputWithAutocomplete}
-      {showDropdown && autocompleteOptions && (
-        <View className="absolute z-10 w-full mt-1 bg-background border border-border rounded-md shadow-lg">
+      {showDropdown && autocompleteOptions && autocompleteOptions.length > 0 && (
+        <View className="absolute w-full mt-12 bg-background border border-border rounded-md shadow-lg">
           {autocompleteOptions?.map((item) => (
             <Pressable
               key={item}
