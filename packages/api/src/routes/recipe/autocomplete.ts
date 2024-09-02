@@ -36,11 +36,11 @@ export const autocomplete = publicProcedure
       throw new Error("Unsupported language");
     }
     const results = await db
-      .select()
+      .select({ name: table.name })
       .from(table)
       .where(like(table.name, `${query}%`))
-      .limit(10);
-    return results;
+      .limit(5);
+    return results.map((result) => result.name);
   });
 
 type RecipeNameTable =
