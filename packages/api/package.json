@@ -21,11 +21,12 @@
     "@tsndr/cloudflare-worker-jwt": "2.2.7",
     "drizzle-orm": "^0.29.0",
     "drizzle-valibot": "beta",
+    "glin-profanity": "1.1.7",
+    "groq-sdk": "^0.6.1",
     "hono": "4.5.10",
     "miniflare": "3.20231025.1",
     "superjson": "2.2.1",
-    "valibot": "^0.20.1",
-    "glin-profanity": "1.1.7"
+    "valibot": "^0.20.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "4.20240821.1",
