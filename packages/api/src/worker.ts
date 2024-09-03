@@ -8,6 +8,7 @@ import { logger } from "hono/logger";
 type Bindings = {
   DB: D1Database;
   JWT_VERIFICATION_KEY: string;
+  GROQ_API_KEY: string;
   APP_URL: string;
   AI: Ai;
 };
@@ -36,7 +37,13 @@ app.use("/trpc/*", async (c, next) => {
   return await trpcServer({
     router: appRouter,
     createContext: async (opts): Promise<Record<string, unknown>> => {
-      const context = await createContext(c.env.DB, c.env.JWT_VERIFICATION_KEY, c.env.AI, opts);
+      const context = await createContext(
+        c.env.DB,
+        c.env.JWT_VERIFICATION_KEY,
+        c.env.GROQ_API_KEY,
+        c.env.AI,
+        opts
+      );
       return { ...context };
     },
   })(c, next);
