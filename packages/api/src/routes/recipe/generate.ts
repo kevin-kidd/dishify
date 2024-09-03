@@ -54,10 +54,15 @@ export const generate = publicProcedure
     }
 
     // If successful, save recipe to database
-    const addRecipe = await ctx.db.insert(EnglishRecipeNameTable).values({ name: dishName });
+    const addRecipe = await ctx.db
+      .insert(EnglishRecipeNameTable)
+      .values({ name: dishName })
+      .onConflictDoNothing();
     if (addRecipe.error) {
       console.error("Failed to save recipe to database", { dishName, error: addRecipe.error });
     }
+
+    // TODO: add CF AI Gateway
 
     return validatedResponse.data;
   });
