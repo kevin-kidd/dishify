@@ -17,7 +17,7 @@ export const selectUserSchema = createSelectSchema(UserTable);
 export const EnglishRecipeNameTable = sqliteTable(
   "english_recipes",
   {
-    name: text("name").notNull(),
+    name: text("name").primaryKey(),
   },
   (table) => ({
     nameIdx: index("name_idx").on(table.name),
@@ -30,7 +30,7 @@ export const selectEnglishRecipeNameSchema = createSelectSchema(EnglishRecipeNam
 
 // Spanish recipe name table
 export const SpanishRecipeNameTable = sqliteTable("spanish_recipes", {
-  name: text("name").notNull(),
+  name: text("name").primaryKey(),
 });
 export type SpanishRecipeName = InferSelectModel<typeof SpanishRecipeNameTable>;
 export type InsertSpanishRecipeName = InferInsertModel<typeof SpanishRecipeNameTable>;
@@ -39,7 +39,7 @@ export const selectSpanishRecipeNameSchema = createSelectSchema(SpanishRecipeNam
 
 // German recipe name table
 export const GermanRecipeNameTable = sqliteTable("german_recipes", {
-  name: text("name").notNull(),
+  name: text("name").primaryKey(),
 });
 export type GermanRecipeName = InferSelectModel<typeof GermanRecipeNameTable>;
 export type InsertGermanRecipeName = InferInsertModel<typeof GermanRecipeNameTable>;
@@ -48,7 +48,7 @@ export const selectGermanRecipeNameSchema = createSelectSchema(GermanRecipeNameT
 
 // French recipe name table
 export const FrenchRecipeNameTable = sqliteTable("french_recipes", {
-  name: text("name").notNull(),
+  name: text("name").primaryKey(),
 });
 export type FrenchRecipeName = InferSelectModel<typeof FrenchRecipeNameTable>;
 export type InsertFrenchRecipeName = InferInsertModel<typeof FrenchRecipeNameTable>;
@@ -57,7 +57,7 @@ export const selectFrenchRecipeNameSchema = createSelectSchema(FrenchRecipeNameT
 
 // Italian recipe name table
 export const ItalianRecipeNameTable = sqliteTable("italian_recipes", {
-  name: text("name").notNull(),
+  name: text("name").primaryKey(),
 });
 export type ItalianRecipeName = InferSelectModel<typeof ItalianRecipeNameTable>;
 export type InsertItalianRecipeName = InferInsertModel<typeof ItalianRecipeNameTable>;
