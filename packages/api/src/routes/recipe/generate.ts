@@ -1,19 +1,13 @@
+import type { ChatCompletionMessageParam } from "groq-sdk/resources/chat/completions";
 import { DishNameSchema } from "../../../schemas/dish-name";
 import { RecipeResponseSchema } from "../../../schemas/recipe-response";
 import { publicProcedure } from "../../trpc";
-
-type AiTextGenerationResponse = {
-  response?: string;
-  tool_calls?: {
-    name: string;
-    arguments: unknown;
-  }[];
-};
+import { EnglishRecipeNameTable } from "../../db/schema";
 
 export const generate = publicProcedure
   .input(DishNameSchema)
   .query(async ({ ctx, input: { dishName } }) => {
-    const messages: AiTextGenerationInput["messages"] = [
+    const messages: ChatCompletionMessageParam[] = [
       {
         role: "system",
         content: `You are a helpful assistant that generates recipes and shopping lists. Provide the response in JSON format like this: { dishName: "",shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}. If you are not aware of the dish, respond with { dishName: "unknown"}`,
@@ -23,11 +17,18 @@ export const generate = publicProcedure
         content: `Generate a recipe and shopping list for: ${dishName}`,
       },
     ];
-    const completion = (await ctx.ai.run("@cf/meta/llama-3.1-8b-instruct", {
-      messages,
-      stream: false,
-    })) as AiTextGenerationResponse;
-    const response = completion.response;
+    const completion = await ctx.groq.chat.completions.create(
+      {
+        model: "llama-3.1-70b-versatile",
+        messages,
+        stream: false,
+        user: ctx.user?.id,
+      },
+      {
+        maxRetries: 3,
+      }
+    );
+    const response = completion.choices?.[0]?.message.content;
     if (!response) {
       console.error("Failed to get response from AI API", { response, request: messages });
       throw new Error("An unexpected error occurred. Please try again.");
@@ -52,7 +53,11 @@ export const generate = publicProcedure
       throw new Error(`Failed to fetch recipe: ${dishName}. Please try again.`);
     }
 
-    // TODO: if successful, save recipe to database if new recipe
+    // If successful, save recipe to database
+    const addRecipe = await ctx.db.insert(EnglishRecipeNameTable).values({ name: dishName });
+    if (addRecipe.error) {
+      console.error("Failed to save recipe to database", { dishName, error: addRecipe.error });
+    }
 
     return validatedResponse.data;
   });
