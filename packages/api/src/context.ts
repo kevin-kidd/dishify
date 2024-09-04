@@ -19,6 +19,7 @@ export const createContext = async (
   d1: D1Database,
   JWT_VERIFICATION_KEY: string,
   GROQ_API_KEY: string,
+  GROQ_BASE_URL: string,
   ai: Ai,
   opts: FetchCreateContextFnOptions
 ): Promise<ApiContextProps> => {
@@ -65,7 +66,7 @@ export const createContext = async (
     return null;
   }
 
-  const groq = new Groq({ apiKey: GROQ_API_KEY });
+  const groq = new Groq({ apiKey: GROQ_API_KEY, baseURL: GROQ_BASE_URL });
   const user = await getUser();
 
   return { user, db, ai, groq };
