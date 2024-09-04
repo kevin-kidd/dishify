@@ -1,3 +1,5 @@
+"use client";
+
 import {
   H1,
   P,
