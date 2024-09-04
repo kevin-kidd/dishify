@@ -5,7 +5,6 @@
     "jsxImportSource": "nativewind",
     "baseUrl": ".",
     "paths": {
-      "react-native": ["react-native-web"],
       "app/*": ["../../packages/app/*"],
       "@dishify/api/*": ["../../packages/api/*"],
       "@dishify/ui/*": ["../../packages/ui/*"]
