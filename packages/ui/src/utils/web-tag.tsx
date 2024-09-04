@@ -1,4 +1,4 @@
-import React, { ComponentType } from "react";
+import React, { type ComponentType } from "react";
 import { Platform } from "react-native";
 import { cn } from ".";
 
@@ -30,15 +30,14 @@ export function withWebTag<
       };
       // Create an element with the appropriate tag name for the web.
       return React.createElement(tagName, combinedProps, children);
-    } else {
-      // For native, just spread the props and render the component.
-      const nativeProps: unknown = {
-        ...restProps,
-        onPress,
-        children,
-        className: combinedClassName,
-      };
-      return <Component {...(nativeProps as P)}>{children}</Component>;
     }
+    // For native, just spread the props and render the component.
+    const nativeProps: unknown = {
+      ...restProps,
+      onPress,
+      children,
+      className: combinedClassName,
+    };
+    return <Component {...(nativeProps as P)}>{children}</Component>;
   };
 }
