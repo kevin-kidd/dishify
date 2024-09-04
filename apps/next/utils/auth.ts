@@ -1,4 +1,4 @@
-import { Session, createPagesServerClient } from "@supabase/auth-helpers-nextjs";
+import { type Session, createPagesServerClient } from "@supabase/auth-helpers-nextjs";
 import jwt from "@tsndr/cloudflare-worker-jwt";
 import { secureCookieOptions } from "app/utils/supabase/cookies";
 import type { GetServerSidePropsContext } from "next/types";
