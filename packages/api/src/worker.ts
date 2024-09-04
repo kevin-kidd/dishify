@@ -9,6 +9,8 @@ type Bindings = {
   DB: D1Database;
   JWT_VERIFICATION_KEY: string;
   GROQ_API_KEY: string;
+  ACCOUNT_ID: string;
+  AI_GATEWAY_ID: string;
   APP_URL: string;
   AI: Ai;
 };
@@ -34,6 +36,7 @@ app.use("/trpc/*", async (c, next) => {
 
 // Setup TRPC server with context
 app.use("/trpc/*", async (c, next) => {
+  const GROQ_BASE_URL = `https://gateway.ai.cloudflare.com/v1/${c.env.ACCOUNT_ID}/${c.env.AI_GATEWAY_ID}/groq`;
   return await trpcServer({
     router: appRouter,
     createContext: async (opts): Promise<Record<string, unknown>> => {
@@ -41,6 +44,7 @@ app.use("/trpc/*", async (c, next) => {
         c.env.DB,
         c.env.JWT_VERIFICATION_KEY,
         c.env.GROQ_API_KEY,
+        GROQ_BASE_URL,
         c.env.AI,
         opts
       );
