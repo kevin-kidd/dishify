@@ -107,6 +107,7 @@ const theme = {
     ({ addBase }) => addBase({ ":root": "--popover-foreground: 	#020817" }),
     ({ addBase }) => addBase({ ":root": "--card: 	#ffffff" }),
     ({ addBase }) => addBase({ ":root": "--card-foreground: 	#020817" }),
+    require("tailwindcss-animate"),
   ],
 };
 

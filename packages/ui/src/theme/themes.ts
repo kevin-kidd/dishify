@@ -1,4 +1,4 @@
-import { vars } from "react-native-css-interop";
+import { vars } from "nativewind";
 
 export const themes = {
   default: {
