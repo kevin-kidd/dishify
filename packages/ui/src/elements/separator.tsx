@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as SeparatorPrimitive from "@rn-primitives/separator";
 import { cn } from "../utils";
-import { ViewProps } from "react-native";
+import type { ViewProps } from "react-native";
 
 type SeparatorProps = ViewProps & {
   asChild?: boolean;
