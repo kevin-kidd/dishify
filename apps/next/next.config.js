@@ -23,9 +23,6 @@ const disableBrowserLogs =
 const enableMillionJS =
   boolVals[process.env.ENABLE_MILLION_JS] ?? process.env.NODE_ENV === "production";
 
-// Enabling might cause FOUC on page refreshes
-const optimizeCss = true;
-
 const plugins = [withPWA, withExpo, withBundleAnalyzer];
 
 module.exports = () => {
@@ -37,10 +34,12 @@ module.exports = () => {
     //   loaderFile: './cfImageLoader.js',
     // },
     // Using Solito image loader without Cloudflare's Paid Image Resizing
+
     images: {},
     typescript: {
       ignoreBuildErrors: true,
     },
+    reactStrictMode: false,
     transpilePackages: [
       "react-native",
       "react-native-web",
@@ -63,10 +62,16 @@ module.exports = () => {
       "glin-profanity",
     ],
     experimental: {
-      optimizeCss,
       forceSwcTransforms: true,
       scrollRestoration: true,
-      webpackBuildWorker: true,
+      swcPlugins: [
+        [
+          "next-superjson-plugin",
+          {
+            excluded: [],
+          },
+        ],
+      ],
     },
     compiler: {
       removeConsole: disableBrowserLogs,
