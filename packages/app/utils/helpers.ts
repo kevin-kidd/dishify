@@ -11,6 +11,19 @@ const checkPasswordRequirements = (value: string) => {
   // The 2nd element represents 1 special character, 3rd element represents 1 capital letter requirement.
   return requirements.map((test) => test(value));
 };
+export const parseErrorMessage = (error: Error) => {
+  if (typeof error.message === "string") {
+    try {
+      const parsedError = JSON.parse(error.message);
+      if (Array.isArray(parsedError) && parsedError.length > 0 && parsedError[0].message) {
+        return parsedError[0].message;
+      }
+    } catch (e) {
+      // If parsing fails, it's not a Zod error, so we'll use the original message
+    }
+  }
+  return error.message || "An unknown error occurred";
+};
 
 export const passwordSchema = z.string().superRefine((value, ctx) => {
   const errors = checkPasswordRequirements(value);
