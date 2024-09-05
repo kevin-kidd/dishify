@@ -7,3 +7,4 @@ export * from "./tooltip";
 export * from "./text";
 export * from "./card";
 export * from "./separator";
+export * from "./select";
