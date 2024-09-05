@@ -45,7 +45,10 @@ app.use("/trpc/*", async (c, next) => {
         c.env.JWT_VERIFICATION_KEY,
         c.env.GROQ_API_KEY,
         GROQ_BASE_URL,
-        c.env.AI,
+        {
+          client: c.env.AI,
+          gatewayId: c.env.AI_GATEWAY_ID,
+        },
         opts
       );
       return { ...context };
