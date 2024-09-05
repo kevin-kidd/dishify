@@ -83,32 +83,6 @@ const theme = {
       sm: "4px",
     },
   },
-  plugins: [
-    // Set a default value on the `:root` element
-    ({ addBase }) => addBase({ ":root": "--radius: 0.5rem" }),
-    ({ addBase }) => addBase({ ":root": "--background: #ffffff" }),
-    ({ addBase }) => addBase({ ":root": "--foreground: 	#020817" }),
-    ({ addBase }) => addBase({ ":root": "--primary: #000000" }),
-    ({ addBase }) => addBase({ ":root": "--primary-foreground: #f8fafc" }),
-    ({ addBase }) => addBase({ ":root": "--secondary: #7d7d7d" }),
-    ({ addBase }) => addBase({ ":root": "--secondary-foreground: #f8fafc" }),
-    ({ addBase }) => addBase({ ":root": "--tertiary: #f0f2f5" }),
-    ({ addBase }) => addBase({ ":root": "--tertiary-foreground: 	#0f172a" }),
-    ({ addBase }) => addBase({ ":root": "--muted: 	#f1f5f9" }),
-    ({ addBase }) => addBase({ ":root": "--muted-foreground: 	#64748b" }),
-    ({ addBase }) => addBase({ ":root": "--accent: 	#f1f5f9" }),
-    ({ addBase }) => addBase({ ":root": "--accent-foreground: 	#0f172a" }),
-    ({ addBase }) => addBase({ ":root": "--destructive: #ef4444" }),
-    ({ addBase }) => addBase({ ":root": "--destructive-foreground: #f8fafc" }),
-    ({ addBase }) => addBase({ ":root": "--border: 	#e2e8f0" }),
-    ({ addBase }) => addBase({ ":root": "--input: 	#e2e8f0" }),
-    ({ addBase }) => addBase({ ":root": "--ring: #cccccc" }),
-    ({ addBase }) => addBase({ ":root": "--popover: 	#ffffff" }),
-    ({ addBase }) => addBase({ ":root": "--popover-foreground: 	#020817" }),
-    ({ addBase }) => addBase({ ":root": "--card: 	#ffffff" }),
-    ({ addBase }) => addBase({ ":root": "--card-foreground: 	#020817" }),
-    require("tailwindcss-animate"),
-  ],
 };
 
 module.exports = {
