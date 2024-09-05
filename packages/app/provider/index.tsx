@@ -9,6 +9,7 @@ import { ThemeProvider } from "./theme";
 import { isWeb } from "@tamagui/constants";
 import { Toaster } from "burnt/web";
 import { StylesProvider } from "./styles";
+import { PortalHost } from "@rn-primitives/portal";
 
 export function Provider({
   children,
@@ -22,12 +23,13 @@ export function Provider({
       <SolitoImageProvider>
         {/* <AuthProvider initialSession={initialSession}> */}
         <TRPCProvider>
-          <StylesProvider>
-            <ThemeProvider>
-              {children}
-              {isWeb && <Toaster position="bottom-right" />}
-            </ThemeProvider>
-          </StylesProvider>
+          {/* <StylesProvider> */}
+          <ThemeProvider>
+            {children}
+            {isWeb && <Toaster position="bottom-right" />}
+            <PortalHost />
+          </ThemeProvider>
+          {/* </StylesProvider> */}
         </TRPCProvider>
         {/* </AuthProvider> */}
       </SolitoImageProvider>
