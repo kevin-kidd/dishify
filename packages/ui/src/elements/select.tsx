@@ -6,9 +6,6 @@ import { cn } from "../utils";
 import { ChevronDown } from "../icons/ChevronDown";
 import { Check } from "../icons/Check";
 import { ChevronUp } from "../icons/ChevronUp";
-// import { cssInterop } from "nativewind";
-
-// cssInterop(SelectPrimitive.Trigger, { className: "style" });
 
 type Option = SelectPrimitive.Option;
 
@@ -24,15 +21,20 @@ const SelectTrigger = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
-    className={cn(
-      "flex-1 flex-row h-10 native:h-12 items-center text-sm justify-between rounded-md border border-input bg-background px-3 py-2 web:ring-offset-background text-muted-foreground web:focus:outline-none web:focus:ring-2 web:focus:ring-ring web:focus:ring-offset-2 [&>span]:line-clamp-1",
-      props.disabled && "web:cursor-not-allowed opacity-50",
-      className
-    )}
+    style={{
+      $$css: true,
+      className: cn(
+        "flex-1 flex-row h-10 web:select-none native:h-12 items-center text-sm justify-between rounded-md border border-input bg-background px-3 py-2 web:ring-offset-background text-muted-foreground web:focus:outline-none web:focus:ring-2 web:focus:ring-ring web:focus:ring-offset-2 [&>span]:line-clamp-1",
+        props.disabled && "web:cursor-not-allowed opacity-50",
+        className
+      ),
+    }}
     {...props}
   >
-    <>{children}</>
-    <ChevronDown size={16} aria-hidden={true} className="text-foreground opacity-50" />
+    <>
+      {children}
+      <ChevronDown size={16} aria-hidden={true} className="text-foreground opacity-50" />
+    </>
   </SelectPrimitive.Trigger>
 ));
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
@@ -84,20 +86,28 @@ const SelectContent = React.forwardRef<
   const { open } = SelectPrimitive.useRootContext();
 
   return (
-    <SelectPrimitive.Portal hostName={portalHost}>
+    <SelectPrimitive.Portal
+      hostName={portalHost}
+      container={document.getElementById("theme-provider")}
+    >
       <SelectPrimitive.Overlay style={Platform.OS !== "web" ? StyleSheet.absoluteFill : undefined}>
-        <Animated.View entering={FadeIn} exiting={FadeOut}>
+        <Animated.View
+          entering={Platform.OS !== "web" ? FadeIn : undefined}
+          exiting={Platform.OS !== "web" ? FadeOut : undefined}
+        >
           <SelectPrimitive.Content
             ref={ref}
-            className={cn(
-              "relative z-50 max-h-96 min-w-[8rem] rounded-md border border-border bg-popover shadow-md shadow-foreground/10 py-2 px-1 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-              position === "popper" &&
-                "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-              open
-                ? "web:zoom-in-95 web:animate-in web:fade-in-0"
-                : "web:zoom-out-95 web:animate-out web:fade-out-0",
-              className
-            )}
+            style={{
+              $$css: true,
+              className: cn(
+                "select-content-child relative z-50 max-h-96 min-w-[8rem] rounded-md border border-border bg-popover shadow-md shadow-foreground/10 py-2 px-1 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 & data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:mt-2 data-[side=left]:ml-1 data-[side=right]:mr-1 data-[side=top]:mb-2",
+                position === "popper" && "select-content-popper",
+                open
+                  ? "web:zoom-in-95 web:animate-in web:fade-in-0"
+                  : "web:zoom-out-95 web:animate-out web:fade-out-0",
+                className
+              ),
+            }}
             position={position}
             {...props}
           >
@@ -106,7 +116,7 @@ const SelectContent = React.forwardRef<
               className={cn(
                 "p-1",
                 position === "popper" &&
-                  "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+                  "h-[var(--radix-select-trigger-height)] w-full native:min-w-[var(--radix-select-trigger-width)]"
               )}
             >
               {children}
@@ -126,10 +136,13 @@ const SelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn(
-      "py-1.5 native:pb-2 pl-8 native:pl-10 pr-2 text-popover-foreground text-sm native:text-base font-semibold",
-      className
-    )}
+    style={{
+      $$css: true,
+      className: cn(
+        "py-1.5 native:pb-2 pl-8 native:pl-10 pr-2 text-popover-foreground text-sm native:text-base font-semibold",
+        className
+      ),
+    }}
     {...props}
   />
 ));
@@ -153,7 +166,15 @@ const SelectItem = React.forwardRef<
         <Check size={16} strokeWidth={3} className="text-popover-foreground" />
       </SelectPrimitive.ItemIndicator>
     </View>
-    <SelectPrimitive.ItemText className="text-sm native:text-lg text-popover-foreground native:text-base web:group-focus:text-accent-foreground" />
+    <SelectPrimitive.ItemText
+      style={{
+        $$css: true,
+        className: cn(
+          "text-sm native:text-lg text-popover-foreground native:text-base web:group-focus:text-accent-foreground",
+          className
+        ),
+      }}
+    />
   </SelectPrimitive.Item>
 ));
 SelectItem.displayName = SelectPrimitive.Item.displayName;
@@ -164,7 +185,10 @@ const SelectSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Separator
     ref={ref}
-    className={cn("-mx-1 my-1 h-px bg-muted", className)}
+    style={{
+      $$css: true,
+      className: cn("-mx-1 my-1 h-px bg-muted", className),
+    }}
     {...props}
   />
 ));
