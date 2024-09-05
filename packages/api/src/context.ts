@@ -11,7 +11,10 @@ interface User {
 interface ApiContextProps {
   user: User | null;
   db: DrizzleD1Database;
-  ai: Ai;
+  ai: {
+    client: Ai;
+    gatewayId: string;
+  };
   groq: Groq;
 }
 
@@ -20,7 +23,10 @@ export const createContext = async (
   JWT_VERIFICATION_KEY: string,
   GROQ_API_KEY: string,
   GROQ_BASE_URL: string,
-  ai: Ai,
+  ai: {
+    client: Ai;
+    gatewayId: string;
+  },
   opts: FetchCreateContextFnOptions
 ): Promise<ApiContextProps> => {
   const db = createDb(d1);
