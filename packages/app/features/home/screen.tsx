@@ -23,13 +23,12 @@ import { Skeleton } from "@dishify/ui/src/elements/skeleton";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getSearchUrl } from "app/utils/helpers";
 import { trpc } from "app/utils/trpc";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { View, ScrollView, Keyboard, type Pressable } from "react-native";
 import { Link } from "solito/link";
 import { skipToken } from "@tanstack/react-query";
 import { DishNameSchema, type DishName } from "@dishify/api/schemas/dish-name";
-import * as Burnt from "burnt";
 import { AutocompleteInput, Input } from "@dishify/ui/src/elements/input";
 import { isWeb } from "@tamagui/constants";
 
@@ -47,7 +46,7 @@ export function HomeScreen() {
   const submitButtonRef = useRef<React.ElementRef<typeof Pressable>>(null);
 
   const [currentRecipe, setCurrentRecipe] = useState("");
-  const { data, isFetching, error } = trpc.recipe.generate.useQuery(
+  const { data, isFetching } = trpc.recipe.generate.useQuery(
     currentRecipe ? { dishName: currentRecipe } : skipToken,
     {
       refetchOnWindowFocus: false,
@@ -70,20 +69,12 @@ export function HomeScreen() {
       {
         enabled: false,
         placeholderData: (prevData) => prevData,
+        meta: { showToastOnError: false },
       }
     );
-  useEffect(() => {
-    if (error) {
-      Burnt.toast({
-        title: "Error",
-        preset: "error",
-        message: error.message,
-      });
-    }
-  }, [error]);
-  const getOptions = async () => {
+  const getOptions = useCallback(async () => {
     await refetchAutocomplete();
-  };
+  }, [refetchAutocomplete]);
   const onSubmit = handleSubmit((data) => {
     setCurrentRecipe(data.dishName);
     if (isWeb) {
