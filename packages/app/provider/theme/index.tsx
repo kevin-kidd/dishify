@@ -38,7 +38,7 @@ export const ThemeProvider = ({
   const theme = themes[appTheme][appColorScheme === "system" ? "light" : appColorScheme];
   if (!hasMounted) return null; // Prevents flash of unstyled content
   return (
-    <View className="flex-1" style={theme}>
+    <View className="flex-1" style={theme} id="theme-provider">
       {children}
       {process.env.NODE_ENV === "development" && (
         <Button

@@ -2,6 +2,7 @@
 import nativewind from "nativewind/preset";
 import type { Config } from "tailwindcss";
 import { theme } from "@dishify/ui/src/theme";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 /**
  * @type {import('tailwindcss').Config}
@@ -12,4 +13,5 @@ module.exports = {
   theme: {
     ...theme,
   },
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

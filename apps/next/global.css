@@ -47,3 +47,54 @@ body {
     -moz-osx-font-smoothing: grayscale;
     -ms-overflow-style: scrollbar;
 }
+
+
+/* Select Component */
+[data-side="bottom"] .select-content-child {
+  @apply slide-in-from-top-2;
+}
+
+[data-side="left"] .select-content-child {
+  @apply slide-in-from-right-2;
+}
+
+[data-side="right"] .select-content-child {
+  @apply slide-in-from-left-2;
+}
+
+[data-side="top"] .select-content-child {
+  @apply slide-in-from-bottom-2;
+}
+
+[data-side="bottom"] .select-content-child {
+  @apply mt-1;
+}
+
+[data-side="left"] .select-content-child {
+  @apply ml-1;
+}
+
+[data-side="right"] .select-content-child {
+  @apply mr-1;
+}
+
+[data-side="top"] .select-content-child {
+  @apply mb-1;
+}
+
+/* Additional styles for popper positions */
+[data-side="bottom"] .select-content-popper {
+  @apply translate-y-1;
+}
+
+[data-side="left"] .select-content-popper {
+  @apply -translate-x-1;
+}
+
+[data-side="right"] .select-content-popper {
+  @apply translate-x-1;
+}
+
+[data-side="top"] .select-content-popper {
+  @apply -translate-y-1;
+}

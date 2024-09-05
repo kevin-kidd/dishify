@@ -1,5 +1,5 @@
+const { DefinePlugin } = require("webpack");
 const million = require("million/compiler");
-const { withExpo } = require("@expo/next-adapter");
 const { withSentryConfig } = require("@sentry/nextjs");
 const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
@@ -23,7 +23,7 @@ const disableBrowserLogs =
 const enableMillionJS =
   boolVals[process.env.ENABLE_MILLION_JS] ?? process.env.NODE_ENV === "production";
 
-const plugins = [withPWA, withExpo, withBundleAnalyzer];
+const plugins = [withPWA, withBundleAnalyzer];
 
 module.exports = () => {
   /** @type {import('next').NextConfig} */
@@ -39,31 +39,46 @@ module.exports = () => {
     typescript: {
       ignoreBuildErrors: true,
     },
+    webpack: (config) => {
+      config.resolve.alias = {
+        ...(config.resolve.alias || {}),
+        // Transform all direct `react-native` imports to `react-native-web`
+        "react-native$": "react-native-web",
+      };
+      config.resolve.extensions = [
+        ".web.js",
+        ".web.jsx",
+        ".web.ts",
+        ".web.tsx",
+        ...config.resolve.extensions,
+      ];
+
+      config.plugins.push(
+        new DefinePlugin({
+          __DEV__: JSON.stringify(process.env.NODE_ENV !== "production"),
+        })
+      );
+
+      return config;
+    },
     reactStrictMode: false,
     transpilePackages: [
-      "react-native",
-      "react-native-web",
-      "solito",
-      "moti",
-      "app",
-      "react-native-reanimated",
-      "nativewind",
-      "react-native-gesture-handler",
-      "react-native-svg",
-      "expo-linking",
-      "expo-constants",
-      "expo-modules-core",
-      "react-native-safe-area-context",
-      "react-native-circular-progress",
       "react-native-css-interop",
+      "nativewind",
       "burnt",
       "@rn-primitives/slot",
       "@rn-primitives/separator",
-      "glin-profanity",
+      "@rn-primitives/select",
+      "@rn-primitives/portal",
+      "@dishify/ui",
+      "react-native-reanimated",
+      "react-native-safe-area-context",
+      "react-native-gesture-handler",
+      "react-native-web",
     ],
     experimental: {
-      forceSwcTransforms: true,
       scrollRestoration: true,
+      forceSwcTransforms: true,
       swcPlugins: [
         [
           "next-superjson-plugin",

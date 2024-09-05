@@ -9,6 +9,8 @@ declare module "react-native" {
   interface ViewStyle {
     transitionProperty?: string;
     transitionDuration?: string;
+    $$css?: boolean;
+    className?: string;
   }
   interface TextProps {
     accessibilityComponentType?: never;
