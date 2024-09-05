@@ -1,6 +1,6 @@
 import { TextInput, type TextInputProps } from "react-native";
 import { isWeb } from "@tamagui/constants";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { View, Text, Pressable } from "react-native";
 import { debounce } from "lodash";
 
@@ -9,6 +9,7 @@ interface InputProps extends TextInputProps {
   type: string;
   onChange: (...event: unknown[]) => void;
   onBlur: () => void;
+  onFocus?: () => void;
 }
 
 export function Input({
@@ -18,6 +19,7 @@ export function Input({
   placeholder,
   value,
   type = "text",
+  onFocus,
   ...props
 }: InputProps) {
   const inputClasses =
@@ -34,6 +36,7 @@ export function Input({
       autoCorrect={props.autoCorrect?.toString()}
       className={inputClasses}
       placeholder={placeholder}
+      onFocus={onFocus}
     />
   ) : (
     <TextInput
@@ -43,6 +46,7 @@ export function Input({
       onBlur={onBlur}
       className={inputClasses}
       placeholder={placeholder}
+      onFocus={onFocus}
     />
   );
 }
@@ -50,7 +54,7 @@ export function Input({
 interface AutocompleteInputProps {
   children: React.ReactElement;
   onSelect: (value: string) => void;
-  getOptions: () => void;
+  getOptions: () => Promise<void>;
   autocompleteOptions?: string[];
 }
 
@@ -61,11 +65,13 @@ export function AutocompleteInput({
   autocompleteOptions,
 }: AutocompleteInputProps) {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const debouncedSearch = useCallback(
     debounce(async (text: string) => {
       if (text.length >= 3) {
-        getOptions();
+        await getOptions();
         setShowDropdown(true);
       } else {
         setShowDropdown(false);
@@ -74,48 +80,73 @@ export function AutocompleteInput({
     []
   );
 
-  const handleInputChange = (text: string) => {
-    debouncedSearch(text);
-    if (isWeb) {
-      children.props.onChange?.(text);
-    } else {
-      children.props.onChangeText?.(text);
-    }
-  };
+  const handleInputChange = useCallback(
+    (text: string) => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
 
-  const handleSelectOption = (option: string) => {
-    setShowDropdown(false);
-    onSelect(option);
-    children.props.onChange?.(option);
-  };
+      searchTimeoutRef.current = setTimeout(() => {
+        debouncedSearch(text);
+      }, 0);
 
-  const handleBlur = () => {
-    setShowDropdown(false);
+      if (isWeb) {
+        children.props.onChange?.(text);
+      } else {
+        children.props.onChangeText?.(text);
+      }
+    },
+    [debouncedSearch, children.props]
+  );
+
+  const handleSelectOption = useCallback(
+    (option: string) => {
+      setShowDropdown(false);
+      onSelect(option);
+      children.props.onChange?.(option);
+    },
+    [children.props.onChange, onSelect]
+  );
+
+  const handleFocus = useCallback(() => {
+    setIsFocused(true);
+    children.props.onFocus?.();
+  }, [children.props.onFocus]);
+
+  const handleBlur = useCallback(() => {
+    setIsFocused(false);
     children.props.onBlur?.();
-  };
+  }, [children.props.onBlur]);
 
   const inputWithAutocomplete = React.cloneElement(children, {
     onChange: handleInputChange,
+    onFocus: handleFocus,
     onBlur: handleBlur,
   });
-  console.log(autocompleteOptions);
+
+  const dropdownContent = React.useMemo(() => {
+    if (showDropdown && isFocused && autocompleteOptions && autocompleteOptions.length > 0) {
+      return (
+        <View className="absolute w-full mt-12 bg-background border border-border rounded-md shadow-lg">
+          {autocompleteOptions.map((option) => (
+            <Pressable
+              key={option}
+              onPress={() => handleSelectOption(option)}
+              className="px-3 py-2 hover:bg-accent"
+            >
+              <Text>{option}</Text>
+            </Pressable>
+          ))}
+        </View>
+      );
+    }
+    return null;
+  }, [autocompleteOptions, isFocused, showDropdown, handleSelectOption]);
 
   return (
     <View className="relative">
       {inputWithAutocomplete}
-      {showDropdown && autocompleteOptions && autocompleteOptions.length > 0 && (
-        <View className="absolute w-full mt-12 bg-background border border-border rounded-md shadow-lg">
-          {autocompleteOptions?.map((item) => (
-            <Pressable
-              key={item}
-              onPress={() => handleSelectOption(item)}
-              className="px-3 py-2 hover:bg-accent"
-            >
-              <Text>{item}</Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
+      {dropdownContent}
     </View>
   );
 }
