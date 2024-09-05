@@ -6,6 +6,14 @@ declare module "react-native" {
     hovered?: boolean;
     focused?: boolean;
   }
+
+  // Extend the StyleProp type
+  type StylePropWithCss<T> =
+    | T
+    | { $$css: boolean; className?: string }
+    | (T | { $$css: boolean; className?: string })[];
+
+  export type StyleProp<T> = StylePropWithCss<T>;
   interface ViewStyle {
     transitionProperty?: string;
     transitionDuration?: string;
