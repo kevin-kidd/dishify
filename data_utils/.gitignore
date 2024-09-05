@@ -1,5 +1,3 @@
-venv/*
-
 # ignore because it's too large
 data/raw/*
 data/sanitized/*
