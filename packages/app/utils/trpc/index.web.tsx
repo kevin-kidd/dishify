@@ -6,13 +6,28 @@ import { getToken } from "../supabase/cookies";
 import { useState } from "react";
 import { createTRPCReact, httpBatchLink, loggerLink } from "@trpc/react-query";
 import {
+  QueryCache,
   QueryClient,
   QueryClientProvider,
   defaultShouldDehydrateQuery,
 } from "@tanstack/react-query";
+import * as Burnt from "burnt";
+import { parseErrorMessage } from "../helpers";
 
 export function makeQueryClient() {
   return new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        if (query.meta?.showToastOnError) {
+          return;
+        }
+        Burnt.toast({
+          title: "Error",
+          preset: "error",
+          message: parseErrorMessage(error),
+        });
+      },
+    }),
     defaultOptions: {
       queries: {
         staleTime: 30 * 1000,
