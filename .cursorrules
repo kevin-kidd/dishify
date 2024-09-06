@@ -1,0 +1,106 @@
+# Dishify Project Guidelines
+
+## Project Overview
+
+Dishify is an AI-powered culinary companion application with cross-platform support (Web, iOS, Android). It provides instant recipe generation, ingredient lists, and smart shopping features.
+
+## Tech Stack
+
+- Next.js (14.2.7) for web application
+- Expo (SDK 51.0.31) for mobile applications
+- React Native (0.74.2) for cross-platform development
+- Tailwind CSS (3.4.4) for styling
+- tRPC (11.0.0) for type-safe API communication
+- Cloudflare Workers (3.73.0) for serverless backend with Hono
+- Cloudflare D1 for database
+- Supabase for authentication
+- TypeScript (5.5.4) as the primary language
+
+## Project Structure
+
+- `apps/`
+  - `expo/`: Expo mobile app
+  - `next/`: Next.js web app
+- `packages/`
+  - `api/`: Backend API and database schema
+  - `app/`: Shared application logic
+  - `ui/`: Shared UI components
+- `data_utils/`: Utility scripts for preparing recipe data for the database
+
+## Code Style and Conventions
+
+1. TypeScript is used for type safety across the project.
+2. A functional programming approach is followed where possible.
+3. Arrow functions are used for component definitions and callbacks.
+4. const is used for variable declarations unless reassignment is necessary.
+5. async/await is used for asynchronous operations.
+6. ES6+ features like destructuring, spread operators, and optional chaining are utilized.
+
+## File Naming Conventions
+
+1. kebab-case is used for file names (e.g., `global-error.tsx`).
+2. PascalCase is used for component names (e.g., `HomeScreen.tsx`).
+3. `.tsx` extension is used for React components and `.ts` for plain TypeScript files.
+4. `index.tsx` is used for main component files in a directory.
+
+## Styling
+
+1. Tailwind CSS is used for styling components.
+2. Custom theme is defined in `@dishify/ui/src/theme.js`.
+3. `nativewind` is used for React Native styling.
+
+## State Management
+
+1. React Query is used for server state management.
+2. Jotai is used for client-side state management.
+
+## API and Data Fetching
+
+1. tRPC is used for type-safe API communication.
+2. API routes are defined in `packages/api/src/routes/`.
+3. React Query hooks are used for data fetching and caching.
+
+## Error Handling and Logging
+
+1. Error boundaries are implemented for graceful error handling.
+2. React <Suspense> boundaries are used for handling loading states.
+3. Best practices include:
+   - Catching and handling errors at appropriate levels
+   - Providing user-friendly error messages
+   - Logging errors for debugging purposes
+
+## Testing
+
+1. Unit tests are implemented for critical functions and components.
+2. Jest is used as the testing framework.
+
+## Build and Deployment
+
+1. GitHub Actions are used for CI/CD pipelines.
+2. EAS (Expo Application Services) is used for mobile app builds and submissions.
+3. The web app is deployed to Cloudflare Pages.
+4. The backend is deployed to Cloudflare Workers.
+
+## Environment Variables
+
+1. `.env.local` is used for local development.
+2. Appropriate prefixes are used for different platforms (e.g., `NEXT_PUBLIC_` for Next.js, `EXPO_PUBLIC_` for Expo).
+
+## Code Quality Tools
+
+1. Biome is used for linting and formatting.
+2. Biome rules are configured in `biome.json`.
+3. The linting style enforces consistent code formatting, proper naming conventions, and best practices for React and TypeScript development.
+
+## Performance Optimization
+
+1. React.memo is used for component memoization when necessary.
+2. useCallback() is utilized for optimizing callback functions.
+3. Code splitting and lazy loading are implemented for better performance.
+
+## Accessibility
+
+1. Proper accessibility attributes are used in components.
+2. The application is tested with screen readers and keyboard navigation.
+
+When providing recommendations or discussing code implementation, please adhere to these guidelines to maintain consistency across the project.
