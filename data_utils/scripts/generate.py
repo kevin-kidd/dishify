@@ -4,9 +4,11 @@ import csv
 import argparse
 from typing import List
 
-# Define constants for directory and table information
-INPUT_DIR = "data/sanitized"
-OUTPUT_DIR = "data"
+# Define fixed directories relative to the project root
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+INPUT_DIR = os.path.join(PROJECT_ROOT, "data", "sanitized")
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data")
+
 COLUMN_NAME = "name"
 
 
@@ -21,8 +23,8 @@ def read_input_file(file_name: str) -> List[str]:
         List[str]: A list of recipe names.
 
     Raises:
-        ValueError: If the file format is not supported.
-        FileNotFoundError: If the input file is not found.
+        ValueError: If the file format is not supported (not JSON or CSV).
+        FileNotFoundError: If the input file is not found in the specified directory.
     """
     file_path = os.path.join(INPUT_DIR, file_name)
     _, file_extension = os.path.splitext(file_name)
@@ -36,7 +38,9 @@ def read_input_file(file_name: str) -> List[str]:
             next(reader)  # Skip header row
             return [row[0] for row in reader]
     else:
-        raise ValueError(f"Unsupported file format: {file_extension}")
+        raise ValueError(
+            f"Unsupported file format: {file_extension}. Please use JSON or CSV."
+        )
 
 
 def escape_name(name: str) -> str:
@@ -47,7 +51,7 @@ def escape_name(name: str) -> str:
         name (str): The recipe name to escape.
 
     Returns:
-        str: The escaped recipe name.
+        str: The recipe name with single quotes escaped (doubled).
     """
     return name.replace("'", "''")
 
@@ -58,8 +62,8 @@ def generate_sql_file(recipe_names: List[str], output_file: str, table_name: str
 
     Args:
         recipe_names (List[str]): List of recipe names to insert.
-        output_file (str): Name of the output SQL file.
-        table_name (str): Name of the table to insert into.
+        output_file (str): Name of the output SQL file to be created.
+        table_name (str): Name of the table to insert the recipe names into.
     """
     output_path = os.path.join(OUTPUT_DIR, output_file)
     with open(output_path, "w") as f:
@@ -76,10 +80,13 @@ def generate_sql_file(recipe_names: List[str], output_file: str, table_name: str
 
 def parse_arguments():
     """
-    Parse command-line arguments.
+    Parse command-line arguments for the script.
 
     Returns:
-        argparse.Namespace: Parsed command-line arguments.
+        argparse.Namespace: Parsed command-line arguments containing:
+            - input: Name of the input file (JSON or CSV) in the data/sanitized directory
+            - output: Name of the output SQL file (default: seed.sql)
+            - table: Name of the table to insert into (default: recipes)
     """
     parser = argparse.ArgumentParser(
         description="Generate SQL insert statements from processed recipe names."
@@ -110,7 +117,7 @@ if __name__ == "__main__":
         recipe_names = read_input_file(args.input)
         generate_sql_file(recipe_names, args.output, args.table)
         print(
-            f"Successfully generated SQL file containing {len(recipe_names)} VALUES for table '{args.table}'."
+            f"Successfully generated SQL file containing {len(recipe_names)} INSERT statements for table '{args.table}'."
         )
     except Exception as e:
         print(f"Error: {str(e)}")
