@@ -98,6 +98,18 @@ Dishify is an AI-powered culinary companion application with cross-platform supp
 2. useCallback() is utilized for optimizing callback functions.
 3. Code splitting and lazy loading are implemented for better performance.
 
+## Commenting Style
+
+1. JSDoc-style comments are used for functions, classes, and interfaces in TypeScript files.
+2. Single-line comments (//) are used for brief explanations or TODO notes.
+3. Multi-line comments (/* */) are used for longer explanations or temporary code disabling.
+4. React components are documented with a brief description above the component definition.
+5. Complex logic or algorithms are explained with inline comments.
+6. Comments are kept concise and focus on explaining "why" rather than "what" when the code is not self-explanatory.
+7. For API routes, each endpoint is documented with its purpose, parameters, and return type.
+
+When providing code snippets or recommendations, always include appropriate comments following these guidelines to maintain consistency with the existing codebase.
+
 ## Accessibility
 
 1. Proper accessibility attributes are used in components.
