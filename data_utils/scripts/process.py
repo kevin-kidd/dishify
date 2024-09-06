@@ -11,11 +11,11 @@ from nltk.tokenize import word_tokenize
 from collections import Counter
 import multiprocessing
 from lib.constants import FILLER_WORDS, CULINARY_TERMS
+from tqdm import tqdm
 
 # Precompile regular expressions for efficient text processing
 CLEAN_REGEX = re.compile(r"[^a-z0-9\s\'\-&]")
 SPACE_REGEX = re.compile(r"\s+")
-NUMBERING_REGEX = re.compile(r"\b(no\s+\d+|#\d+)\b", re.IGNORECASE)
 
 # Define fixed directories relative to the project root
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -42,20 +42,17 @@ def process_chunk(chunk):
         chunk: A subset of recipe names to process.
 
     Returns:
-        Tuple[Dict, Counter]: Processed names and removal reasons.
+        Tuple[Dict, Counter, int]: Processed names and removal reasons.
     """
-    processed_names = {}
+    processed_names = []
     removal_reasons = Counter()
     for name in chunk:
         processed, reason = process_name(name)
         if processed:
-            if processed in processed_names:
-                removal_reasons["Duplicates"] += 1
-            else:
-                processed_names[processed] = True
+            processed_names.append(processed)
         else:
             removal_reasons[reason] += 1
-    return processed_names, removal_reasons
+    return processed_names, removal_reasons, len(chunk)
 
 
 def is_valid_recipe_name(name: str) -> bool:
@@ -87,13 +84,10 @@ def is_valid_recipe_name(name: str) -> bool:
         for j in range(i + 1, len(tokens) + 1)
     )
 
-    # Check for numbering (e.g., "recipe #1" or "no. 2 cake")
-    has_numbering = bool(NUMBERING_REGEX.search(name))
-
     # Minimum word requirement
     min_words = 2
 
-    return len(tokens) >= min_words and has_culinary_term and not has_numbering
+    return len(tokens) >= min_words and has_culinary_term
 
 
 def read_csv(file_name: str) -> pd.DataFrame:
@@ -144,7 +138,7 @@ def process_name(name: str, max_length: int = 50) -> Tuple[str, str]:
     words = name.split()
 
     # Check if name includes a number
-    if any(word.isdigit() for word in words):
+    if any(char.isdigit() for char in name):
         return "", "Includes number"
 
     # Remove single-character words except those in ALLOWED_SINGLE_CHARS
@@ -172,87 +166,44 @@ def process_name(name: str, max_length: int = 50) -> Tuple[str, str]:
     return name, ""  # Return the processed name and an empty string for the reason
 
 
-def process_recipe_names(file_name: str, column_name: str) -> List[str]:
+def process_recipe_names(
+    df: pd.DataFrame, column_name: str, pbar: tqdm
+) -> Tuple[List[str], Counter, int, int]:
     """
-    Process recipe names from a CSV file using parallel processing.
+    Process recipe names from a DataFrame using parallel processing.
 
     Args:
-        file_name (str): Name of the CSV file to process.
+        df (pd.DataFrame): DataFrame containing recipe names.
         column_name (str): Name of the column containing recipe names.
+        pbar (tqdm): Progress bar object to update.
 
     Returns:
-        List[str]: List of unique processed recipe names.
-
-    Raises:
-        SystemExit: If the specified column is not found in the CSV file.
+        Tuple[List[str], Counter, int, int]: Processed names, removal reasons, names removed, and total names.
     """
-    df = read_csv(file_name)
-
-    if column_name not in df.columns:
-        print(f"Error: '{column_name}' column not found in the CSV file.")
-        exit(1)
-
     total_names = len(df[column_name])
 
-    # Split the data into chunks for parallel processing
-    num_cores = multiprocessing.cpu_count()
-    chunk_size = len(df) // num_cores
+    chunk_size = 1000
     chunks = [
-        df[column_name][i : i + chunk_size] for i in range(0, len(df), chunk_size)
+        df[column_name][i : i + chunk_size] for i in range(0, total_names, chunk_size)
     ]
 
-    # Process chunks in parallel
-    with multiprocessing.Pool(num_cores) as pool:
-        results = pool.map(process_chunk, chunks)
-
-    # Combine results from all chunks
-    processed_names = {}
+    processed_names = set()
     removal_reasons = Counter()
-    for chunk_names, chunk_reasons in results:
-        for name in chunk_names:
-            if name in processed_names:
-                removal_reasons["Duplicates"] += 1
-            else:
-                processed_names[name] = True
-        removal_reasons.update(chunk_reasons)
+    duplicates = 0
 
-    # Calculate and print statistics
+    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
+        results = pool.imap(process_chunk, chunks)
+        for chunk_names, chunk_reasons, size in results:
+            for name in chunk_names:
+                if name in processed_names:
+                    duplicates += 1
+                else:
+                    processed_names.add(name)
+            removal_reasons.update(chunk_reasons)
+            pbar.update(size)
+
     names_removed = total_names - len(processed_names)
-    print_removal_statistics(
-        removal_reasons, names_removed, total_names, file_name, column_name
-    )
-
-    return list(processed_names.keys())
-
-
-def print_removal_statistics(
-    reasons: Counter,
-    total_removed: int,
-    total_names: int,
-    file_name: str,
-    column_name: str,
-):
-    """
-    Print statistics about the recipe name processing.
-
-    Args:
-        reasons (Counter): Counter of removal reasons.
-        total_removed (int): Total number of names removed.
-        total_names (int): Total number of names processed.
-        file_name (str): Name of the processed file.
-        column_name (str): Name of the processed column.
-    """
-    print("\n" + "=" * 50)
-    print(f"Statistics for '{file_name}', column '{column_name}'")
-    print("=" * 50)
-    print(f"Total names processed: {total_names}")
-    print(f"Total names removed: {total_removed}")
-    print(f"Names kept: {total_names - total_removed}")
-    print("\nRemoval reasons:")
-    print("-" * 30)
-    for reason, count in reasons.most_common():
-        print(f"{reason:<20} - {count:>7}")
-    print("-" * 30 + "\n")
+    return list(processed_names), removal_reasons, names_removed, total_names
 
 
 def save_to_csv(names: List[str], file_name: str) -> None:
@@ -351,11 +302,50 @@ if __name__ == "__main__":
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # Process recipe names from all input files
+    print(f"Reading CSV file{len(input_files) > 1 and 's' or ''}...")
+    dataframes = []
+    total_rows = 0
+    for file_name, column_name in input_files:
+        df = read_csv(file_name)
+        if column_name not in df.columns:
+            print(f"Error: '{column_name}' column not found in the file '{file_name}'.")
+            exit(1)
+        total_rows += len(df[column_name])
+        dataframes.append((df, column_name))
+
     all_processed_names = set()
-    for input_file_name, column_name in input_files:
-        processed_names = process_recipe_names(input_file_name, column_name)
-        all_processed_names.update(processed_names)
+    all_removal_reasons = Counter()
+    all_names_removed = 0
+    all_total_names = 0
+
+    with tqdm(
+        total=total_rows,
+        desc="Processing recipes",
+        unit="recipe",
+        position=0,
+        leave=True,
+    ) as pbar:
+        for df, column_name in dataframes:
+            processed_names, removal_reasons, names_removed, total_names = (
+                process_recipe_names(df, column_name, pbar)
+            )
+            all_processed_names.update(processed_names)
+            all_removal_reasons.update(removal_reasons)
+            all_names_removed += names_removed
+            all_total_names += total_names
+
+    print("\n" + "=" * 30)
+    print("Processing Summary")
+    print("=" * 30)
+    print(f"Total names processed: {all_total_names}")
+    print(f"Total names removed: {all_names_removed}")
+    print(f"Names kept: {len(all_processed_names)}")
+    # TODO: length of names removed does not add up to removal reasons, likely a bug with counting duplicates during multiprocessing
+    print("\nRemoval reasons:")
+    print("-" * 30)
+    for reason, count in all_removal_reasons.most_common():
+        print(f"{reason:<20} - {count:>7}")
+    print("-" * 30 + "\n")
 
     # Convert set back to list
     all_processed_names = list(all_processed_names)
