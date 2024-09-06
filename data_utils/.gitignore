@@ -4,3 +4,12 @@ data/sanitized/*
 
 # include the raw directory, but ignore the recipes.csv file
 !data/raw/.gitkeep
+
+# ignore the build directory
+data_utils.egg-info/*
+
+# ignore sql in data directory
+data/*.sql
+
+# ignore pycache
+**/__pycache__/*
