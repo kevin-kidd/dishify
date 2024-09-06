@@ -6,9 +6,7 @@ import { SolitoImageProvider } from "./solito-image";
 import type { Session } from "@supabase/supabase-js";
 import { AuthProvider } from "./auth";
 import { ThemeProvider } from "./theme";
-import { isWeb } from "@tamagui/constants";
 import { Toaster } from "burnt/web";
-import { StylesProvider } from "./styles";
 import { PortalHost } from "@rn-primitives/portal";
 
 export function Provider({
@@ -26,7 +24,7 @@ export function Provider({
           {/* <StylesProvider> */}
           <ThemeProvider>
             {children}
-            {isWeb && <Toaster position="bottom-right" />}
+            <Toaster position="bottom-right" />
             <PortalHost />
           </ThemeProvider>
           {/* </StylesProvider> */}
