@@ -1,6 +1,10 @@
+joblib==1.4.2
+nltk==3.9.1
 numpy==2.1.0
 pandas==2.2.2
 python-dateutil==2.9.0.post0
 pytz==2024.1
+regex==2024.7.24
 six==1.16.0
+tqdm==4.66.5
 tzdata==2024.1
