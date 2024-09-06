@@ -1,6 +1,7 @@
 # ignore because it's too large
-data/raw/*
-data/sanitized/*
+data/raw/*.csv
+data/sanitized/*.json
+data/sanitized/*.csv
 
 # include the raw directory, but ignore the recipes.csv file
 !data/raw/.gitkeep
