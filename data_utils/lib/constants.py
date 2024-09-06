@@ -54,6 +54,7 @@ FILLER_WORDS: Set[str] = {
     "bubbly",
     "bubly",
     "recipe",
+    "no.",
 }
 CULINARY_TERMS: Set[str] = {
     # Cooking methods
