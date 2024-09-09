@@ -9,5 +9,6 @@ setup(
         "nltk",
         "numpy",
         "tqdm",
+        "alt-profanity-check",
     ],
 )
