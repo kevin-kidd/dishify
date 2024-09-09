@@ -48,15 +48,18 @@ def contains_profanity(text: str) -> bool:
     return bool(predict([text])[0])
 
 
-def process_chunk(chunk):
+def process_chunk(chunk: List[str]) -> Tuple[List[str], Counter, int]:
     """
     Process a chunk of recipe names in parallel.
 
     Args:
-        chunk: A subset of recipe names to process.
+        chunk (List[str]): A subset of recipe names to process.
 
     Returns:
-        Tuple[Dict, Counter, int]: Processed names and removal reasons.
+        Tuple[List[str], Counter, int]:
+            - List of processed names
+            - Counter of removal reasons
+            - Number of names in the chunk
     """
     processed_names = []
     removal_reasons = Counter()
@@ -78,6 +81,12 @@ def is_valid_recipe_name(name: str) -> bool:
 
     Returns:
         bool: True if the name is valid, False otherwise.
+
+    Criteria:
+    - Does not contain personal pronouns or proper nouns
+    - Does not contain filler words
+    - Contains at least one culinary term
+    - Has at least two words
     """
     # Tokenize and get part-of-speech tags
     tokens = word_tokenize(name)
@@ -141,6 +150,13 @@ def process_name(name: str, max_length: int = 50) -> Tuple[str, str]:
 
     Returns:
         Tuple[str, str]: The processed recipe name and a reason if invalid.
+
+    Processing steps:
+    1. Remove leading/trailing whitespace and convert to lowercase
+    2. Replace non-allowed characters with spaces
+    3. Check for profanity
+    4. Remove single-character words (except allowed ones)
+    5. Validate word count, length, and recipe name validity
     """
     if pd.isna(name):
         return "", "Empty or NaN"
@@ -186,7 +202,7 @@ def process_name(name: str, max_length: int = 50) -> Tuple[str, str]:
 
 def process_recipe_names(
     df: pd.DataFrame, column_name: str, pbar: tqdm
-) -> Tuple[List[str], Counter, int, int]:
+) -> Tuple[List[str], Counter, int]:
     """
     Process recipe names from a DataFrame using parallel processing.
 
@@ -196,7 +212,10 @@ def process_recipe_names(
         pbar (tqdm): Progress bar object to update.
 
     Returns:
-        Tuple[List[str], Counter, int, int]: Processed names, removal reasons, names removed, and total names.
+        Tuple[List[str], Counter, int]:
+            - List of processed names
+            - Counter of removal reasons
+            - Total number of names processed
     """
     total_names = len(df[column_name])
 
@@ -246,12 +265,18 @@ def save_to_json(names: List[str], file_name: str) -> None:
     print(f"Saved {len(names)} unique recipe names to {file_path}")
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     """
     Parse command-line arguments for the recipe name processing script.
 
     Returns:
         argparse.Namespace: Parsed command-line arguments.
+
+    Arguments:
+    - input: Comma-separated list of input CSV files with optional column names
+    - output: Name of the output file (without extension)
+    - format: Output file format (csv or json)
+    - default-column: Default column name to use if not specified for a file
     """
     parser = argparse.ArgumentParser(description="Process recipe names from CSV files.")
     parser.add_argument(
