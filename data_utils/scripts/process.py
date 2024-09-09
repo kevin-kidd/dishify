@@ -1,5 +1,4 @@
 import pandas as pd
-import re
 import os
 import argparse
 import json
@@ -10,12 +9,14 @@ from nltk.tag import pos_tag
 from nltk.tokenize import word_tokenize
 from collections import Counter
 import multiprocessing
-from lib.constants import FILLER_WORDS, CULINARY_TERMS
+from lib.constants import (
+    FILLER_WORDS,
+    CULINARY_TERMS,
+    CLEAN_REGEX,
+    SPACE_REGEX,
+)
 from tqdm import tqdm
-
-# Precompile regular expressions for efficient text processing
-CLEAN_REGEX = re.compile(r"[^a-z0-9\s\'\-&]")
-SPACE_REGEX = re.compile(r"\s+")
+from profanity_check import predict  # TODO: switch to better profanity checker
 
 # Define fixed directories relative to the project root
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -32,6 +33,19 @@ nltk.download("punkt_tab", quiet=True)
 
 # Convert words corpus to a set for faster lookups
 ENGLISH_WORDS: Set[str] = set(words.words())
+
+
+def contains_profanity(text: str) -> bool:
+    """
+    Check if the given text contains any profane words using profanity-check library.
+
+    Args:
+        text (str): The text to check for profanity.
+
+    Returns:
+        bool: True if profanity is found, False otherwise.
+    """
+    return bool(predict([text])[0])
 
 
 def process_chunk(chunk):
@@ -135,6 +149,10 @@ def process_name(name: str, max_length: int = 50) -> Tuple[str, str]:
     name = CLEAN_REGEX.sub(" ", name)  # Replace non-allowed characters with a space
     name = SPACE_REGEX.sub(" ", name)  # Replace multiple spaces with a single space
 
+    # Check for profanity
+    if contains_profanity(name):
+        return "", "Profanity"
+
     words = name.split()
 
     # Check if name includes a number
@@ -187,23 +205,17 @@ def process_recipe_names(
         df[column_name][i : i + chunk_size] for i in range(0, total_names, chunk_size)
     ]
 
-    processed_names = set()
+    processed_names = []
     removal_reasons = Counter()
-    duplicates = 0
 
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
         results = pool.imap(process_chunk, chunks)
         for chunk_names, chunk_reasons, size in results:
-            for name in chunk_names:
-                if name in processed_names:
-                    duplicates += 1
-                else:
-                    processed_names.add(name)
+            processed_names.extend(chunk_names)
             removal_reasons.update(chunk_reasons)
             pbar.update(size)
 
-    names_removed = total_names - len(processed_names)
-    return list(processed_names), removal_reasons, names_removed, total_names
+    return processed_names, removal_reasons, total_names
 
 
 def save_to_csv(names: List[str], file_name: str) -> None:
@@ -313,9 +325,8 @@ if __name__ == "__main__":
         total_rows += len(df[column_name])
         dataframes.append((df, column_name))
 
-    all_processed_names = set()
+    all_processed_names = []
     all_removal_reasons = Counter()
-    all_names_removed = 0
     all_total_names = 0
 
     with tqdm(
@@ -326,21 +337,30 @@ if __name__ == "__main__":
         leave=True,
     ) as pbar:
         for df, column_name in dataframes:
-            processed_names, removal_reasons, names_removed, total_names = (
-                process_recipe_names(df, column_name, pbar)
+            processed_names, removal_reasons, total_names = process_recipe_names(
+                df, column_name, pbar
             )
-            all_processed_names.update(processed_names)
+            all_processed_names.extend(processed_names)
             all_removal_reasons.update(removal_reasons)
-            all_names_removed += names_removed
             all_total_names += total_names
+
+    # Perform duplicate checking
+    unique_names = set()
+    all_removal_reasons["Duplicates"] = 0
+    for name in all_processed_names:
+        if name in unique_names:
+            all_removal_reasons["Duplicates"] += 1
+        else:
+            unique_names.add(name)
+
+    all_names_removed = all_total_names - len(unique_names)
 
     print("\n" + "=" * 30)
     print("Processing Summary")
     print("=" * 30)
     print(f"Total names processed: {all_total_names}")
     print(f"Total names removed: {all_names_removed}")
-    print(f"Names kept: {len(all_processed_names)}")
-    # TODO: length of names removed does not add up to removal reasons, likely a bug with counting duplicates during multiprocessing
+    print(f"Names kept: {len(unique_names)}")
     print("\nRemoval reasons:")
     print("-" * 30)
     for reason, count in all_removal_reasons.most_common():
@@ -348,7 +368,7 @@ if __name__ == "__main__":
     print("-" * 30 + "\n")
 
     # Convert set back to list
-    all_processed_names = list(all_processed_names)
+    all_processed_names = list(unique_names)
 
     # Save processed names to file in the specified format
     if output_format == "csv":
