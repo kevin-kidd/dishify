@@ -62,5 +62,5 @@ python -m scripts.generate processed_recipes.json -o recipe_seed.sql -t english_
 Ensure you have the required dependencies installed. You can install them using:
 
 ```bash
-pip install -e .
+pip install -r requirements.txt
 ```
