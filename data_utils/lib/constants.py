@@ -1,5 +1,14 @@
+import re
 from typing import Set
 
+# Matches any character that is not a lowercase letter, number, space, apostrophe, hyphen, or ampersand
+CLEAN_REGEX = re.compile(r"[^a-z0-9\s\'\-&]")
+
+
+# Matches one or more whitespace characters
+SPACE_REGEX = re.compile(r"\s+")
+
+# Filler words that are not useful for recipe name generation
 FILLER_WORDS: Set[str] = {
     "just",
     "great",
@@ -55,7 +64,11 @@ FILLER_WORDS: Set[str] = {
     "bubly",
     "recipe",
     "no.",
+    "skinny",
+    "fabulously",
 }
+
+# Culinary terms that are often used in recipe names
 CULINARY_TERMS: Set[str] = {
     # Cooking methods
     "bake",
