@@ -18,6 +18,8 @@ import {
   OL,
   LI,
   UL,
+  TextInput,
+  Autocomplete,
 } from "@dishify/ui";
 import { Skeleton } from "@dishify/ui/src/elements/skeleton";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,7 +31,6 @@ import { View, ScrollView, Keyboard, type Pressable } from "react-native";
 import { Link } from "solito/link";
 import { skipToken } from "@tanstack/react-query";
 import { DishNameSchema, type DishName } from "@dishify/api/schemas/dish-name";
-import { AutocompleteInput, Input } from "@dishify/ui/src/elements/input";
 import { isWeb } from "@tamagui/constants";
 
 export function HomeScreen() {
@@ -97,13 +98,12 @@ export function HomeScreen() {
             }}
             render={({ field: { onChange, onBlur, name, value } }) => (
               <FormInput error={errors.dishName?.message} id={name}>
-                <AutocompleteInput
+                <Autocomplete
                   onSelect={(selectedValue) => onChange(selectedValue)}
                   getOptions={getOptions}
                   autocompleteOptions={autocompleteOptions}
                 >
-                  <Input
-                    type="text"
+                  <TextInput
                     id={name}
                     value={value}
                     onBlur={onBlur}
@@ -112,7 +112,7 @@ export function HomeScreen() {
                     autoCorrect={true}
                     maxLength={80}
                   />
-                </AutocompleteInput>
+                </Autocomplete>
               </FormInput>
             )}
           />
