@@ -8,8 +8,8 @@ CLEAN_REGEX = re.compile(r"[^a-z0-9\s\'\-&]")
 # Matches one or more whitespace characters
 SPACE_REGEX = re.compile(r"\s+")
 
-# Filler words that are not useful for recipe name generation
-FILLER_WORDS: Set[str] = {
+# Filter words that are not useful for recipe name generation
+FILTER_WORDS: Set[str] = {
     "just",
     "great",
     "stuff",
@@ -68,6 +68,9 @@ FILLER_WORDS: Set[str] = {
     "fabulously",
     "comment",
     "see",
+    "idiot",
+    "stupid",
+    "fool",
 }
 
 # Culinary terms that are often used in recipe names
