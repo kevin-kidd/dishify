@@ -4,6 +4,7 @@ import { Filter } from "glin-profanity";
 const profanityFilter = new Filter({
   allLanguages: true,
   wordBoundaries: true,
+  ignoreWords: ["ass"],
 });
 
 export const DishNameSchema = z
