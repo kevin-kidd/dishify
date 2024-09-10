@@ -1,24 +1,94 @@
-import { TextLink as SolitoTextLink, TextLinkProps } from "solito/link";
-import { withWebTag } from "../utils/web-tag";
+import { TextLink as SolitoTextLink, type TextLinkProps } from "solito/link";
 import { Text } from "./text";
+import {
+  H1 as ExpoH1,
+  P as ExpoP,
+  H2 as ExpoH2,
+  H3 as ExpoH3,
+  H4 as ExpoH4,
+  Span as ExpoSpan,
+  Strong as ExpoStrong,
+  BlockQuote as ExpoBlockQuote,
+  Code as ExpoCode,
+} from "@expo/html-elements";
+import { cn } from "../utils";
+import type { TextProps } from "@expo/html-elements/build/primitives/Text";
+import type { BlockQuoteProps } from "@expo/html-elements/build/elements/Text.types";
 
-export const P = withWebTag(Text, "p", "break-words text-foreground");
+export const P = ({ className, children, ...rest }: TextProps) => (
+  <ExpoP className={cn("leading-7 [&:not(:first-child)]:mt-6", className)} {...rest}>
+    {children}
+  </ExpoP>
+);
 
-export const H1 = withWebTag(Text, "h1", "text-3xl font-extrabold text-foreground");
+export const H1 = ({ className, children, ...rest }: TextProps) => (
+  <ExpoH1
+    className={cn("scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl", className)}
+    {...rest}
+  >
+    {children}
+  </ExpoH1>
+);
 
-export const H2 = withWebTag(Text, "h2", "text-2xl font-bold text-foreground");
+export const H2 = ({ className, children, ...rest }: TextProps) => (
+  <ExpoH2
+    className={cn(
+      "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0",
+      className
+    )}
+    {...rest}
+  >
+    {children}
+  </ExpoH2>
+);
 
-export const H3 = withWebTag(Text, "h3", "text-xl font-bold text-foreground");
+export const H3 = ({ className, children, ...rest }: TextProps) => (
+  <ExpoH3 className={cn("scroll-m-20 text-2xl font-semibold tracking-tight", className)} {...rest}>
+    {children}
+  </ExpoH3>
+);
 
-export const H4 = withWebTag(Text, "h4", "text-lg font-bold text-foreground");
+export const H4 = ({ className, children, ...rest }: TextProps) => (
+  <ExpoH4 className={cn("scroll-m-20 text-xl font-semibold tracking-tight", className)} {...rest}>
+    {children}
+  </ExpoH4>
+);
 
-export const H5 = withWebTag(Text, "h5", "text-base font-bold text-foreground");
+export const Span = ({ className, children, ...rest }: TextProps) => (
+  <ExpoSpan className={cn("text-foreground", className)} {...rest}>
+    {children}
+  </ExpoSpan>
+);
 
-export const H6 = withWebTag(Text, "h6", "text-sm font-bold text-foreground");
+export const Strong = ({ className, children, ...rest }: TextProps) => (
+  <ExpoStrong className={cn("font-bold text-foreground", className)} {...rest}>
+    {children}
+  </ExpoStrong>
+);
 
-export const Span = withWebTag(Text, "span", "text-foreground");
+export const BlockQuote = ({ className, children, ...rest }: BlockQuoteProps) => (
+  <ExpoBlockQuote className={cn("mt-6 border-l-2 pl-6 italic", className)} {...rest}>
+    {children}
+  </ExpoBlockQuote>
+);
 
-export const Strong = withWebTag(Text, "strong", "font-bold text-foreground");
+export const MutedText = ({ className, children, ...rest }: TextProps) => (
+  <ExpoP className={cn("text-sm text-muted-foreground", className)} {...rest}>
+    {children}
+  </ExpoP>
+);
+
+export const InlineCode = ({ className, children, ...rest }: TextProps) => (
+  <ExpoCode
+    className={cn(
+      "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold",
+      className
+    )}
+    {...rest}
+  >
+    {children}
+  </ExpoCode>
+);
 
 /**
  * Solito's TextLink doesn't work directly since it has a textProps prop
