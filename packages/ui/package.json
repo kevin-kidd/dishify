@@ -23,6 +23,7 @@
     "class-variance-authority": "0.7.0",
     "lucide-react-native": "0.438.0",
     "tailwindcss-animate": "1.0.7",
-    "react-native-reanimated": "~3.10.1"
+    "react-native-reanimated": "~3.10.1",
+    "@expo/html-elements": "latest"
   }
 }
