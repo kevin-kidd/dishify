@@ -16,7 +16,6 @@ from lib.constants import (
     SPACE_REGEX,
 )
 from tqdm import tqdm
-from profanity_check import predict  # TODO: switch to better profanity checker
 
 # Define fixed directories relative to the project root
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -33,19 +32,6 @@ nltk.download("punkt_tab", quiet=True)
 
 # Convert words corpus to a set for faster lookups
 ENGLISH_WORDS: Set[str] = set(words.words())
-
-
-def contains_profanity(text: str) -> bool:
-    """
-    Check if the given text contains any profane words using profanity-check library.
-
-    Args:
-        text (str): The text to check for profanity.
-
-    Returns:
-        bool: True if profanity is found, False otherwise.
-    """
-    return bool(predict([text])[0])
 
 
 def process_chunk(chunk: List[str]) -> Tuple[List[str], Counter, int]:
@@ -164,10 +150,6 @@ def process_name(name: str, max_length: int = 50) -> Tuple[str, str]:
     name = str(name).strip().lower()
     name = CLEAN_REGEX.sub(" ", name)  # Replace non-allowed characters with a space
     name = SPACE_REGEX.sub(" ", name)  # Replace multiple spaces with a single space
-
-    # Check for profanity
-    if contains_profanity(name):
-        return "", "Profanity"
 
     words = name.split()
 
