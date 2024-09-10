@@ -75,6 +75,7 @@ module.exports = () => {
       "react-native-safe-area-context",
       "react-native-gesture-handler",
       "react-native-web",
+      "@expo/html-elements",
     ],
     experimental: {
       scrollRestoration: true,
