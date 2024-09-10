@@ -13,11 +13,11 @@ import {
   Span,
   Strong,
   H3,
-  OrderedList,
-  ListItem,
-  UnorderedList,
   Image,
   Text,
+  OL,
+  LI,
+  UL,
 } from "@dishify/ui";
 import { Skeleton } from "@dishify/ui/src/elements/skeleton";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -148,13 +148,13 @@ export function HomeScreen() {
                     <Strong>Servings:</Strong> {data.recipe.servings}
                   </P>
                   <H3 className="font-semibold mt-4 mb-2">Instructions:</H3>
-                  <OrderedList>
+                  <OL>
                     {data.recipe.instructions.map((step, index) => (
-                      <ListItem key={`step-${index}-${step.slice(0, 5)}`} className="mb-2">
+                      <LI key={`step-${index}-${step.slice(0, 5)}`} className="mb-2">
                         {step}
-                      </ListItem>
+                      </LI>
                     ))}
-                  </OrderedList>
+                  </OL>
                 </>
               ) : null}
             </CardContent>
@@ -171,9 +171,9 @@ export function HomeScreen() {
                   <Skeleton className="h-4 w-full mb-2" />
                 </>
               ) : data ? (
-                <UnorderedList className="space-y-2">
+                <UL className="space-y-2">
                   {data.shoppingList.map((item, index) => (
-                    <ListItem
+                    <LI
                       key={`step-${index}-${item.item}`}
                       className="flex items-center justify-between py-2"
                     >
@@ -224,9 +224,9 @@ export function HomeScreen() {
                           </Button>
                         </Link>
                       </View>
-                    </ListItem>
+                    </LI>
                   ))}
-                </UnorderedList>
+                </UL>
               ) : null}
             </CardContent>
           </Card>
