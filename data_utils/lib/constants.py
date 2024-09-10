@@ -66,6 +66,8 @@ FILLER_WORDS: Set[str] = {
     "no.",
     "skinny",
     "fabulously",
+    "comment",
+    "see",
 }
 
 # Culinary terms that are often used in recipe names
