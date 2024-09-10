@@ -10,7 +10,7 @@ from nltk.tokenize import word_tokenize
 from collections import Counter
 import multiprocessing
 from lib.constants import (
-    FILLER_WORDS,
+    FILTER_WORDS,
     CULINARY_TERMS,
     CLEAN_REGEX,
     SPACE_REGEX,
@@ -70,7 +70,7 @@ def is_valid_recipe_name(name: str) -> bool:
 
     Criteria:
     - Does not contain personal pronouns or proper nouns
-    - Does not contain filler words
+    - Does not contain word from list of filter words
     - Contains at least one culinary term
     - Has at least two words
     """
@@ -83,7 +83,7 @@ def is_valid_recipe_name(name: str) -> bool:
         return False
 
     # Check for filler words
-    if set(tokens).intersection(FILLER_WORDS):
+    if set(tokens).intersection(FILTER_WORDS):
         return False
 
     # Check if any culinary terms are present
