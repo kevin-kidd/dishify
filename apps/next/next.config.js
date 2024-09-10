@@ -70,6 +70,7 @@ module.exports = () => {
       "@rn-primitives/separator",
       "@rn-primitives/select",
       "@rn-primitives/portal",
+      "@rn-primitives/popover",
       "@dishify/ui",
       "react-native-reanimated",
       "react-native-safe-area-context",
