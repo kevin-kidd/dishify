@@ -20,6 +20,7 @@
     "@rn-primitives/separator": "~1.0.3",
     "@rn-primitives/slot": "~1.0.3",
     "@rn-primitives/types": "~1.0.3",
+    "@rn-primitives/popover": "~1.0.3",
     "class-variance-authority": "0.7.0",
     "lucide-react-native": "0.438.0",
     "tailwindcss-animate": "1.0.7",
