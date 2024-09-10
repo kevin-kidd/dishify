@@ -1,5 +1,5 @@
-import { ReactNode, createContext, useContext, useRef, useState } from "react";
-import { View, Text } from "react-native";
+import { type ReactNode, createContext, useContext, useRef, useState } from "react";
+import { View } from "react-native";
 import { cn } from "../utils";
 import { isWeb } from "@tamagui/constants";
 
