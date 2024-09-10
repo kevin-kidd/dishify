@@ -8,6 +8,7 @@ import { AuthProvider } from "./auth";
 import { ThemeProvider } from "./theme";
 import { Toaster } from "burnt/web";
 import { PortalHost } from "@rn-primitives/portal";
+import { Header } from "app/features/header";
 
 export function Provider({
   children,
@@ -23,6 +24,7 @@ export function Provider({
         <TRPCProvider>
           {/* <StylesProvider> */}
           <ThemeProvider>
+            <Header />
             {children}
             <Toaster position="bottom-right" />
             <PortalHost />
