@@ -71,6 +71,7 @@ FILTER_WORDS: Set[str] = {
     "idiot",
     "stupid",
     "fool",
+    "test",
 }
 
 # Culinary terms that are often used in recipe names
