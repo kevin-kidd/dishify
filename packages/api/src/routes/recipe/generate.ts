@@ -139,7 +139,7 @@ export const generate = publicProcedure
     // If successful, save recipe to database
     const addRecipe = await ctx.db
       .insert(EnglishRecipeNameTable)
-      .values({ name: validatedResponse.data.dishName })
+      .values({ name: validatedResponse.data.dishName.toLowerCase() })
       .onConflictDoNothing();
     if (addRecipe.error) {
       console.error("Failed to save recipe to database", { dishName, error: addRecipe.error });
