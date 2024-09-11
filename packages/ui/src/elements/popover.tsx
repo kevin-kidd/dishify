@@ -3,19 +3,33 @@ import { Platform, StyleSheet } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { TextClassContext } from "./text";
 import * as PopoverPrimitive from "@rn-primitives/popover";
+import type { PositionedContentProps } from "@rn-primitives/types";
+import type { ViewProps } from "react-native";
 import { cn } from "../utils";
 
 const Popover = PopoverPrimitive.Root;
 
 const PopoverTrigger = PopoverPrimitive.Trigger;
 
+type AdditionalContentProps = {
+  portalHost?: string;
+  container?: string;
+  animationDuration?: number;
+  className?: string;
+  align?: "start" | "center" | "end";
+  sideOffset?: number;
+};
+
+type PopoverContentProps = ViewProps &
+  PositionedContentProps &
+  AdditionalContentProps & {
+    asChild?: boolean;
+    onOpenAutoFocus?: (event: Event) => void;
+  };
+
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content> & {
-    portalHost?: string;
-    container?: string;
-    animationDuration?: number;
-  }
+  PopoverContentProps
 >(
   (
     {
