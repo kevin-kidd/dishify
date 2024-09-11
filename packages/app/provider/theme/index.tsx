@@ -43,12 +43,14 @@ export const ThemeProvider = ({
       {process.env.NODE_ENV === "development" && (
         <Button
           onPress={toggleColorScheme}
+          variant="default"
+          size="icon"
           className={cn(
-            "bg-foreground rounded-md py-1 px-2 right-4 bottom-4 z-50",
+            "right-4 bottom-4 z-50 bg-primary web:hover:bg-primary/80 border border-border",
             isWeb ? "fixed" : "absolute"
           )}
         >
-          <Text className="text-xl">{appColorScheme === "dark" ? "🌙" : "🌞"}</Text>
+          <Text className="text-xl select-none">{appColorScheme === "dark" ? "🌙" : "🌞"}</Text>
         </Button>
       )}
     </View>
