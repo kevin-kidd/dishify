@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Div } from "./layout";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { cn } from "../utils";
-import { Pressable } from "react-native";
+import { Pressable, findNodeHandle } from "react-native";
 import type { TextInput } from "./input";
 import { Text } from "./text";
 
@@ -28,6 +28,8 @@ export function Autocomplete({
   const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const triggerRef = useRef<PopoverTriggerRef>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
+  const [inputValue, setInputValue] = useState("");
 
   const insets = useSafeAreaInsets();
   const contentInsets = {
@@ -40,7 +42,10 @@ export function Autocomplete({
   const debouncedSearch = useCallback(
     debounce(async (text: string) => {
       if (text.length >= 3) {
+        // Only fetch options if the user has typed at least 3 characters
         await getOptions();
+      } else {
+        triggerRef.current?.close?.();
       }
     }, 300),
     []
@@ -54,15 +59,18 @@ export function Autocomplete({
       } else {
         children.props.onChangeText?.(text);
       }
+      setInputValue(text);
+      if (!isOpen) {
+        triggerRef.current?.open?.();
+      }
     },
-    [debouncedSearch, children.props]
+    [debouncedSearch, children.props, isOpen]
   );
 
   const handleSelectOption = useCallback(
     (option: string) => {
       onSelect(option);
       handleInputChange(option);
-
       triggerRef.current?.close?.();
     },
     [onSelect, handleInputChange]
@@ -77,13 +85,6 @@ export function Autocomplete({
     children.props.onFocus?.();
   }, [children.props.onFocus]);
 
-  const handleBlur = useCallback(() => {
-    blurTimeoutRef.current = setTimeout(() => {
-      triggerRef.current?.close?.();
-      children.props.onBlur?.();
-    }, 500);
-  }, [children.props.onBlur]);
-
   useEffect(() => {
     return () => {
       if (blurTimeoutRef.current) {
@@ -92,12 +93,31 @@ export function Autocomplete({
     };
   }, []);
 
+  const handleInteractOutside = useCallback((e: any) => {
+    if (isWeb) {
+      // Web-specific check
+      const inputElement = inputRef.current as unknown as HTMLInputElement;
+      if (inputElement && (e.target === inputElement || inputElement.contains(e.target as Node))) {
+        return; // Do nothing if the interaction is within the input
+      }
+    } else {
+      // React Native-specific check
+      const inputHandle = findNodeHandle(inputRef.current);
+      if (inputHandle && e.target === inputHandle) {
+        return; // Do nothing if the interaction is with the input
+      }
+    }
+    e.preventDefault();
+    triggerRef.current?.close?.();
+  }, []);
+
   const inputWithAutocomplete = React.cloneElement<React.ComponentProps<typeof TextInput>>(
     children,
     {
       [isWeb ? "onChange" : "onChangeText"]: handleInputChange,
       onFocus: handleFocus,
-      onBlur: handleBlur,
+      ref: inputRef,
+      // onBlur: handleBlur,
     }
   );
 
@@ -109,6 +129,8 @@ export function Autocomplete({
     [autocompleteOptions, handleSelectOption]
   );
 
+  // TODO: add keyboard navigation
+
   return (
     <Div className={cn(className, "w-full")}>
       {inputWithAutocomplete}
@@ -117,12 +139,15 @@ export function Autocomplete({
         <PopoverContent
           onFocusOutside={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
+          onInteractOutside={handleInteractOutside}
           onPointerDownOutside={(e) => e.preventDefault()}
           insets={contentInsets}
           className={
-            isOpen && autocompleteOptions && autocompleteOptions.length > 0
+            isOpen &&
+            autocompleteOptions &&
+            autocompleteOptions.length > 0 &&
+            inputValue.length >= 3 &&
+            inputValue.slice(0, 3) === autocompleteOptions[0].slice(0, 3)
               ? "w-[--radix-popover-trigger-width] p-1"
               : "hidden"
           }
