@@ -1,5 +1,5 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 
 // User
@@ -17,10 +17,10 @@ export const selectUserSchema = createSelectSchema(UserTable);
 export const EnglishRecipeNameTable = sqliteTable(
   "english_recipes",
   {
-    name: text("name").primaryKey(),
+    name: text("name").primaryKey().notNull(),
   },
   (table) => ({
-    nameIdx: index("name_idx").on(table.name),
+    nameIdx: uniqueIndex("name_idx").on(table.name),
   })
 );
 export type EnglishRecipeName = InferSelectModel<typeof EnglishRecipeNameTable>;
