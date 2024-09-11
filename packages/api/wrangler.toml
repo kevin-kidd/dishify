@@ -4,6 +4,8 @@ send_metrics = true
 main = "src/worker.ts"
 account_id = "8ec43c4425032808531ab8274abee3d8"
 
+tail_consumers = [{service = "dishify-api-tail"}]
+
 # [[d1_databases]]
 # binding = "DB"
 # database_name = "production"
