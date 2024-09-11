@@ -87,8 +87,7 @@ export function HomeScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="bg-background p-4">
-      <View className="container mx-auto w-full space-y-4">
-        <H1>Dishify</H1>
+      <View className="container mx-auto w-full space-y-4 h-full pt-20 max-w-4xl">
         <Form className="mb-4 flex flex-col sm:flex-row gap-2 items-center" onSubmit={onSubmit}>
           <Controller
             name="dishName"
