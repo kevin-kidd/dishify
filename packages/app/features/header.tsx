@@ -4,9 +4,15 @@ import { Link } from "solito/link";
 export function Header() {
   return (
     <Div className="bg-background">
-      <Nav className="flex flex-row items-center justify-between container mx-auto">
+      <Nav className="flex flex-row items-center justify-between container mx-auto py-6">
         <Link href="/">
-          <Image src="/logo.png" alt="Dishify" width={100} height={100} />
+          <Image
+            src="/logo-icon.png"
+            alt="Dishify"
+            width={100}
+            height={100}
+            className="w-10 h-10 hover:opacity-90 transition-opacity"
+          />
         </Link>
         <UL className="flex flex-row items-center gap-10">
           <LI>
@@ -26,9 +32,11 @@ export function Header() {
             </TextLink>
           </LI>
           <LI>
-            <Button variant="default">
-              <Text>Sign In</Text>
-            </Button>
+            <Link href="/sign-in">
+              <Button href="/sign-in">
+                <Text>Sign In</Text>
+              </Button>
+            </Link>
           </LI>
         </UL>
       </Nav>
