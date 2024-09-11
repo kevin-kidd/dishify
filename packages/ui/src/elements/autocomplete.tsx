@@ -7,6 +7,8 @@ import { Div } from "./layout";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { cn } from "../utils";
 import { Pressable, findNodeHandle } from "react-native";
+import type { KeyboardEvent } from "react";
+import type { NativeSyntheticEvent, TextInputKeyPressEventData } from "react-native";
 import type { TextInput } from "./input";
 import { Text } from "./text";
 
@@ -29,6 +31,7 @@ export function Autocomplete({
   const triggerRef = useRef<PopoverTriggerRef>(null);
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const [inputValue, setInputValue] = useState("");
 
   const insets = useSafeAreaInsets();
@@ -39,11 +42,14 @@ export function Autocomplete({
     right: 12,
   };
 
+  const resetSelectedIndex = useCallback(() => setSelectedIndex(-1), []);
+
   const debouncedSearch = useCallback(
     debounce(async (text: string) => {
       if (text.length >= 3) {
         // Only fetch options if the user has typed at least 3 characters
         await getOptions();
+        resetSelectedIndex();
       } else {
         triggerRef.current?.close?.();
       }
@@ -81,9 +87,10 @@ export function Autocomplete({
       clearTimeout(blurTimeoutRef.current);
       blurTimeoutRef.current = null;
     }
+    resetSelectedIndex();
     triggerRef.current?.open?.();
     children.props.onFocus?.();
-  }, [children.props.onFocus]);
+  }, [children.props.onFocus, resetSelectedIndex]);
 
   useEffect(() => {
     return () => {
@@ -111,22 +118,59 @@ export function Autocomplete({
     triggerRef.current?.close?.();
   }, []);
 
+  const handleKeyPress = useCallback(
+    (event: KeyboardEvent<HTMLInputElement> | NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+      if (!isOpen || !autocompleteOptions || autocompleteOptions.length === 0) return;
+
+      const key = isWeb
+        ? (event as KeyboardEvent<HTMLInputElement>).key
+        : (event as NativeSyntheticEvent<TextInputKeyPressEventData>).nativeEvent.key;
+
+      switch (key) {
+        case "ArrowDown":
+          event.preventDefault();
+          setSelectedIndex((prevIndex) =>
+            prevIndex < autocompleteOptions.length - 1 ? prevIndex + 1 : 0
+          );
+          break;
+        case "ArrowUp":
+          event.preventDefault();
+          setSelectedIndex((prevIndex) =>
+            prevIndex > 0 ? prevIndex - 1 : autocompleteOptions.length - 1
+          );
+          break;
+        case "Enter":
+          if (selectedIndex !== -1) {
+            event.preventDefault();
+            handleSelectOption(autocompleteOptions[selectedIndex]);
+          }
+          break;
+      }
+    },
+    [isOpen, autocompleteOptions, selectedIndex, handleSelectOption]
+  );
+
   const inputWithAutocomplete = React.cloneElement<React.ComponentProps<typeof TextInput>>(
     children,
     {
       [isWeb ? "onChange" : "onChangeText"]: handleInputChange,
       onFocus: handleFocus,
       ref: inputRef,
-      // onBlur: handleBlur,
+      onKeyPress: isWeb ? handleKeyPress : undefined,
     }
   );
 
   const optionsList = React.useMemo(
     () =>
-      autocompleteOptions?.map((option) => (
-        <OptionItem key={option} option={option} onPress={handleSelectOption} />
+      autocompleteOptions?.map((option, index) => (
+        <OptionItem
+          key={option}
+          option={option}
+          onPress={handleSelectOption}
+          isSelected={index === selectedIndex}
+        />
       )),
-    [autocompleteOptions, handleSelectOption]
+    [autocompleteOptions, handleSelectOption, selectedIndex]
   );
 
   // TODO: add keyboard navigation
@@ -141,6 +185,7 @@ export function Autocomplete({
           onCloseAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={handleInteractOutside}
           onPointerDownOutside={(e) => e.preventDefault()}
+          onOpenAutoFocus={(e) => e.preventDefault()}
           insets={contentInsets}
           className={
             isOpen &&
@@ -161,13 +206,25 @@ export function Autocomplete({
 }
 
 const OptionItem = React.memo(
-  ({ option, onPress }: { option: string; onPress: (option: string) => void }) => (
+  ({
+    option,
+    onPress,
+    isSelected,
+  }: { option: string; onPress: (option: string) => void; isSelected: boolean }) => (
     <Pressable
       key={option}
       onPress={() => onPress(option)}
-      className="w-full group web:cursor-default web:select-none rounded-sm py-1.5 native:py-2 px-4 web:hover:bg-accent web:outline-none"
+      className={cn(
+        "w-full group web:cursor-default web:select-none rounded-sm py-1.5 native:py-2 px-4 web:hover:bg-accent web:outline-none",
+        isSelected && "bg-accent"
+      )}
     >
-      <Text className="web:group-hover:text-accent-foreground text-sm native:text-lg text-popover-foreground native:text-base">
+      <Text
+        className={cn(
+          "web:group-hover:text-accent-foreground text-sm native:text-lg text-popover-foreground native:text-base",
+          isSelected && "text-accent-foreground"
+        )}
+      >
         {option}
       </Text>
     </Pressable>
