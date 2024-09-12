@@ -72,6 +72,7 @@ const Button = React.forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>
             buttonVariants({ variant, size, className })
           )}
           ref={ref}
+          role="button"
           {...props}
         />
       </TextClassContext.Provider>
