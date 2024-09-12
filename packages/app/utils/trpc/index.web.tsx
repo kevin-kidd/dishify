@@ -11,7 +11,7 @@ import {
   QueryClientProvider,
   defaultShouldDehydrateQuery,
 } from "@tanstack/react-query";
-import * as Burnt from "burnt";
+import { toast } from "../toast";
 import { parseErrorMessage } from "../helpers";
 
 export function makeQueryClient() {
@@ -21,10 +21,9 @@ export function makeQueryClient() {
         if (query.meta?.showToastOnError) {
           return;
         }
-        Burnt.toast({
-          title: "Error",
-          preset: "error",
-          message: parseErrorMessage(error),
+        toast.error("Error", {
+          description: parseErrorMessage(error),
+          duration: 10000,
         });
       },
     }),
