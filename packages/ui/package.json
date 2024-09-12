@@ -9,7 +9,6 @@
     "clean": "rm -rf node_modules"
   },
   "dependencies": {
-    "burnt": "0.12.2",
     "nativewind": "4.0.36",
     "tailwind-merge": "2.0.0",
     "clsx": "2.0.0",

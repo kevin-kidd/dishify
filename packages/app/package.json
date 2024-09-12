@@ -14,7 +14,6 @@
     "@trpc/next": "11.0.0-rc.490",
     "@trpc/react-query": "11.0.0-rc.490",
     "nativewind": "4.0.36",
-    "burnt": "0.12.2",
     "expo-constants": "16.0.2",
     "expo-linking": "6.3.1",
     "expo-secure-store": "^12.5.0",
@@ -29,7 +28,10 @@
     "react-hook-form": "7.53.0",
     "@tamagui/constants": "latest",
     "@expo/html-elements": "latest",
-    "react-native-reanimated": "~3.10.1"
+    "react-native-reanimated": "~3.10.1",
+    "sonner-native": "0.12.1",
+    "react-native-gesture-handler": "2.19.0",
+    "sonner": "1.5.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.37"
