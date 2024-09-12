@@ -2,10 +2,10 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Text } from "react-native";
-import { Button, Form, FormInput, cn } from "@dishify/ui";
+import { Button, Form, FormInput, TextInput } from "@dishify/ui";
 import { useAtomValue } from "jotai";
 import { appColorSchemeAtom } from "app/atoms/theme";
-import * as Burnt from "burnt";
+import { toast } from "app/utils/toast";
 
 export function SignInForm() {
   const {
@@ -21,10 +21,8 @@ export function SignInForm() {
   });
   const appColorScheme = useAtomValue(appColorSchemeAtom);
   const onSubmit = handleSubmit((data) => {
-    Burnt.toast({
-      title: "Success",
-      preset: "done",
-      message: "You have successfully signed in!",
+    toast.success("Success", {
+      description: "You have successfully signed in!",
     });
     console.log(data);
   });
@@ -37,17 +35,17 @@ export function SignInForm() {
           required: true,
         }}
         render={({ field: { onChange, onBlur, name, value } }) => (
-          <FormInput
-            type="email"
-            autoComplete="email"
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
-            autoCorrect={false}
-            error={errors.email?.message}
-            label="Email"
-            id={name}
-          />
+          <FormInput error={errors.email?.message} label="Email" id={name}>
+            <TextInput
+              inputMode="email"
+              textContentType="emailAddress"
+              onBlur={onBlur}
+              onChange={onChange}
+              value={value}
+              autoComplete="email"
+              autoCorrect={false}
+            />
+          </FormInput>
         )}
       />
       <Controller
@@ -57,19 +55,17 @@ export function SignInForm() {
           maxLength: 100,
         }}
         render={({ field: { onChange, onBlur, name, value } }) => (
-          <FormInput
-            type="password"
-            id={name}
-            onBlur={onBlur}
-            onChangeText={onChange}
-            secureTextEntry={true}
-            value={value}
-            autoCorrect={false}
-            error={errors.password?.message}
-            autoCapitalize="none"
-            autoComplete="current-password"
-            label="Password"
-          />
+          <FormInput id={name} error={errors.password?.message} label="Password">
+            <TextInput
+              textContentType="password"
+              autoCapitalize="none"
+              autoComplete="current-password"
+              onBlur={onBlur}
+              onChange={onChange}
+              secureTextEntry={true}
+              value={value}
+            />
+          </FormInput>
         )}
       />
       <Button
