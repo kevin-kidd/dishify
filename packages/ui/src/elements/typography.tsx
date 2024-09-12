@@ -1,12 +1,10 @@
 import { TextLink as SolitoTextLink, type TextLinkProps } from "solito/link";
-import { Text } from "./text";
 import {
   H1 as ExpoH1,
   P as ExpoP,
   H2 as ExpoH2,
   H3 as ExpoH3,
   H4 as ExpoH4,
-  Span as ExpoSpan,
   Strong as ExpoStrong,
   BlockQuote as ExpoBlockQuote,
   Code as ExpoCode,
@@ -14,6 +12,8 @@ import {
 import { cn } from "../utils";
 import type { TextProps } from "@expo/html-elements/build/primitives/Text";
 import type { BlockQuoteProps } from "@expo/html-elements/build/elements/Text.types";
+import { withWebTag } from "../utils/web-tag";
+import { Text } from "react-native";
 
 export const P = ({ className, children, ...rest }: TextProps) => (
   <ExpoP className={cn("leading-7 [&:not(:first-child)]:mt-6", className)} {...rest}>
@@ -54,11 +54,7 @@ export const H4 = ({ className, children, ...rest }: TextProps) => (
   </ExpoH4>
 );
 
-export const Span = ({ className, children, ...rest }: TextProps) => (
-  <ExpoSpan className={cn("text-foreground", className)} {...rest}>
-    {children}
-  </ExpoSpan>
-);
+export const Span = withWebTag(Text, "span", "text-foreground");
 
 export const Strong = ({ className, children, ...rest }: TextProps) => (
   <ExpoStrong className={cn("font-bold text-foreground", className)} {...rest}>
