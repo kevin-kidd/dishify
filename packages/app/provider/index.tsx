@@ -6,9 +6,9 @@ import { SolitoImageProvider } from "./solito-image";
 import type { Session } from "@supabase/supabase-js";
 import { AuthProvider } from "./auth";
 import { ThemeProvider } from "./theme";
-import { Toaster } from "burnt/web";
 import { PortalHost } from "@rn-primitives/portal";
 import { Header } from "app/features/header";
+import { ToastProvider } from "./toasts";
 
 export function Provider({
   children,
@@ -22,14 +22,13 @@ export function Provider({
       <SolitoImageProvider>
         {/* <AuthProvider initialSession={initialSession}> */}
         <TRPCProvider>
-          {/* <StylesProvider> */}
           <ThemeProvider>
-            <Header />
-            {children}
-            <Toaster position="bottom-right" />
+            <ToastProvider>
+              <Header />
+              {children}
+            </ToastProvider>
             <PortalHost />
           </ThemeProvider>
-          {/* </StylesProvider> */}
         </TRPCProvider>
         {/* </AuthProvider> */}
       </SolitoImageProvider>
