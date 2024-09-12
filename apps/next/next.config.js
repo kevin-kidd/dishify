@@ -65,7 +65,7 @@ module.exports = () => {
     transpilePackages: [
       "react-native-css-interop",
       "nativewind",
-      "burnt",
+      "sonner-native",
       "@rn-primitives/slot",
       "@rn-primitives/separator",
       "@rn-primitives/select",
