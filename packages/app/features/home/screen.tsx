@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  H1,
   P,
   Button,
   Form,
@@ -40,6 +39,7 @@ export function HomeScreen() {
     formState: { errors },
   } = useForm<DishName>({
     resolver: zodResolver(DishNameSchema),
+    mode: "onSubmit",
     defaultValues: {
       dishName: "",
     },
@@ -103,12 +103,12 @@ export function HomeScreen() {
                   autocompleteOptions={autocompleteOptions}
                 >
                   <TextInput
+                    inputMode="search"
                     id={name}
                     value={value}
                     onBlur={onBlur}
                     onChange={onChange}
                     placeholder="Enter a dish name"
-                    autoCorrect={true}
                     maxLength={80}
                   />
                 </Autocomplete>
