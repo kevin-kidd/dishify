@@ -33,7 +33,7 @@ export function Header() {
           </LI>
           <LI>
             <Link href="/sign-in">
-              <Button href="/sign-in">
+              <Button>
                 <Text>Sign In</Text>
               </Button>
             </Link>
