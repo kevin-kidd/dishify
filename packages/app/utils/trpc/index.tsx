@@ -7,8 +7,8 @@ import { useState } from "react";
 import superjson from "superjson";
 import { supabase } from "../supabase/client";
 import { replaceLocalhost } from "./localhost.native";
-import * as Burnt from "burnt";
 import { parseErrorMessage } from "../helpers";
+import { toast } from "../toast";
 
 /**
  * A set of typesafe hooks for consuming the API.
@@ -31,10 +31,9 @@ export const TRPCProvider: React.FC<{
             if (query.meta?.showToastOnError) {
               return;
             }
-            Burnt.toast({
-              title: "Error",
-              preset: "error",
-              message: parseErrorMessage(error),
+            toast.error("Error", {
+              description: parseErrorMessage(error),
+              duration: 10000,
             });
           },
         }),
