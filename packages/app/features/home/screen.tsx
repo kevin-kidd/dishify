@@ -13,12 +13,12 @@ import {
   Strong,
   H3,
   Image,
-  Text,
   OL,
   LI,
   UL,
   TextInput,
   Autocomplete,
+  Text,
 } from "@dishify/ui";
 import { Skeleton } from "@dishify/ui/src/elements/skeleton";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,34 +29,44 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { View, ScrollView, Keyboard, type Pressable } from "react-native";
 import { Link } from "solito/link";
 import { skipToken } from "@tanstack/react-query";
-import { DishNameSchema, type DishName } from "@dishify/api/schemas/dish-name";
+import { SearchSchema, type SearchValues } from "@dishify/api/schemas/search";
 import { isWeb } from "@tamagui/constants";
+import { SendHorizontal } from "@dishify/ui/src/icons/send-horizontal";
+import { LoaderCircle } from "@dishify/ui/src/icons/loader-circle";
+import ImageDropdown from "./image-dropdown";
+import type { RecipeResponse } from "@dishify/api/schemas/recipe-response";
+import { toast } from "app/utils/toast";
 
 export function HomeScreen() {
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<DishName>({
-    resolver: zodResolver(DishNameSchema),
+    watch,
+    setValue,
+  } = useForm<SearchValues>({
+    resolver: zodResolver(SearchSchema),
     mode: "onSubmit",
     defaultValues: {
       dishName: "",
+      image: [],
     },
   });
   const submitButtonRef = useRef<React.ElementRef<typeof Pressable>>(null);
 
-  const [currentRecipe, setCurrentRecipe] = useState("");
-  const { data, isFetching } = trpc.recipe.generate.useQuery(
-    currentRecipe ? { dishName: currentRecipe } : skipToken,
-    {
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      refetchOnReconnect: false,
-      retry: 3,
-      retryDelay: 1000,
-    }
-  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [recipeData, setRecipeData] = useState<RecipeResponse>();
+  const generate = trpc.recipe.generate.useMutation();
+  // const { data, isFetching } = trpc.recipe.generate.useQuery(
+  //   currentRecipe || imageData ? { dishName: currentRecipe, image: imageData } : skipToken,
+  //   {
+  //     refetchOnWindowFocus: false,
+  //     refetchOnMount: false,
+  //     refetchOnReconnect: false,
+  //     retry: 3,
+  //     retryDelay: 1000,
+  //   }
+  // );
   const dishName = useWatch({
     control,
     name: "dishName",
@@ -64,7 +74,7 @@ export function HomeScreen() {
   const { data: autocompleteOptions, refetch: refetchAutocomplete } =
     trpc.recipe.autocomplete.useQuery(
       {
-        query: dishName,
+        query: dishName ?? "",
         language: "en",
       },
       {
@@ -76,13 +86,35 @@ export function HomeScreen() {
   const getOptions = useCallback(async () => {
     await refetchAutocomplete();
   }, [refetchAutocomplete]);
-  const onSubmit = handleSubmit((data) => {
-    setCurrentRecipe(data.dishName);
+  const onSubmitImage = handleSubmit(async (data) => {
+    setIsLoading(true);
+    try {
+      const response = await generate.mutateAsync({ image: data.image });
+      if (response) {
+        setRecipeData(response);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+    setIsLoading(false);
+  });
+  const onSubmit = handleSubmit(async (data) => {
+    setIsLoading(true);
     if (isWeb) {
       submitButtonRef.current?.focus();
     } else {
       Keyboard.dismiss();
     }
+    try {
+      const response = await generate.mutateAsync({ dishName: data.dishName });
+      if (response) {
+        setRecipeData(response);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+
+    setIsLoading(false);
   });
 
   return (
@@ -115,22 +147,26 @@ export function HomeScreen() {
               </FormInput>
             )}
           />
-          <Button
-            onPress={onSubmit}
-            disabled={!!currentRecipe && isFetching}
-            className="w-full sm:w-auto"
-            ref={submitButtonRef}
-          >
-            <Text>{!!currentRecipe && isFetching ? "Generating..." : "Generate Recipe"}</Text>
+          <Button size="icon" disabled={isLoading} ref={submitButtonRef} onPress={onSubmit}>
+            {isLoading ? (
+              <LoaderCircle className="animate-spin text-primary-foreground p-0.5" />
+            ) : (
+              <SendHorizontal className="text-primary-foreground p-0.5" />
+            )}
           </Button>
+          <ImageDropdown
+            setImageData={(imageData: number[] | undefined) => setValue("image", imageData)}
+            watch={watch}
+            onSubmit={onSubmitImage}
+          />
         </Form>
         <View className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>Recipe {data && `- ${data?.dishName}`}</CardTitle>
+              <CardTitle>Recipe {recipeData && `- ${recipeData?.dishName}`}</CardTitle>
             </CardHeader>
             <CardContent>
-              {!!currentRecipe && isFetching ? (
+              {isLoading ? (
                 <>
                   <Skeleton className="h-4 w-1/2 mb-2" />
                   <Skeleton className="h-4 w-1/3 mb-4" />
@@ -138,17 +174,17 @@ export function HomeScreen() {
                   <Skeleton className="h-4 w-full mb-2" />
                   <Skeleton className="h-4 w-full mb-2" />
                 </>
-              ) : data ? (
+              ) : recipeData ? (
                 <>
                   <P>
-                    <Strong>Cooking Time:</Strong> {data.recipe.cookingTime}
+                    <Strong>Cooking Time:</Strong> {recipeData.recipe.cookingTime}
                   </P>
                   <P>
-                    <Strong>Servings:</Strong> {data.recipe.servings}
+                    <Strong>Servings:</Strong> {recipeData.recipe.servings}
                   </P>
                   <H3 className="font-semibold mt-4 mb-2">Instructions:</H3>
                   <OL>
-                    {data.recipe.instructions.map((step, index) => (
+                    {recipeData.recipe.instructions.map((step, index) => (
                       <LI key={`step-${index}-${step.slice(0, 5)}`} className="mb-2">
                         {step}
                       </LI>
@@ -163,15 +199,15 @@ export function HomeScreen() {
               <CardTitle>Shopping List</CardTitle>
             </CardHeader>
             <CardContent>
-              {!!currentRecipe && isFetching ? (
+              {isLoading ? (
                 <>
                   <Skeleton className="h-4 w-full mb-2" />
                   <Skeleton className="h-4 w-full mb-2" />
                   <Skeleton className="h-4 w-full mb-2" />
                 </>
-              ) : data ? (
+              ) : recipeData ? (
                 <UL className="space-y-2">
-                  {data.shoppingList.map((item, index) => (
+                  {recipeData.shoppingList.map((item, index) => (
                     <LI
                       key={`step-${index}-${item.item}`}
                       className="flex items-center justify-between py-2"
