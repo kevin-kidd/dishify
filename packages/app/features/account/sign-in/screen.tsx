@@ -1,7 +1,7 @@
 import { H1, TextLink, P, Image } from "@dishify/ui";
 import { SignInForm } from "./form";
 import { OAuthButtons } from "../OAuthButtons";
-import { View, ScrollView } from "react-native";
+import { View } from "react-native";
 
 export function SignInScreen() {
   return (
