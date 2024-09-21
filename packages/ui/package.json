@@ -24,6 +24,12 @@
     "lucide-react-native": "0.438.0",
     "tailwindcss-animate": "1.0.7",
     "react-native-reanimated": "~3.10.1",
-    "@expo/html-elements": "latest"
+    "@expo/html-elements": "latest",
+    "@rn-primitives/dropdown-menu": "1.0.4",
+    "@rn-primitives/hooks": "1.0.4",
+    "@rn-primitives/utils": "1.0.4",
+    "@rn-primitives/portal": "1.0.4",
+    "@radix-ui/react-dialog": "1.1.1",
+    "@radix-ui/react-dropdown-menu": "2.1.1"
   }
 }
