@@ -23,21 +23,21 @@
     "app": "workspace:*",
     "million": "latest",
     "next": "14.2.7",
+    "next-superjson-plugin": "^0.6.3",
     "pattycake": "^0.0.2",
+    "postcss": "latest",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native-web": "latest",
-    "next-superjson-plugin": "^0.6.3",
-    "webpack": "^5.88.2",
     "server-only": "^0.0.1",
     "tailwindcss-animate": "1.0.7",
-    "postcss": "latest"
+    "webpack": "^5.88.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.37",
-    "vercel": "33.0.2",
-    "wrangler": "3.75.0",
     "autoprefixer": "^10.4.7",
-    "tailwindcss": "3.4.4"
+    "tailwindcss": "3.4.4",
+    "vercel": "33.0.2",
+    "wrangler": "3.75.0"
   }
 }

@@ -56,7 +56,7 @@ module.exports = () => {
       config.plugins.push(
         new DefinePlugin({
           __DEV__: JSON.stringify(process.env.NODE_ENV !== "production"),
-        })
+        }),
       );
 
       return config;
