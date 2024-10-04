@@ -59,7 +59,7 @@ function useRootContext() {
   const context = React.useContext(DropdownMenuContext);
   if (!context) {
     throw new Error(
-      "DropdownMenu compound components cannot be rendered outside the DropdownMenu component"
+      "DropdownMenu compound components cannot be rendered outside the DropdownMenu component",
     );
   }
   return context;
@@ -104,7 +104,7 @@ const Trigger = React.forwardRef<DropdownMenuTriggerRef, SlottablePressableProps
         <Component ref={augmentedRef} {...props} />
       </DropdownMenu.Trigger>
     );
-  }
+  },
 );
 
 Trigger.displayName = "TriggerWebDropdownMenu";
@@ -117,7 +117,7 @@ const Overlay = React.forwardRef<PressableRef, SlottablePressableProps & Dropdow
   ({ asChild, ...props }, ref) => {
     const Component = asChild ? Slot.Pressable : Pressable;
     return <Component ref={ref} {...props} />;
-  }
+  },
 );
 
 Overlay.displayName = "OverlayWebDropdownMenu";
@@ -148,7 +148,7 @@ const Content = React.forwardRef<PressableRef, SlottablePressableProps & Positio
       hideWhenDetached,
       ...props
     },
-    ref
+    ref,
   ) => {
     const itemRef = React.useRef<HTMLDivElement>(null);
 
@@ -188,7 +188,7 @@ const Content = React.forwardRef<PressableRef, SlottablePressableProps & Positio
         </DropdownMenu.Content>
       </DropdownMenuContentContext.Provider>
     );
-  }
+  },
 );
 
 Content.displayName = "ContentWebDropdownMenu";
@@ -197,7 +197,7 @@ function useDropdownMenuContentContext() {
   const context = React.useContext(DropdownMenuContentContext);
   if (!context) {
     throw new Error(
-      "DropdownMenu compound components cannot be rendered outside the DropdownMenu component"
+      "DropdownMenu compound components cannot be rendered outside the DropdownMenu component",
     );
   }
   return context;
@@ -213,7 +213,7 @@ const Item = React.forwardRef<PressableRef, SlottablePressableProps & DropdownMe
       onKeyDown: onKeyDownProp,
       ...props
     },
-    ref
+    ref,
   ) => {
     const { close } = useDropdownMenuContentContext();
 
@@ -251,7 +251,7 @@ const Item = React.forwardRef<PressableRef, SlottablePressableProps & DropdownMe
         />
       </DropdownMenu.Item>
     );
-  }
+  },
 );
 
 Item.displayName = "ItemWebDropdownMenu";
@@ -294,7 +294,7 @@ const CheckboxItem = React.forwardRef<
       onKeyDown: onKeyDownProp,
       ...props
     },
-    ref
+    ref,
   ) => {
     const { close } = useDropdownMenuContentContext();
 
@@ -336,7 +336,7 @@ const CheckboxItem = React.forwardRef<
         />
       </DropdownMenu.CheckboxItem>
     );
-  }
+  },
 );
 
 CheckboxItem.displayName = "CheckboxItemWebDropdownMenu";
@@ -356,7 +356,7 @@ const RadioGroup = React.forwardRef<ViewRef, SlottableViewProps & DropdownMenuRa
         </DropdownMenu.RadioGroup>
       </DropdownMenuRadioGroupContext.Provider>
     );
-  }
+  },
 );
 
 RadioGroup.displayName = "RadioGroupWebDropdownMenu";
@@ -365,7 +365,7 @@ function useDropdownMenuRadioGroupContext() {
   const context = React.useContext(DropdownMenuRadioGroupContext);
   if (!context) {
     throw new Error(
-      "DropdownMenuRadioGroup compound components cannot be rendered outside the DropdownMenuRadioGroup component"
+      "DropdownMenuRadioGroup compound components cannot be rendered outside the DropdownMenuRadioGroup component",
     );
   }
   return context;
@@ -385,7 +385,7 @@ const RadioItem = React.forwardRef<
       onKeyDown: onKeyDownProp,
       ...props
     },
-    ref
+    ref,
   ) => {
     const { onValueChange } = useDropdownMenuRadioGroupContext();
     const { close } = useDropdownMenuContentContext();
@@ -426,7 +426,7 @@ const RadioItem = React.forwardRef<
         />
       </DropdownMenu.RadioItem>
     );
-  }
+  },
 );
 
 RadioItem.displayName = "RadioItemWebDropdownMenu";
@@ -439,7 +439,7 @@ const ItemIndicator = React.forwardRef<ViewRef, SlottableViewProps & ForceMounta
         <Component ref={ref} {...props} />
       </DropdownMenu.ItemIndicator>
     );
-  }
+  },
 );
 
 ItemIndicator.displayName = "ItemIndicatorWebDropdownMenu";
@@ -452,7 +452,7 @@ const Separator = React.forwardRef<ViewRef, SlottableViewProps & DropdownMenuSep
         <Component ref={ref} {...props} />
       </DropdownMenu.Separator>
     );
-  }
+  },
 );
 
 Separator.displayName = "SeparatorWebDropdownMenu";
@@ -478,7 +478,7 @@ const Sub = React.forwardRef<ViewRef, SlottableViewProps & DropdownMenuSubProps>
         </DropdownMenu.Sub>
       </DropdownMenuSubContext.Provider>
     );
-  }
+  },
 );
 
 Sub.displayName = "SubWebDropdownMenu";
@@ -487,7 +487,7 @@ function useSubContext() {
   const context = React.useContext(DropdownMenuSubContext);
   if (!context) {
     throw new Error(
-      "DropdownMenu compound components cannot be rendered outside the DropdownMenu component"
+      "DropdownMenu compound components cannot be rendered outside the DropdownMenu component",
     );
   }
   return context;
@@ -517,7 +517,7 @@ const SubContent = React.forwardRef<PressableRef, SlottablePressableProps & Forc
         </DropdownMenu.SubContent>
       </DropdownMenu.Portal>
     );
-  }
+  },
 );
 
 Content.displayName = "ContentWebDropdownMenu";
