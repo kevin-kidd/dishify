@@ -36,7 +36,7 @@ const Root = React.forwardRef<ViewRef, SlottableViewProps & DialogRootProps>(
         </Dialog.Root>
       </DialogContext.Provider>
     );
-  }
+  },
 );
 
 Root.displayName = "RootWebDialog";
@@ -80,7 +80,7 @@ const Trigger = React.forwardRef<PressableRef, SlottablePressableProps>(
         />
       </Dialog.Trigger>
     );
-  }
+  },
 );
 
 Trigger.displayName = "TriggerWebDialog";
@@ -101,7 +101,7 @@ const Overlay = React.forwardRef<PressableRef, SlottablePressableProps & DialogO
         <Component ref={ref} {...props} />
       </Dialog.Overlay>
     );
-  }
+  },
 );
 
 Overlay.displayName = "OverlayWebDialog";
@@ -118,7 +118,7 @@ const Content = React.forwardRef<ViewRef, SlottableViewProps & DialogContentProp
       onPointerDownOutside,
       ...props
     },
-    ref
+    ref,
   ) => {
     const Component = asChild ? Slot.View : View;
     return (
@@ -133,7 +133,7 @@ const Content = React.forwardRef<ViewRef, SlottableViewProps & DialogContentProp
         <Component ref={ref} {...props} />
       </Dialog.Content>
     );
-  }
+  },
 );
 
 Content.displayName = "ContentWebDialog";
@@ -171,7 +171,7 @@ const Close = React.forwardRef<PressableRef, SlottablePressableProps>(
         </Dialog.Close>
       </>
     );
-  }
+  },
 );
 
 Close.displayName = "CloseWebDialog";

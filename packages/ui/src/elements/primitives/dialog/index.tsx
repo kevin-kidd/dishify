@@ -42,7 +42,7 @@ const Root = React.forwardRef<ViewRef, SlottableViewProps & DialogRootProps>(
         <Component ref={ref} {...viewProps} />
       </DialogContext.Provider>
     );
-  }
+  },
 );
 
 Root.displayName = "RootNativeDialog";
@@ -77,7 +77,7 @@ const Trigger = React.forwardRef<PressableRef, SlottablePressableProps>(
         {...props}
       />
     );
-  }
+  },
 );
 
 Trigger.displayName = "TriggerNativeDialog";
@@ -120,7 +120,7 @@ const Overlay = React.forwardRef<PressableRef, SlottablePressableProps & DialogO
 
     const Component = asChild ? Slot.Pressable : Pressable;
     return <Component ref={ref} onPress={onPress} {...props} />;
-  }
+  },
 );
 
 Overlay.displayName = "OverlayNativeDialog";
@@ -159,7 +159,7 @@ const Content = React.forwardRef<ViewRef, SlottableViewProps & DialogContentProp
         {...props}
       />
     );
-  }
+  },
 );
 
 Content.displayName = "ContentNativeDialog";
@@ -185,7 +185,7 @@ const Close = React.forwardRef<PressableRef, SlottablePressableProps>(
         {...props}
       />
     );
-  }
+  },
 );
 
 Close.displayName = "CloseNativeDialog";
