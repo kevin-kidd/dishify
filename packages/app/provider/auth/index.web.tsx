@@ -13,7 +13,7 @@ export const AuthProvider = ({ children, initialSession }: Props): React.ReactNo
   const [supabaseClient] = useState(() =>
     createPagesBrowserClient({
       cookieOptions: secureCookieOptions,
-    })
+    }),
   );
 
   return (
