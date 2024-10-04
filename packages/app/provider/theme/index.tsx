@@ -47,7 +47,7 @@ export const ThemeProvider = ({
           size="icon"
           className={cn(
             "right-4 bottom-4 z-50 bg-primary web:hover:bg-primary/80 border border-border",
-            isWeb ? "fixed" : "absolute"
+            isWeb ? "fixed" : "absolute",
           )}
         >
           <Text className="text-xl select-none">{appColorScheme === "dark" ? "🌙" : "🌞"}</Text>

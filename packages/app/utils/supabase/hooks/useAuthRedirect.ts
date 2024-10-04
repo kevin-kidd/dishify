@@ -21,7 +21,7 @@ export const useAuthRedirect = () => {
           setSession(session);
           setLoading(false);
         }
-      }
+      },
     );
     return () => {
       signOutListener.data.subscription.unsubscribe();
