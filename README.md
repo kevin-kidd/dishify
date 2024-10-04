@@ -83,7 +83,7 @@ Dishify is your AI-powered culinary companion. Enter any dish name for instant r
   - `api/`: Backend API and database schema
   - `app/`: Shared application logic
   - `ui/`: Shared UI components
-- `data_utils/`: Utility scripts for preparing recipe data for the database
+- `data_utils/`: Utility scripts for preparing recipe data for the database and AI model training
 
 ## Contributing
 
