@@ -35,5 +35,5 @@ export const atomWithMMKV = <T>(key: string, initialValue: T) =>
       setItem,
       removeItem,
       clearAll,
-    }))
+    })),
   );
