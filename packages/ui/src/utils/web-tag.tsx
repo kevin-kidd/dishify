@@ -12,7 +12,7 @@ export function withWebTag<
 >(
   Component: ComponentType<P>,
   tagName: T,
-  baseClassName?: string
+  baseClassName?: string,
 ): ComponentType<P & React.ComponentProps<T>> {
   return ({ onPress, children, className, ...restProps }: P & React.ComponentProps<T>) => {
     const combinedClassName = cn(baseClassName, className);

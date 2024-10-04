@@ -29,7 +29,7 @@ export function useAutocomplete({ onSelect, getOptions, autocompleteOptions, chi
         triggerRef.current?.close?.();
       }
     }, 300),
-    []
+    [],
   );
 
   const handleInputChange = useCallback(
@@ -42,7 +42,7 @@ export function useAutocomplete({ onSelect, getOptions, autocompleteOptions, chi
       }
       setInputValue(text);
     },
-    [debouncedSearch, children.props]
+    [debouncedSearch, children.props],
   );
 
   const handleSelectOption = useCallback(
@@ -51,7 +51,7 @@ export function useAutocomplete({ onSelect, getOptions, autocompleteOptions, chi
       handleInputChange(option);
       triggerRef.current?.close?.();
     },
-    [onSelect, handleInputChange]
+    [onSelect, handleInputChange],
   );
 
   const handleFocus = useCallback(() => {
@@ -92,13 +92,13 @@ export function useAutocomplete({ onSelect, getOptions, autocompleteOptions, chi
         case "ArrowDown":
           event.preventDefault();
           setSelectedIndex((prevIndex) =>
-            prevIndex < autocompleteOptions.length - 1 ? prevIndex + 1 : 0
+            prevIndex < autocompleteOptions.length - 1 ? prevIndex + 1 : 0,
           );
           break;
         case "ArrowUp":
           event.preventDefault();
           setSelectedIndex((prevIndex) =>
-            prevIndex > 0 ? prevIndex - 1 : autocompleteOptions.length - 1
+            prevIndex > 0 ? prevIndex - 1 : autocompleteOptions.length - 1,
           );
           break;
         case "Enter":
@@ -109,7 +109,7 @@ export function useAutocomplete({ onSelect, getOptions, autocompleteOptions, chi
           break;
       }
     },
-    [isOpen, autocompleteOptions, selectedIndex, handleSelectOption]
+    [isOpen, autocompleteOptions, selectedIndex, handleSelectOption],
   );
 
   return {

@@ -8,7 +8,7 @@ const EVENT_TYPE = {
 } as const;
 
 export function useKeyboard(
-  { eventType = "didShow" }: { eventType?: keyof typeof EVENT_TYPE } = { eventType: "didShow" }
+  { eventType = "didShow" }: { eventType?: keyof typeof EVENT_TYPE } = { eventType: "didShow" },
 ) {
   const [isKeyboardVisible, setKeyboardVisible] = React.useState(false);
   const [keyboardHeight, setKeyboardHeight] = React.useState(0);
