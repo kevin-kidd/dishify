@@ -81,7 +81,7 @@ export function HomeScreen() {
         enabled: false,
         placeholderData: (prevData) => prevData,
         meta: { showToastOnError: false },
-      }
+      },
     );
   const getOptions = useCallback(async () => {
     await refetchAutocomplete();
@@ -176,20 +176,23 @@ export function HomeScreen() {
                 </>
               ) : recipeData ? (
                 <>
-                  <P>
+                  <P className="text-foreground">
                     <Strong>Cooking Time:</Strong> {recipeData.recipe.cookingTime}
                   </P>
-                  <P>
+                  <P className="text-foreground">
                     <Strong>Servings:</Strong> {recipeData.recipe.servings}
                   </P>
-                  <H3 className="font-semibold mt-4 mb-2">Instructions:</H3>
-                  <OL>
+                  <H3 className="font-semibold mt-4 mb-2 text-foreground">Instructions:</H3>
+                  <UL>
                     {recipeData.recipe.instructions.map((step, index) => (
-                      <LI key={`step-${index}-${step.slice(0, 5)}`} className="mb-2">
+                      <LI
+                        key={`step-${index}-${step.slice(0, 5)}`}
+                        className="mb-2 text-foreground"
+                      >
                         {step}
                       </LI>
                     ))}
-                  </OL>
+                  </UL>
                 </>
               ) : null}
             </CardContent>
