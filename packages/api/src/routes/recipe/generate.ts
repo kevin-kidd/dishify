@@ -1,10 +1,12 @@
 import type { ChatCompletionMessageParam } from "groq-sdk/resources/chat/completions";
 import { SearchSchema } from "../../../schemas/search";
-import { RecipeResponse, RecipeResponseSchema } from "../../../schemas/recipe-response";
+import { type RecipeResponse, RecipeResponseSchema } from "../../../schemas/recipe-response";
 import { publicProcedure } from "../../trpc";
 import { EnglishRecipeNameTable } from "../../db/schema";
 import Groq from "groq-sdk";
 import { TRPCError } from "@trpc/server";
+// biome-ignore lint/style/useNodejsImportProtocol: this package functions in Workers, but has to be installed
+import { Buffer } from "buffer";
 
 type AiTextGenerationResponse = {
   response?: string;
@@ -17,20 +19,46 @@ type AiTextGenerationResponse = {
 async function completionWithGroq(
   groq: Groq,
   messages: ChatCompletionMessageParam[],
-  user?: string
+  user?: string,
+  image?: number[],
 ): Promise<string | null | undefined> {
   try {
-    const completion = await groq.chat.completions.create(
-      {
-        model: "llama-3.1-70b-versatile",
-        messages,
+    let completion: Groq.Chat.ChatCompletion;
+    if (image) {
+      // Convert Uint8Array to base64
+      const base64Image = Buffer.from(image).toString("base64");
+      const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+      messages.push({
+        role: "user",
+        content: [
+          {
+            type: "image_url",
+            image_url: {
+              url: imageUrl,
+            },
+          },
+        ],
+      });
+      completion = await groq.chat.completions.create({
+        model: "llama-3.2-11b-vision-preview",
         stream: false,
-        user,
-      },
-      {
-        maxRetries: 3,
-      }
-    );
+        response_format: { type: "json_object" },
+        messages,
+      });
+    } else {
+      completion = await groq.chat.completions.create(
+        {
+          model: "llama-3.1-70b-versatile",
+          messages,
+          response_format: { type: "json_object" },
+          stream: false,
+          user,
+        },
+        {
+          maxRetries: 3,
+        },
+      );
+    }
     return completion.choices?.[0]?.message.content;
   } catch (error) {
     if (error instanceof Groq.APIError) {
@@ -47,6 +75,8 @@ async function completionWithGroq(
         default:
           console.error("Groq API error:", error);
       }
+    } else {
+      console.error(error);
     }
     return null;
   }
@@ -55,9 +85,26 @@ async function completionWithGroq(
 async function completionWithWorkers(
   ai: Ai,
   messages: RoleScopedChatInput[],
-  gatewayId: string
+  gatewayId: string,
+  image?: number[],
 ): Promise<string | null | undefined> {
   try {
+    if (image) {
+      const completion = (await ai.run(
+        "@cf/meta/llama-3.2-11b-vision-instruct" as BaseAiImageToTextModels,
+        {
+          messages,
+          image,
+        },
+        {
+          gateway: {
+            id: gatewayId,
+          },
+        },
+      )) as AiTextGenerationResponse;
+      console.log(completion.response);
+      return completion.response;
+    }
     const completion = (await ai.run(
       "@cf/meta/llama-3.1-8b-instruct",
       {
@@ -68,35 +115,9 @@ async function completionWithWorkers(
         gateway: {
           id: gatewayId,
         },
-      }
+      },
     )) as AiTextGenerationResponse;
     return completion.response;
-  } catch (error) {
-    console.error("CloudFlare AI Worker error:", error);
-    return null;
-  }
-}
-
-async function imageCompletionWithWorkers(
-  ai: Ai,
-  messages: RoleScopedChatInput[],
-  gatewayId: string,
-  image: number[]
-): Promise<string | null | undefined> {
-  try {
-    const completion = await ai.run(
-      "@cf/unum/uform-gen2-qwen-500m",
-      {
-        messages,
-        image,
-      },
-      {
-        gateway: {
-          id: gatewayId,
-        },
-      }
-    );
-    return completion.description;
   } catch (error) {
     console.error("CloudFlare AI Worker error:", error);
     return null;
@@ -107,51 +128,37 @@ export const generate = publicProcedure
   .input(SearchSchema)
   .mutation(async ({ ctx, input: { dishName, image } }) => {
     let response: string | null | undefined;
-    let messages: RoleScopedChatInput[] = [];
+    const messages: RoleScopedChatInput[] = [];
     if (image) {
-      // Handle image generation
-      messages = [
+      messages.push(
         {
-          role: "system",
-          content: `You are a helpful assistant that identifies recipe names from images of dishes, drinks, desserts and more. You will only respond with the recipe name, not including anything else. The image might not be of food or drinks, in which case respond with "unknown". You should err on the side of caution by responding with "unknown" if you are not sure of the recipe name.`,
+          role: "user",
+          content: `You are a helpful assistant that generates recipes and shopping lists. Provide the response in JSON format like this: { dishName: "", shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}. If you are not aware of the dish, respond with { dishName: "unknown" }`,
         },
         {
           role: "user",
-          content: `Identify the recipe name from the image provided. This image might not be of food, in which case respond with "unknown".`,
+          content: `Identify the recipe name from the image provided. This image might not be of food, in which case respond with { dishName: "unknown" }`,
         },
-      ];
-      response = await imageCompletionWithWorkers(ctx.ai.client, messages, ctx.ai.gatewayId, image);
-      if (!response) {
-        console.error("Failed to generate image response", { image, request: messages });
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate image. Please try again.",
-        });
-      }
-      if (response.includes("unknown") || response.toLowerCase().startsWith("No")) {
-        console.error("Unknown dish", { response, request: messages });
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Unknown dish",
-        });
-      }
-      dishName = response;
+      );
+    } else {
+      messages.push(
+        {
+          role: "system",
+          content: `You are a helpful assistant that generates recipes and shopping lists. Provide the response in JSON format like this: { dishName: "", shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}. If you are not aware of the dish, respond with { dishName: "unknown" }`,
+        },
+        {
+          role: "user",
+          content: `Generate a recipe and shopping list for: ${dishName}`,
+        },
+      );
     }
-    messages = [
-      {
-        role: "system",
-        content: `You are a helpful assistant that generates recipes and shopping lists. Provide the response in JSON format like this: { dishName: "", shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}. If you are not aware of the dish, respond with { dishName: "unknown" }`,
-      },
-      {
-        role: "user",
-        content: `Generate a recipe and shopping list for: ${dishName}`,
-      },
-    ];
+
     // Attempt to get a response from Groq
     response = await completionWithGroq(
       ctx.groq,
       messages as ChatCompletionMessageParam[],
-      ctx.user?.id
+      ctx.user?.id,
+      image,
     );
     if (!response) {
       // If Groq fails, try CloudFlare AI Worker
@@ -159,7 +166,8 @@ export const generate = publicProcedure
       response = await completionWithWorkers(
         ctx.ai.client,
         messages as RoleScopedChatInput[],
-        ctx.ai.gatewayId
+        ctx.ai.gatewayId,
+        image,
       );
     }
 
@@ -167,7 +175,7 @@ export const generate = publicProcedure
       // If both fail, throw an error
       console.error("Both Groq and CloudFlare AI Worker completions failed.", {
         response,
-        request: messages,
+        request: { messages, image },
       });
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
@@ -177,25 +185,46 @@ export const generate = publicProcedure
 
     try {
       // Extract the JSON from the response
-      const jsonMatch = response.match(/{[\s\S]*}/);
-      const jsonResponse = jsonMatch ? jsonMatch[0] : null;
-      if (!jsonResponse) {
+      const jsonRegex = /{[^{}]*(?:{[^{}]*}[^{}]*)*}/;
+      const jsonMatch = response.match(jsonRegex);
+      console.log("Extracted JSON match:", jsonMatch);
+
+      if (!jsonMatch) {
         console.error("No valid JSON found in the AI response", { response, request: messages });
         throw new Error("An unexpected error occurred. Please try again.");
       }
-      // Parse the response
-      const parsedResponse = JSON.parse(jsonResponse);
-      if (parsedResponse.dishName?.includes("unknown")) {
+
+      let jsonResponse = jsonMatch[0];
+      console.log("Extracted JSON string:", jsonResponse);
+
+      // Attempt to parse the JSON
+      let parsedResponse: RecipeResponse;
+      try {
+        parsedResponse = JSON.parse(jsonResponse);
+      } catch (parseError) {
+        // If parsing fails, attempt to fix the JSON
+        console.log("Initial JSON parse failed, attempting to fix JSON");
+        jsonResponse = jsonResponse.replace(/(\w+):/g, '"$1":');
+        console.log("Fixed JSON string:", jsonResponse);
+        parsedResponse = JSON.parse(jsonResponse);
+      }
+
+      if (parsedResponse.dishName?.toLowerCase().includes("unknown")) {
         console.error("Unknown dish", { response, request: messages });
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Unknown dish: ${dishName}`,
+          message: `Unknown dish ${image ? "" : `: ${dishName}`}`,
         });
       }
+
       // Validate the response
       const validatedResponse = RecipeResponseSchema.safeParse(parsedResponse);
       if (!validatedResponse.success) {
-        console.error("Failed to validate recipe response", { response, request: messages });
+        console.error("Failed to validate recipe response", {
+          response,
+          request: messages,
+          validationError: validatedResponse.error,
+        });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `Failed to fetch recipe: ${dishName}. Please try again.`,
