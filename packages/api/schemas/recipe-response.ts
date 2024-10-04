@@ -6,7 +6,7 @@ export const RecipeResponseSchema = z.object({
     z.object({
       item: z.string(),
       quantity: z.string(),
-    })
+    }),
   ),
   recipe: z.object({
     cookingTime: z.string(),
