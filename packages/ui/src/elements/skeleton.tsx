@@ -19,7 +19,7 @@ function Skeleton({
   React.useEffect(() => {
     sv.value = withRepeat(
       withSequence(withTiming(0.5, { duration }), withTiming(1, { duration })),
-      -1
+      -1,
     );
   }, [sv]);
 
@@ -27,7 +27,7 @@ function Skeleton({
     () => ({
       opacity: sv.value,
     }),
-    [sv]
+    [sv],
   );
 
   return (

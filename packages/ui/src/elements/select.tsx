@@ -26,7 +26,7 @@ const SelectTrigger = React.forwardRef<
       className: cn(
         "flex-1 flex-row h-10 web:select-none native:h-12 items-center text-sm justify-between rounded-md border border-input bg-background px-3 py-2 web:ring-offset-background text-muted-foreground web:focus:outline-none web:focus:ring-2 web:focus:ring-ring web:focus:ring-offset-2 [&>span]:line-clamp-1",
         props.disabled && "web:cursor-not-allowed opacity-50",
-        className
+        className,
       ),
     }}
     {...props}
@@ -105,7 +105,7 @@ const SelectContent = React.forwardRef<
                 open
                   ? "web:zoom-in-95 web:animate-in web:fade-in-0"
                   : "web:zoom-out-95 web:animate-out web:fade-out-0",
-                className
+                className,
               ),
             }}
             position={position}
@@ -116,7 +116,7 @@ const SelectContent = React.forwardRef<
               className={cn(
                 "p-1",
                 position === "popper" &&
-                  "h-[var(--radix-select-trigger-height)] w-full native:min-w-[var(--radix-select-trigger-width)]"
+                  "h-[var(--radix-select-trigger-height)] w-full native:min-w-[var(--radix-select-trigger-width)]",
               )}
             >
               {children}
@@ -140,7 +140,7 @@ const SelectLabel = React.forwardRef<
       $$css: true,
       className: cn(
         "py-1.5 native:pb-2 pl-8 native:pl-10 pr-2 text-popover-foreground text-sm native:text-base font-semibold",
-        className
+        className,
       ),
     }}
     {...props}
@@ -157,7 +157,7 @@ const SelectItem = React.forwardRef<
     className={cn(
       "relative web:group flex flex-row w-full web:cursor-default web:select-none items-center rounded-sm py-1.5 native:py-2 pl-8 native:pl-10 pr-2 web:hover:bg-accent/50 active:bg-accent web:outline-none web:focus:bg-accent",
       props.disabled && "web:pointer-events-none opacity-50",
-      className
+      className,
     )}
     {...props}
   >
@@ -171,7 +171,7 @@ const SelectItem = React.forwardRef<
         $$css: true,
         className: cn(
           "text-sm native:text-lg text-popover-foreground native:text-base web:group-focus:text-accent-foreground",
-          className
+          className,
         ),
       }}
     />

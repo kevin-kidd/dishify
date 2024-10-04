@@ -151,7 +151,7 @@ export const TooltipContent = ({
         positionClasses[position],
         textClassName,
         className,
-        show ? "md:visible invisible opacity-100 scale-100" : "opacity-0 invisible"
+        show ? "md:visible invisible opacity-100 scale-100" : "opacity-0 invisible",
       )}
     >
       {children}

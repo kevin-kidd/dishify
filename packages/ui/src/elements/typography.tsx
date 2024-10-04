@@ -34,7 +34,7 @@ export const H2 = ({ className, children, ...rest }: TextProps) => (
   <ExpoH2
     className={cn(
       "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0",
-      className
+      className,
     )}
     {...rest}
   >
@@ -78,7 +78,7 @@ export const InlineCode = ({ className, children, ...rest }: TextProps) => (
   <ExpoCode
     className={cn(
       "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold",
-      className
+      className,
     )}
     {...rest}
   >

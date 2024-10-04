@@ -53,7 +53,7 @@ export function Autocomplete({
       onFocus: handleFocus,
       ref: inputRef,
       onKeyPress: isWeb ? handleKeyPress : undefined,
-    }
+    },
   );
 
   const optionsList = React.useMemo(
@@ -66,7 +66,7 @@ export function Autocomplete({
           isSelected={index === selectedIndex}
         />
       )),
-    [autocompleteOptions, handleSelectOption, selectedIndex]
+    [autocompleteOptions, handleSelectOption, selectedIndex],
   );
 
   return (
@@ -110,17 +110,17 @@ const OptionItem = React.memo(
       onPress={() => onPress(option)}
       className={cn(
         "w-full group web:cursor-default web:select-none rounded-sm py-1.5 native:py-2 px-4 web:hover:bg-accent web:outline-none",
-        isSelected && "bg-accent"
+        isSelected && "bg-accent",
       )}
     >
       <Text
         className={cn(
           "web:group-hover:text-accent-foreground text-sm native:text-lg text-popover-foreground native:text-base",
-          isSelected && "text-accent-foreground"
+          isSelected && "text-accent-foreground",
         )}
       >
         {option}
       </Text>
     </Pressable>
-  )
+  ),
 );
