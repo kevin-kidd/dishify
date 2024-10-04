@@ -21,7 +21,7 @@ export const EnglishRecipeNameTable = sqliteTable(
   },
   (table) => ({
     nameIdx: uniqueIndex("name_idx").on(table.name),
-  })
+  }),
 );
 export type EnglishRecipeName = InferSelectModel<typeof EnglishRecipeNameTable>;
 export type InsertEnglishRecipeName = InferInsertModel<typeof EnglishRecipeNameTable>;
