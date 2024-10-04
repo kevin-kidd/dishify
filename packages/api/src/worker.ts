@@ -23,7 +23,7 @@ app.use(logger());
 app.use("/trpc/*", async (c, next) => {
   if (c.env.APP_URL === undefined) {
     console.log(
-      "APP_URL is not set. CORS errors may occur. Make sure the .dev.vars file is present at /packages/api/.dev.vars"
+      "APP_URL is not set. CORS errors may occur. Make sure the .dev.vars file is present at /packages/api/.dev.vars",
     );
   }
   return await cors({
@@ -49,7 +49,7 @@ app.use("/trpc/*", async (c, next) => {
           client: c.env.AI,
           gatewayId: c.env.AI_GATEWAY_ID,
         },
-        opts
+        opts,
       );
       return { ...context };
     },

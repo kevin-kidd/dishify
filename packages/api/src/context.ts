@@ -27,7 +27,7 @@ export const createContext = async (
     client: Ai;
     gatewayId: string;
   },
-  opts: FetchCreateContextFnOptions
+  opts: FetchCreateContextFnOptions,
 ): Promise<ApiContextProps> => {
   const db = createDb(d1);
 
