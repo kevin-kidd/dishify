@@ -37,7 +37,7 @@ export const TRPCProvider: React.FC<{
             });
           },
         }),
-      })
+      }),
   );
   const [trpcClient] = useState(() =>
     trpc.createClient({
@@ -54,7 +54,7 @@ export const TRPCProvider: React.FC<{
           url: `${getApiUrl()}/trpc`,
         }),
       ],
-    })
+    }),
   );
 
   return (

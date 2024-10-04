@@ -5,7 +5,7 @@ import { Image as RNImage } from "react-native";
 export const resizeImage = async (
   imageData: Blob | string,
   maxWidth: number,
-  maxSizeInBytes: number
+  maxSizeInBytes: number,
 ): Promise<Uint8Array> => {
   if (isWeb) {
     return resizeImageWeb(imageData as Blob, maxWidth, maxSizeInBytes);
@@ -16,7 +16,7 @@ export const resizeImage = async (
 const resizeImageWeb = async (
   blob: Blob,
   maxWidth: number,
-  maxSizeInBytes: number
+  maxSizeInBytes: number,
 ): Promise<Uint8Array> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -57,7 +57,7 @@ const resizeImageWeb = async (
             }
           },
           "image/jpeg",
-          quality
+          quality,
         );
       };
 
@@ -71,7 +71,7 @@ const resizeImageWeb = async (
 const resizeImageMobile = async (
   uri: string,
   maxWidth: number,
-  maxSizeInBytes: number
+  maxSizeInBytes: number,
 ): Promise<Uint8Array> => {
   return new Promise((resolve, reject) => {
     RNImage.getSize(
@@ -109,7 +109,7 @@ const resizeImageMobile = async (
 
         reject(new Error("Unable to compress image to desired size"));
       },
-      (error) => reject(new Error(`Failed to get image size: ${error}`))
+      (error) => reject(new Error(`Failed to get image size: ${error}`)),
     );
   });
 };

@@ -78,7 +78,7 @@ export function TRPCProvider(props: { children: React.ReactNode }) {
           url: `${process.env.NEXT_PUBLIC_API_URL}/trpc`,
         }),
       ],
-    })
+    }),
   );
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
