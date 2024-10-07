@@ -2,6 +2,54 @@ import { isWeb } from "@tamagui/constants";
 import * as ImageManipulator from "expo-image-manipulator";
 import { Image as RNImage } from "react-native";
 
+export async function processImage(
+  input: Blob | string | ImageData,
+  setImageData: (imageData: number[] | undefined) => void,
+  setIsPreviewOpen: (isOpen: boolean) => void,
+): Promise<void> {
+  const maxWidth = 800;
+  const maxSizeInBytes = 1024 * 1024; // 1MB
+
+  let blob: Blob;
+
+  if (input instanceof Blob) {
+    blob = input;
+  } else if (typeof input === "string") {
+    // Convert base64 string to Blob
+    const response = await fetch(input);
+    blob = await response.blob();
+  } else if (input instanceof ImageData) {
+    // Convert ImageData to Blob
+    const canvas = document.createElement("canvas");
+    canvas.width = input.width;
+    canvas.height = input.height;
+    const ctx = canvas.getContext("2d");
+    ctx?.putImageData(input, 0, 0);
+    blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!)));
+  } else {
+    throw new Error("Unsupported input type");
+  }
+
+  try {
+    let resizedImage = await resizeImage(blob, maxWidth, maxSizeInBytes);
+
+    if (resizedImage.length > maxSizeInBytes) {
+      // If still too large, try resizing to 400px width
+      resizedImage = await resizeImage(blob, 400, maxSizeInBytes);
+
+      if (resizedImage.length > maxSizeInBytes) {
+        throw new Error("Image size is too large");
+      }
+    }
+
+    setImageData(Array.from(resizedImage));
+    setIsPreviewOpen(true);
+  } catch (error) {
+    console.error("Error processing image:", error);
+    throw error;
+  }
+}
+
 export const resizeImage = async (
   imageData: Blob | string,
   maxWidth: number,
