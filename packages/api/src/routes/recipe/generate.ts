@@ -93,7 +93,7 @@ async function completionWithWorkers(
       const completion = (await ai.run(
         "@cf/meta/llama-3.2-11b-vision-instruct" as BaseAiImageToTextModels,
         {
-          messages,
+          prompt: messages.map((message) => message.content).join("\n"),
           image,
         },
         {
@@ -175,7 +175,7 @@ export const generate = publicProcedure
       // If both fail, throw an error
       console.error("Both Groq and CloudFlare AI Worker completions failed.", {
         response,
-        request: { messages, image },
+        request: { messages: JSON.stringify(messages, null, 2), image },
       });
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
@@ -187,7 +187,6 @@ export const generate = publicProcedure
       // Extract the JSON from the response
       const jsonRegex = /{[^{}]*(?:{[^{}]*}[^{}]*)*}/;
       const jsonMatch = response.match(jsonRegex);
-      console.log("Extracted JSON match:", jsonMatch);
 
       if (!jsonMatch) {
         console.error("No valid JSON found in the AI response", { response, request: messages });
@@ -195,25 +194,21 @@ export const generate = publicProcedure
       }
 
       let jsonResponse = jsonMatch[0];
-      console.log("Extracted JSON string:", jsonResponse);
 
       // Attempt to parse the JSON
       let parsedResponse: RecipeResponse;
       try {
         parsedResponse = JSON.parse(jsonResponse);
       } catch (parseError) {
-        // If parsing fails, attempt to fix the JSON
-        console.log("Initial JSON parse failed, attempting to fix JSON");
         jsonResponse = jsonResponse.replace(/(\w+):/g, '"$1":');
-        console.log("Fixed JSON string:", jsonResponse);
         parsedResponse = JSON.parse(jsonResponse);
       }
-
-      if (parsedResponse.dishName?.toLowerCase().includes("unknown")) {
+      // Check if the dish name is unknown, any empty fields, or if any fields contain only "unknown"
+      if (containsUnknown(parsedResponse)) {
         console.error("Unknown dish", { response, request: messages });
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Unknown dish ${image ? "" : `: ${dishName}`}`,
+          message: `Unknown dish ${image ? "for image" : `for ${dishName}`}`,
         });
       }
 
@@ -223,11 +218,11 @@ export const generate = publicProcedure
         console.error("Failed to validate recipe response", {
           response,
           request: messages,
-          validationError: validatedResponse.error,
+          validationError: validatedResponse.error.issues,
         });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to fetch recipe: ${dishName}. Please try again.`,
+          message: `Failed to fetch recipe ${image ? "from image" : `for ${dishName}`}. Please try again.`,
         });
       }
 
@@ -255,3 +250,19 @@ export const generate = publicProcedure
       });
     }
   });
+
+function containsUnknown(obj: any): boolean {
+  if (obj === null || obj === undefined) {
+    return true;
+  }
+  if (typeof obj === "string" && obj.trim().toLowerCase().includes("unknown")) {
+    return true;
+  }
+  if (Array.isArray(obj)) {
+    return obj.some(containsUnknown);
+  }
+  if (typeof obj === "object") {
+    return Object.values(obj).some(containsUnknown);
+  }
+  return false;
+}
