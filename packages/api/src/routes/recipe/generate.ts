@@ -129,26 +129,30 @@ export const generate = publicProcedure
   .mutation(async ({ ctx, input: { dishName, image } }) => {
     let response: string | null | undefined;
     const messages: RoleScopedChatInput[] = [];
+    let provider = "groq";
     if (image) {
-      messages.push(
-        {
-          role: "user",
-          content: `You are a helpful assistant that generates recipes and shopping lists. Provide the response in JSON format like this: { dishName: "", shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}. If you are not aware of the dish, respond with { dishName: "unknown" }`,
-        },
-        {
-          role: "user",
-          content: `Identify the recipe name from the image provided. This image might not be of food, in which case respond with { dishName: "unknown" }`,
-        },
-      );
+      messages.push({
+        role: "user",
+        content: `
+            You are a helpful assistant that generates recipes and shopping lists. Provide the response in JSON format like this: { dishName: "", shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}.
+            Identify whether this image is of food, drink, dessert, etc... If it is not, you must respond with { dishName: "unknown" }. It is best to err on the side of unknown, unless it is obvious this image is of a specific food, drink, etc...
+            If you incorrectly identify the dish and recipe, you will be fined 1 million dollars.
+          `,
+      });
     } else {
       messages.push(
         {
           role: "system",
-          content: `You are a helpful assistant that generates recipes and shopping lists. Provide the response in JSON format like this: { dishName: "", shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}. If you are not aware of the dish, respond with { dishName: "unknown" }`,
+          content: `
+            You are a helpful assistant that generates recipes and shopping lists.
+            Provide the response in JSON format like this: { dishName: "", shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}.
+            Identify whether this dish name is of food, drink, dessert, etc... If it is not, you must respond with { dishName: "unknown" }. It is best to err on the side of unknown, unless it is obvious this image is of a specific food, drink, etc...
+            If you incorrectly identify the dish and recipe, you will be fined 1 million dollars.
+          `,
         },
         {
           role: "user",
-          content: `Generate a recipe and shopping list for: ${dishName}`,
+          content: `Generate a recipe and shopping list for the following dish: ${dishName}`,
         },
       );
     }
@@ -162,7 +166,7 @@ export const generate = publicProcedure
     );
     if (!response) {
       // If Groq fails, try CloudFlare AI Worker
-      console.log("Groq completion failed, trying CloudFlare AI Worker");
+      provider = "workers";
       response = await completionWithWorkers(
         ctx.ai.client,
         messages as RoleScopedChatInput[],
@@ -189,7 +193,11 @@ export const generate = publicProcedure
       const jsonMatch = response.match(jsonRegex);
 
       if (!jsonMatch) {
-        console.error("No valid JSON found in the AI response", { response, request: messages });
+        console.error("No valid JSON found in the AI response", {
+          response,
+          request: messages,
+          provider,
+        });
         throw new Error("An unexpected error occurred. Please try again.");
       }
 
@@ -205,7 +213,7 @@ export const generate = publicProcedure
       }
       // Check if the dish name is unknown, any empty fields, or if any fields contain only "unknown"
       if (containsUnknown(parsedResponse)) {
-        console.error("Unknown dish", { response, request: messages });
+        console.error("Unknown dish", { response, request: messages, provider });
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: `Unknown dish ${image ? "for image" : `for ${dishName}`}`,
@@ -219,6 +227,7 @@ export const generate = publicProcedure
           response,
           request: messages,
           validationError: validatedResponse.error.issues,
+          provider,
         });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -232,7 +241,11 @@ export const generate = publicProcedure
         .values({ name: validatedResponse.data.dishName.toLowerCase() })
         .onConflictDoNothing();
       if (addRecipe.error) {
-        console.error("Failed to save recipe to database", { dishName, error: addRecipe.error });
+        console.error("Failed to save recipe to database", {
+          dishName,
+          error: addRecipe.error,
+          provider,
+        });
       }
 
       return validatedResponse.data;
@@ -240,6 +253,7 @@ export const generate = publicProcedure
       console.error("Error generating recipe", {
         error,
         input: dishName,
+        provider,
       });
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
