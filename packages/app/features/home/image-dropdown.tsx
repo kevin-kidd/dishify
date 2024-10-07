@@ -16,7 +16,8 @@ import ImagePreview from "./image-preview";
 import type { SearchValues } from "@dishify/api/schemas/search";
 import type { UseFormWatch } from "react-hook-form";
 import { toast } from "app/utils/toast";
-import { resizeImage } from "app/utils/image";
+import { processImage } from "app/utils/image";
+import CameraPopup from "./camera-popup";
 
 interface ImageDropdownProps {
   setImageData: (imageData: number[] | undefined) => void;
@@ -25,7 +26,8 @@ interface ImageDropdownProps {
 }
 
 export default function ImageDropdown({ setImageData, watch, onSubmit }: ImageDropdownProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleUpload = async () => {
     setImageData(undefined);
@@ -65,33 +67,7 @@ export default function ImageDropdown({ setImageData, watch, onSubmit }: ImageDr
   };
 
   const processFile = (file: Blob) => {
-    const maxWidth = 800;
-    const maxSizeInBytes = 1024 * 1024; // 1MB
-    const promise = new Promise<void>((resolve, reject) => {
-      const processAndResize = async () => {
-        try {
-          let resizedImage = await resizeImage(file, maxWidth, maxSizeInBytes);
-
-          if (resizedImage.length > maxSizeInBytes) {
-            // If still too large, try resizing to 400px width
-            resizedImage = await resizeImage(file, 400, maxSizeInBytes);
-
-            if (resizedImage.length > maxSizeInBytes) {
-              throw new Error("Image size is too large");
-            }
-          }
-
-          setImageData(Array.from(resizedImage));
-          setIsDialogOpen(true);
-          resolve();
-        } catch (error) {
-          console.error("Error processing file:", error);
-          reject(error);
-        }
-      };
-
-      processAndResize();
-    });
+    const promise = processImage(file, setImageData, setIsPreviewOpen);
 
     const id = toast.promise(promise, {
       loading: "Processing image...",
@@ -101,7 +77,7 @@ export default function ImageDropdown({ setImageData, watch, onSubmit }: ImageDr
   };
 
   const handleTakePhoto = () => {
-    console.log("Take photo");
+    setIsCameraOpen(true);
   };
   return (
     <>
@@ -130,9 +106,15 @@ export default function ImageDropdown({ setImageData, watch, onSubmit }: ImageDr
       <ImagePreview
         watch={watch}
         setImageData={setImageData}
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        isOpen={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
         onSubmit={onSubmit}
+      />
+      <CameraPopup
+        isOpen={isCameraOpen}
+        onOpenChange={setIsCameraOpen}
+        setIsPreviewOpen={setIsPreviewOpen}
+        setImageData={setImageData}
       />
     </>
   );
