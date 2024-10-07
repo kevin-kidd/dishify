@@ -25,7 +25,12 @@ export async function processImage(
     canvas.height = input.height;
     const ctx = canvas.getContext("2d");
     ctx?.putImageData(input, 0, 0);
-    blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!)));
+    blob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => {
+        if (b) resolve(b);
+        else throw new Error("Failed to create blob");
+      }),
+    );
   } else {
     throw new Error("Unsupported input type");
   }
