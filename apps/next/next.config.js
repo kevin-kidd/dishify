@@ -78,6 +78,7 @@ module.exports = () => {
       "react-native-gesture-handler",
       "react-native-web",
       "@expo/html-elements",
+      "react-camera-pro",
     ],
     experimental: {
       scrollRestoration: true,
