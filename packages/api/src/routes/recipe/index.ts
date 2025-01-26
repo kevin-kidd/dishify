@@ -6,3 +6,6 @@ export const recipeRouter = router({
   generate,
   autocomplete,
 });
+const test = "";
+console.log(test);
+console.log("test: ", test);
