@@ -23,10 +23,7 @@ export function Provider({
         {/* <AuthProvider initialSession={initialSession}> */}
         <TRPCProvider>
           <ThemeProvider>
-            <ToastProvider>
-              <Header />
-              {children}
-            </ToastProvider>
+            <ToastProvider>{children}</ToastProvider>
             <PortalHost />
           </ThemeProvider>
         </TRPCProvider>
