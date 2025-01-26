@@ -1,5 +1,8 @@
 import { Text, View } from "react-native";
 import { withWebTag } from "../utils/web-tag";
+import { cn } from "../utils";
+import React from "react";
+import type { ViewRef } from "@rn-primitives/types";
 
 export const Form = withWebTag(View, "form");
 
@@ -7,30 +10,40 @@ export const Label = withWebTag(Text, "label", "text-sm font-semibold text-prima
 
 export const ErrorLabel = withWebTag(Text, "label", "text-xs text-red-500 2xl:text-sm");
 
-interface FormInputProps {
+export interface FormInputProps extends React.ComponentPropsWithoutRef<typeof View> {
   label?: string;
   optional?: boolean;
   error?: string;
-  id: string;
+  id?: string;
   children: React.ReactNode;
+  className?: string;
 }
 
-export const FormInput = ({ label, optional, error, id, children }: FormInputProps) => {
-  return (
-    <View className="flex-1 w-full flex-col gap-1 z-10">
-      {(!!label || !!error) && (
-        <View className="mb-1 flex-1 flex-row items-end justify-between">
-          <Label htmlFor={id}>{label}</Label>
+export const FormInput = React.forwardRef<ViewRef, FormInputProps>(
+  ({ label, optional, error, id, children, className, ...props }, ref) => {
+    return (
+      <View ref={ref} className={cn("flex flex-col gap-1.5", className)} {...props}>
+        {label && (
+          <Text
+            nativeID={id ? `${id}-label` : undefined}
+            className="text-sm native:text-base font-medium text-foreground"
+          >
+            {label}
+            {optional && <Text className="text-muted-foreground"> (optional)</Text>}
+          </Text>
+        )}
+        {children}
+        {error && (
+          <Text
+            nativeID={id ? `${id}-error` : undefined}
+            className="text-sm native:text-base text-destructive"
+          >
+            {error}
+          </Text>
+        )}
+      </View>
+    );
+  },
+);
 
-          {/* Error */}
-          {error ? (
-            <ErrorLabel>{error}</ErrorLabel>
-          ) : optional ? (
-            <Label className="text-xs text-secondary 2xl:text-sm">optional</Label>
-          ) : null}
-        </View>
-      )}
-      {children}
-    </View>
-  );
-};
+FormInput.displayName = "FormInput";
