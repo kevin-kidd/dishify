@@ -16,7 +16,7 @@ import { withWebTag } from "../utils/web-tag";
 import { Text } from "react-native";
 
 export const P = ({ className, children, ...rest }: TextProps) => (
-  <ExpoP className={cn("leading-7 [&:not(:first-child)]:mt-6", className)} {...rest}>
+  <ExpoP className={className} {...rest}>
     {children}
   </ExpoP>
 );
@@ -32,10 +32,7 @@ export const H1 = ({ className, children, ...rest }: TextProps) => (
 
 export const H2 = ({ className, children, ...rest }: TextProps) => (
   <ExpoH2
-    className={cn(
-      "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0",
-      className,
-    )}
+    className={cn("scroll-m-20 pb-2 text-3xl font-semibold tracking-tight first:mt-0", className)}
     {...rest}
   >
     {children}
