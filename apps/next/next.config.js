@@ -79,6 +79,8 @@ module.exports = () => {
       "react-native-web",
       "@expo/html-elements",
       "react-camera-pro",
+      "embla-carousel-react",
+      "lucide-react-native",
     ],
     experimental: {
       scrollRestoration: true,
