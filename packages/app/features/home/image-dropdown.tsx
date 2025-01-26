@@ -1,4 +1,6 @@
 import {
+  cn,
+  Div,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -86,18 +88,43 @@ export default function ImageDropdown({ setImageData, watch, onSubmit }: ImageDr
       )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="icon">
-            <ImageIcon className="text-primary-foreground p-0.5" />
+          <Button
+            accessibilityRole="button"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "relative h-9 sm:h-10 aspect-square w-auto rounded-xl overflow-hidden flex items-center justify-center",
+              "bg-gradient-to-br from-primary/80 to-primary",
+              "hover:from-primary hover:to-[#137991]",
+              "web:transition-all transition-all duration-300 ease-in-out",
+              "hover:scale-105 scale-100 active:scale-95",
+              "text-white",
+            )}
+          >
+            <CameraIcon
+              className={cn(
+                "h-4 sm:h-5 w-auto aspect-square transition-all duration-300 text-white overflow-visible",
+                "group-hover:scale-105 group-hover:rotate-[-8deg] group-hover:mr-[4px] group-hover:mt-[2px]",
+              )}
+            />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent>
+        <DropdownMenuContent align="end" className="w-48 rounded-xl">
           <DropdownMenuGroup>
-            <DropdownMenuItem onPress={handleUpload}>
-              <UploadIcon className="text-primary-foreground p-0.5" />
+            <DropdownMenuItem
+              onPress={handleUpload}
+              className="flex items-center gap-2 py-2 cursor-pointer rounded-xl transition-colors duration-200 ease-in-out"
+              textClassName="group-hover:text-primary transition-colors duration-200 ease-in-out"
+            >
+              <UploadIcon className="text-primary h-4 w-4" />
               <Text>Upload</Text>
             </DropdownMenuItem>
-            <DropdownMenuItem onPress={handleTakePhoto}>
-              <CameraIcon className="text-primary-foreground p-0.5" />
+            <DropdownMenuItem
+              onPress={handleTakePhoto}
+              className="flex items-center gap-2 py-2 cursor-pointer rounded-xl transition-colors duration-200 ease-in-out"
+              textClassName="group-hover:text-primary transition-colors duration-200 ease-in-out"
+            >
+              <CameraIcon className="text-primary h-4 w-4" />
               <Text>Take photo</Text>
             </DropdownMenuItem>
           </DropdownMenuGroup>
