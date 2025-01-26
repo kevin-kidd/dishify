@@ -105,7 +105,7 @@ const DropdownMenuContent = React.forwardRef<
         <DropdownMenuPrimitive.Content
           ref={ref}
           className={cn(
-            "dropdown-content-child z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 shadow-md shadow-foreground/5 web:data-[side=bottom]:slide-in-from-top-2 web:data-[side=left]:slide-in-from-right-2 web:data-[side=right]:slide-in-from-left-2 web:data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:mt-2 data-[side=left]:ml-1 data-[side=right]:mr-1 data-[side=top]:mb-2",
+            "dropdown-content-child z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 shadow-md shadow-foreground/15 web:data-[side=bottom]:slide-in-from-top-2 web:data-[side=left]:slide-in-from-right-2 web:data-[side=right]:slide-in-from-left-2 web:data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:mt-2 data-[side=left]:ml-1 data-[side=right]:mr-1 data-[side=top]:mb-2",
 
             open
               ? "web:animate-in web:fade-in-0 web:zoom-in-95"
@@ -124,13 +124,14 @@ const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
     inset?: boolean;
+    textClassName?: string;
   }
->(({ className, inset, ...props }, ref) => (
-  <TextClassContext.Provider value="select-none text-sm native:text-lg text-popover-foreground web:group-focus:text-accent-foreground">
+>(({ className, inset, textClassName, ...props }, ref) => (
+  <TextClassContext.Provider value={cn("select-none text-sm native:text-lg", textClassName)}>
     <DropdownMenuPrimitive.Item
       ref={ref}
       className={cn(
-        "relative flex flex-row web:cursor-default gap-2 items-center rounded-sm px-2 py-1.5 native:py-2 web:outline-none web:focus:bg-accent active:bg-accent web:hover:bg-accent group",
+        "relative flex flex-row web:cursor-default gap-2 items-center rounded-sm px-2 py-1.5 native:py-2 web:outline-none web:focus:bg-input active:bg-input web:hover:bg-input group",
         inset && "pl-8",
         props.disabled && "opacity-50 web:pointer-events-none",
         className,
