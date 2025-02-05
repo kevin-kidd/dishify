@@ -59,7 +59,7 @@ for (const chunk of chunkedReadAtStatementBoundary(seedFile, chunkSize)) {
 
     try {
       // Execute the SQL statements using wrangler
-      execSync(`wrangler d1 execute dishify_preview --local --file=${tempFile}`, {
+      execSync(`wrangler d1 execute dishify_production --local --file=${tempFile}`, {
         stdio: "inherit",
       });
     } catch (error) {
