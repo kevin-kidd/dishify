@@ -1,19 +1,15 @@
-import "../global.css";
-import { Provider } from "app/provider";
-import { Provider as JotAIProvider } from "jotai";
+import "./global.css";
 import type { Metadata, Viewport } from "next";
-
+import { Provider } from "@dishify/app/provider";
 const appUrl = `${process.env.NEXT_PUBLIC_APP_URL}`;
 const title = "Dishify";
 const description = `${process.env.NEXT_PUBLIC_METADATA_DESCRIPTION}`;
 
-export default function Layout(props: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <JotAIProvider>
-          <Provider initialSession={null}>{props.children}</Provider>
-        </JotAIProvider>
+        <Provider>{children}</Provider>
       </body>
     </html>
   );
