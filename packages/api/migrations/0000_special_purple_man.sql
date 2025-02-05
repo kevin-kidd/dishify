@@ -56,9 +56,11 @@ CREATE UNIQUE INDEX `english_name_idx` ON `english_recipes` (`name`);--> stateme
 CREATE TABLE `english_recipe_details` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
+	`slug` text NOT NULL,
 	`data` text,
 	`status` text DEFAULT 'generating' NOT NULL,
 	`moved_to_recipe_id` text,
+	`moved_to_slug` text,
 	`error_message` text,
 	`search_query` text,
 	`image_query` text,
@@ -68,7 +70,9 @@ CREATE TABLE `english_recipe_details` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `english_recipe_details_name_unique` ON `english_recipe_details` (`name`);--> statement-breakpoint
+CREATE UNIQUE INDEX `english_recipe_details_slug_unique` ON `english_recipe_details` (`slug`);--> statement-breakpoint
 CREATE UNIQUE INDEX `english_recipe_name_idx` ON `english_recipe_details` (`name`);--> statement-breakpoint
+CREATE UNIQUE INDEX `english_recipe_slug_idx` ON `english_recipe_details` (`slug`);--> statement-breakpoint
 CREATE TABLE `favorites` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
