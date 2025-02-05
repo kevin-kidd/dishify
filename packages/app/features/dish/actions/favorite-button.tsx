@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@dishify/ui";
 import { trpc } from "app/utils/trpc";
 import { useAtom } from "jotai";
-import { useOnline } from "app/utils/use-online";
+import { useOnline } from "app/utils/hooks/use-online";
 import { toast } from "app/utils/toast";
 import { favoritedRecipesAtom } from "app/atoms/favorites";
 import type { EnglishRecipe } from "@dishify/api/src/db/schema/recipes";
