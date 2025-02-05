@@ -9,8 +9,10 @@ import { useAtom } from "jotai";
 import { useOnline } from "app/utils/hooks/use-online";
 import { useOfflineSync } from "app/utils/hooks/use-offline-sync";
 import { recipeReactionsAtom, type ReactionState, type RecipeReactions } from "app/atoms/reactions";
+import { authClient } from "app/utils/auth/client";
 import EmojiGrid from "./grid";
 import EmojiCounter from "./counter";
+import { cn } from "@dishify/ui";
 
 interface Reaction {
   emoji: string;
@@ -30,15 +32,17 @@ const AVAILABLE_REACTIONS: readonly Reaction[] = [
 ];
 
 interface EmojiReactionsProps {
-  recipeId: string;
+  slug: string;
 }
 
-export const EmojiReactions = ({ recipeId }: EmojiReactionsProps) => {
+export const EmojiReactions = ({ slug }: EmojiReactionsProps) => {
   const isOnline = useOnline();
   const [localReactions, setLocalReactions] = useAtom(recipeReactionsAtom);
+  const { data: session } = authClient.useSession();
+  const isSignedIn = !!session?.user?.id;
 
   // Get reactions for this recipe from local storage or initialize empty
-  const currentRecipeReactions = localReactions[recipeId] || [];
+  const currentRecipeReactions = localReactions[slug] || [];
 
   // Toggle reaction mutation
   const toggleReaction = trpc.recipe.reactions.toggleReaction.useMutation({
@@ -48,32 +52,36 @@ export const EmojiReactions = ({ recipeId }: EmojiReactionsProps) => {
   });
 
   // Setup offline sync
-  useOfflineSync<RecipeReactions, { recipeId: string; emoji: string }>(
+  useOfflineSync<RecipeReactions, { slug: string; emoji: string }>(
     recipeReactionsAtom,
     (payload) => {
       toggleReaction.mutate(payload);
     },
     {
       versionCheck: true,
-      onError: (err) => toast.error(err.message),
       getSyncPayload: (data) => {
-        const reactions = data[recipeId] || [];
+        const reactions = data[slug] || [];
         // We only sync reactions that the user has reacted to
         const reacted = reactions.find((r) => r.hasReacted);
         return reacted
           ? {
-              recipeId,
+              slug,
               emoji: reacted.emoji,
             }
-          : { recipeId, emoji: "" };
+          : { slug, emoji: "" };
       },
     },
   );
 
   const handleToggleReaction = useCallback(
     (emoji: string) => {
+      if (!isSignedIn) {
+        toast.error("Please sign in to react to recipes");
+        return;
+      }
+
       setLocalReactions((prev) => {
-        const recipeReactions = prev[recipeId] || [];
+        const recipeReactions = prev[slug] || [];
         const existing = recipeReactions.find((r) => r.emoji === emoji);
 
         let updatedReactions: ReactionState[];
@@ -94,7 +102,7 @@ export const EmojiReactions = ({ recipeId }: EmojiReactionsProps) => {
 
         return {
           ...prev,
-          [recipeId]: updatedReactions,
+          [slug]: updatedReactions,
         };
       });
 
@@ -102,17 +110,22 @@ export const EmojiReactions = ({ recipeId }: EmojiReactionsProps) => {
         toast.info("Changes will sync when you're back online");
       }
     },
-    [recipeId, setLocalReactions, isOnline],
+    [slug, setLocalReactions, isOnline, isSignedIn],
   );
 
   const handleAddReaction = useCallback(
     (emoji: string) => {
+      if (!isSignedIn) {
+        toast.error("Please sign in to react to recipes");
+        return;
+      }
+
       const existing = currentRecipeReactions.find((r) => r.emoji === emoji);
       if (!existing?.hasReacted) {
         handleToggleReaction(emoji);
       }
     },
-    [currentRecipeReactions, handleToggleReaction],
+    [currentRecipeReactions, handleToggleReaction, isSignedIn],
   );
 
   const sortedReactions = useMemo(() => {
@@ -143,7 +156,10 @@ export const EmojiReactions = ({ recipeId }: EmojiReactionsProps) => {
       <Popover>
         <PopoverTrigger asChild>
           <Pressable
-            className="p-2 rounded-full bg-gray-100 active:bg-gray-200 transition-colors border border-gray-200"
+            className={cn(
+              "p-2 rounded-full bg-gray-100 active:bg-gray-200 transition-all border border-gray-200 hover:bg-gray-200 hover:scale-105 active:scale-95 duration-200",
+              !isSignedIn && "cursor-not-allowed opacity-50",
+            )}
             accessibilityLabel="Add reaction"
           >
             <MotiView
@@ -156,7 +172,11 @@ export const EmojiReactions = ({ recipeId }: EmojiReactionsProps) => {
           </Pressable>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0 bg-white/95 backdrop-blur-xl border-gray-200">
-          <EmojiGrid reactions={AVAILABLE_REACTIONS} onSelect={handleAddReaction} />
+          <EmojiGrid
+            reactions={AVAILABLE_REACTIONS}
+            onSelect={handleAddReaction}
+            isSignedIn={isSignedIn}
+          />
         </PopoverContent>
       </Popover>
 
@@ -174,6 +194,7 @@ export const EmojiReactions = ({ recipeId }: EmojiReactionsProps) => {
               count={count}
               isSelected={hasReacted}
               onClick={() => handleToggleReaction(emoji)}
+              isSignedIn={isSignedIn}
             />
           ))}
         </AnimatePresence>
