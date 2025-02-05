@@ -6,7 +6,8 @@ import { type RecipeResponse, RecipeResponseSchema } from "../schemas/recipe-res
 import { createGroq } from "@ai-sdk/groq";
 import { type CoreMessage, generateObject } from "ai";
 import { createWorkersAI } from "workers-ai-provider";
-import type { schema } from "./db/schema";
+import type * as recipeSchema from "./db/schema/recipes";
+import type * as userSchema from "./db/schema/user";
 
 const RECIPE_STATE_PREFIX = "recipe_state:";
 
@@ -23,7 +24,7 @@ export async function generateRecipe(
   recipeId: string,
   dishName: string | undefined,
   image: number[] | undefined,
-  db: DrizzleD1Database<typeof schema>,
+  db: DrizzleD1Database<typeof recipeSchema & typeof userSchema>,
   env: Env,
 ) {
   let provider = "groq";
@@ -201,6 +202,7 @@ export async function generateRecipe(
         .set({
           status: "moved",
           movedToRecipeId: existingRecipe.id,
+          movedToSlug: existingRecipe.slug,
           updatedAt: new Date().toISOString(),
         })
         .where(eq(EnglishRecipesTable.id, recipeId));
@@ -265,6 +267,7 @@ export async function generateRecipe(
               .set({
                 status: "moved",
                 movedToRecipeId: existingRecipeWithName.id,
+                movedToSlug: existingRecipeWithName.slug,
                 updatedAt: new Date().toISOString(),
               })
               .where(eq(EnglishRecipesTable.id, recipeId));
