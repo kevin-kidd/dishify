@@ -1,19 +1,16 @@
-import { useCallback, useState, useRef, useEffect } from "react";
-import { View } from "react-native";
+import { useCallback, useRef, useEffect } from "react";
 import { Printer } from "lucide-react";
-import { motion } from "framer-motion";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@dishify/ui";
+import { Tooltip, TooltipTrigger, TooltipContent, cn, Div } from "@dishify/ui";
 import { toast } from "app/utils/toast";
-import type { EnglishRecipe } from "@dishify/api/src/db/schema";
+import type { EnglishRecipe } from "@dishify/api/src/db/schema/recipes";
 
 interface PrintButtonProps {
   recipe: EnglishRecipe;
   className?: string;
-  onPress?: () => Promise<void>;
+  onClick?: () => Promise<void>;
 }
 
-export function PrintButton({ recipe, className, onPress }: PrintButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
+export function PrintButton({ recipe, className, onClick }: PrintButtonProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   // Create a hidden iframe for printing
@@ -32,10 +29,8 @@ export function PrintButton({ recipe, className, onPress }: PrintButtonProps) {
 
   const handlePrint = useCallback(async () => {
     try {
-      setIsLoading(true);
-
-      if (onPress) {
-        await onPress();
+      if (onClick) {
+        await onClick();
       }
 
       const iframe = iframeRef.current;
@@ -239,39 +234,32 @@ export function PrintButton({ recipe, className, onPress }: PrintButtonProps) {
 
       // Wait for content to load
       iframe.onload = () => {
-        setIsLoading(false);
         // Trigger print dialog
         iframe.contentWindow?.print();
       };
     } catch (error) {
       console.error("Failed to print:", error);
-      setIsLoading(false);
+
       toast.error("Failed to print recipe");
     }
-  }, [recipe, onPress]);
+  }, [recipe, onClick]);
 
   if (typeof window === "undefined") return null;
 
   return (
     <Tooltip>
       <TooltipTrigger>
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          className={`hidden md:flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+        <Div
+          className={cn(
+            "hidden hover:cursor-pointer md:flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all duration-200",
+            className,
+          )}
           onClick={handlePrint}
-          disabled={isLoading}
         >
-          <motion.div
-            initial={false}
-            animate={{
-              opacity: isLoading ? 0.5 : 1,
-            }}
-          >
-            <Printer className="h-4 w-4 text-gray-600" />
-          </motion.div>
+          <Printer className="h-4 w-4 text-gray-600" />
+
           <span className="sr-only">Print Recipe</span>
-        </motion.button>
+        </Div>
       </TooltipTrigger>
       <TooltipContent position="top">Print Recipe</TooltipContent>
     </Tooltip>
