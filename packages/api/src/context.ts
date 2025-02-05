@@ -1,81 +1,68 @@
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
-import jwt from "@tsndr/cloudflare-worker-jwt";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { createDb } from "./db/client";
 import Groq from "groq-sdk";
-
-interface User {
-  id: string;
-}
+import { auth } from "./auth";
+import type { User } from "better-auth/types";
+import type { dbSchema } from "./db/client";
+import type { Bindings } from "./worker";
 
 interface ApiContextProps {
   user: User | null;
-  db: DrizzleD1Database;
+  db: DrizzleD1Database<typeof dbSchema>;
   ai: {
     client: Ai;
     gatewayId: string;
   };
   groq: Groq;
+  recipeState: KVNamespace;
+  env: {
+    RECIPE_QUEUE: Queue<{ recipeId: string; dishName?: string; image?: number[] }>;
+  };
 }
 
 export const createContext = async (
   d1: D1Database,
-  JWT_VERIFICATION_KEY: string,
   GROQ_API_KEY: string,
   GROQ_BASE_URL: string,
   ai: {
     client: Ai;
     gatewayId: string;
   },
-  opts: FetchCreateContextFnOptions,
+  recipeState: KVNamespace,
+  recipeQueue: Queue,
+  env: Bindings,
+  headers: Headers,
 ): Promise<ApiContextProps> => {
   const db = createDb(d1);
+  const betterAuth = auth(d1, env);
 
-  async function getUser() {
-    const sessionToken = opts.req.headers.get("authorization")?.split(" ")[1];
+  const session = await betterAuth.api
+    .getSession({
+      headers: headers,
+    })
+    .catch((error) => {
+      console.error("Session retrieval error:", error);
+      return null;
+    });
 
-    if (sessionToken !== undefined && sessionToken !== "undefined") {
-      if (!JWT_VERIFICATION_KEY) {
-        console.error("JWT_VERIFICATION_KEY is not set");
-        return null;
-      }
-
-      try {
-        const authorized = await jwt.verify(sessionToken, JWT_VERIFICATION_KEY, {
-          algorithm: "HS256",
-        });
-        if (!authorized) {
-          return null;
-        }
-
-        const decodedToken = jwt.decode(sessionToken);
-
-        // Check if token is expired
-        const expirationTimestamp = decodedToken.payload.exp;
-        const currentTimestamp = Math.floor(Date.now() / 1000);
-        if (!expirationTimestamp || expirationTimestamp < currentTimestamp) {
-          return null;
-        }
-
-        const userId = decodedToken?.payload?.sub;
-
-        if (userId) {
-          return {
-            id: userId,
-          };
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    return null;
+  let user = null;
+  if (session?.user) {
+    user = session.user;
   }
 
   const groq = new Groq({ apiKey: GROQ_API_KEY, baseURL: GROQ_BASE_URL });
-  const user = await getUser();
 
-  return { user, db, ai, groq };
+  return {
+    user,
+    db,
+    ai,
+    groq,
+    recipeState,
+    env: {
+      RECIPE_QUEUE: recipeQueue as Queue<{ recipeId: string; dishName?: string; image?: number[] }>,
+    },
+  };
 };
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
