@@ -14,3 +14,4 @@ export * from "./popover";
 export * from "./dialog";
 export * from "./dropdown";
 export * from "./skeleton";
+export * from "./icon-button";

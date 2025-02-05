@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { Platform, StyleSheet } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";

@@ -1,3 +1,5 @@
+"use client";
+
 import { Text, View } from "react-native";
 import { withWebTag } from "../utils/web-tag";
 import { cn } from "../utils";

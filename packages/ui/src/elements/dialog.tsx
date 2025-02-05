@@ -45,7 +45,7 @@ const DialogOverlayNative = React.forwardRef<
       ref={ref}
     >
       <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(150)}>
-        <>{children}</>
+        {children}
       </Animated.View>
     </DialogPrimitive.Overlay>
   );

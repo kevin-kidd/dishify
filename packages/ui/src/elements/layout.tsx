@@ -1,3 +1,5 @@
+"use client";
+
 import { View } from "react-native";
 import { withWebTag } from "../utils/web-tag";
 import { UL as ExpoUL, LI as ExpoLI } from "@expo/html-elements";

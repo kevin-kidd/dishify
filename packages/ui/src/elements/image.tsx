@@ -1,3 +1,5 @@
+"use client";
+
 import type { ComponentProps } from "react";
 import { SolitoImage } from "solito/image";
 import { View } from "react-native";

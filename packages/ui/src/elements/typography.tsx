@@ -1,3 +1,5 @@
+"use client";
+
 import { TextLink as SolitoTextLink, type TextLinkProps } from "solito/link";
 import {
   H1 as ExpoH1,

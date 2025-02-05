@@ -46,7 +46,8 @@ const DropdownMenuSubTrigger = React.forwardRef<
         {...props}
       >
         <>
-          {children} <Icon size={18} className="ml-auto text-foreground" />
+          {children as React.ReactNode}
+          <Icon size={18} className="ml-auto text-foreground" />
         </>
       </DropdownMenuPrimitive.SubTrigger>
     </TextClassContext.Provider>
@@ -130,12 +131,15 @@ const DropdownMenuItem = React.forwardRef<
   <TextClassContext.Provider value={cn("select-none text-sm native:text-lg", textClassName)}>
     <DropdownMenuPrimitive.Item
       ref={ref}
-      className={cn(
-        "relative flex flex-row web:cursor-default gap-2 items-center rounded-sm px-2 py-1.5 native:py-2 web:outline-none web:focus:bg-input active:bg-input web:hover:bg-input group",
-        inset && "pl-8",
-        props.disabled && "opacity-50 web:pointer-events-none",
-        className,
-      )}
+      style={{
+        $$css: true,
+        className: cn(
+          "relative flex flex-row web:cursor-default gap-2 items-center rounded-sm px-2 py-1.5 native:py-2 web:outline-none web:focus:bg-input active:bg-input web:hover:bg-input group",
+          inset && "pl-8",
+          props.disabled && "opacity-50 web:pointer-events-none",
+          className,
+        ),
+      }}
       {...props}
     />
   </TextClassContext.Provider>
@@ -161,7 +165,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
         <Check size={14} strokeWidth={3} className="text-foreground" />
       </DropdownMenuPrimitive.ItemIndicator>
     </View>
-    <>{children}</>
+    {children as React.ReactNode}
   </DropdownMenuPrimitive.CheckboxItem>
 ));
 DropdownMenuCheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displayName;
@@ -184,7 +188,7 @@ const DropdownMenuRadioItem = React.forwardRef<
         <View className="bg-foreground h-2 w-2 rounded-full" />
       </DropdownMenuPrimitive.ItemIndicator>
     </View>
-    <>{children}</>
+    {children as React.ReactNode}
   </DropdownMenuPrimitive.RadioItem>
 ));
 DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName;
