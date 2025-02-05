@@ -97,39 +97,42 @@ export default function ProfileButton() {
 
           <Text className="text-xs text-gray-500 mt-0.5 truncate">{session.user.email}</Text>
         </Div>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-sage-100" />
 
-        <Pressable
-          onPress={() => router.push("/account/settings")}
-          className="w-full px-4 py-2.5 text-left text-sm text-gray-700 
-                           hover:bg-sage-100 flex items-center space-x-3 
+        <Button
+          variant="none"
+          onClick={() => router.push("/account/settings")}
+          className="w-full px-4 py-2.5 text-left items-center text-sm text-gray-700 
+                           hover:bg-sage-100 flex justify-start space-x-3 
                            transition-all duration-200 hover:text-gray-900 flex-row rounded-lg"
         >
           <Settings className="w-4 h-4 text-gray-500" />
           <Span className="font-medium">Manage Account</Span>
-        </Pressable>
+        </Button>
 
-        <Pressable
-          onPress={() => router.push("/favorites")}
-          className="w-full px-4 py-2.5 text-left text-sm text-gray-700 
-                           hover:bg-sage-100 flex items-center space-x-3 
+        <Button
+          variant="none"
+          onClick={() => router.push("/favorites")}
+          className="w-full px-4 py-2.5 text-left items-center text-sm text-gray-700 
+                           hover:bg-sage-100 flex justify-start space-x-3 
                            transition-all duration-200 hover:text-gray-900 flex-row rounded-lg"
         >
           <Heart className="w-4 h-4 text-gray-500" />
           <Span className="font-medium">View Favorites</Span>
-        </Pressable>
+        </Button>
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-sage-100" />
 
-        <Pressable
-          onPress={() => signOut()}
+        <Button
+          variant="none"
+          onClick={() => signOut()}
           className="w-full px-4 py-2.5 text-left text-sm text-red-600 
-                     hover:bg-red-50/80 rounded-lg flex items-center space-x-3 
+                     hover:bg-red-50/80 rounded-lg flex items-center justify-start space-x-3 
                      transition-all duration-200 hover:text-red-700 flex-row"
         >
           <LogOut className="w-4 h-4" />
           <Span className="font-medium">Sign out</Span>
-        </Pressable>
+        </Button>
       </DropdownMenuContent>
     </DropdownMenu>
   );
