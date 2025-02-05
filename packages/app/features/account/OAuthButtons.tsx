@@ -1,46 +1,46 @@
-import {
-  Button,
-  GoogleIcon,
-  IconProps,
-  LinkedInIcon,
-  ListItem,
-  Tooltip,
-  TooltipContent,
-  TooltipGroup,
-  TooltipTrigger,
-  UnorderedList,
-} from "@dishify/ui";
+"use client";
+
+import { Button, LI, Tooltip, TooltipContent, TooltipGroup, TooltipTrigger, UL } from "@dishify/ui";
+import { Facebook, Google, Microsoft } from "@dishify/ui/src/icons/social";
+import type React from "react";
 
 export function OAuthButtons() {
   return (
     <TooltipGroup>
-      <UnorderedList className="flex flex-row gap-4 justify-center">
-        <ListItem className="z-30">
+      <UL className="flex flex-row gap-4 justify-center">
+        <LI className="z-30">
           <OAuthButton
-            Icon={GoogleIcon}
+            Icon={Google}
             onPress={() => console.log("XD")}
             label="Sign in with Google"
           />
-        </ListItem>
-        <ListItem className="z-20">
+        </LI>
+        <LI className="z-20">
           <OAuthButton
-            Icon={LinkedInIcon}
+            Icon={Microsoft}
             onPress={() => console.log("XD")}
-            label="Sign in with LinkedIn"
+            label="Sign in with Microsoft"
           />
-        </ListItem>
-      </UnorderedList>
+        </LI>
+        <LI className="z-20">
+          <OAuthButton
+            Icon={Facebook}
+            onPress={() => console.log("XD")}
+            label="Sign in with Facebook"
+          />
+        </LI>
+      </UL>
     </TooltipGroup>
   );
 }
 
 function OAuthButton({
-  onPress,
   Icon,
+  onPress,
   label,
 }: {
+  Icon: React.ElementType;
   onPress: () => void;
-  Icon: (props: IconProps) => JSX.Element;
   label: string;
 }) {
   return (
@@ -50,7 +50,7 @@ function OAuthButton({
           aria-label={label}
           role="link"
           onPress={onPress}
-          className="h-12 w-12 rounded-lg border border-border bg-background p-3 hover:bg-muted 2xl:h-14 2xl:w-14 2xl:p-[0.875rem]"
+          className="h-12 w-12 rounded-lg border border-sage-400 bg-background p-3 hover:bg-sage-100 2xl:h-14 2xl:w-14 2xl:p-[0.875rem] transition-colors duration-200"
         >
           <Icon className="h-full w-full" />
         </Button>
