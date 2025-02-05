@@ -40,7 +40,7 @@ export const ThemeProvider = ({
   return (
     <View className="flex-1" style={theme} id="theme-provider">
       {children}
-      {process.env.NODE_ENV === "development" && (
+      {/* {process.env.NODE_ENV === "development" && (
         <Button
           onPress={toggleColorScheme}
           variant="default"
@@ -52,7 +52,7 @@ export const ThemeProvider = ({
         >
           <Text className="text-xl select-none">{appColorScheme === "dark" ? "🌙" : "🌞"}</Text>
         </Button>
-      )}
+      )} */}
     </View>
   );
 };
