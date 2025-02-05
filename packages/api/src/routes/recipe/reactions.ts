@@ -1,71 +1,104 @@
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure, publicProcedure, router } from "../../trpc";
-import { RecipeReactionsTable } from "../../db/schema/recipes";
+import { RecipeReactionsTable, EnglishRecipesTable } from "../../db/schema/recipes";
+import { TRPCError } from "@trpc/server";
 
 export const recipeReactionsRouter = router({
   getReactions: publicProcedure
     .input(
       z.object({
-        recipeId: z.string(),
+        slug: z.string(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Get reaction counts and user's reactions if logged in
-      const reactions = await ctx.db
-        .select({
-          emoji: RecipeReactionsTable.emoji,
-          count: sql<number>`count(*)`,
-          hasReacted: sql<boolean>`max(case when ${RecipeReactionsTable.userId} = ${
-            ctx.user?.id ?? ""
-          } then 1 else 0 end)`,
-        })
-        .from(RecipeReactionsTable)
-        .where(eq(RecipeReactionsTable.recipeId, input.recipeId))
-        .groupBy(RecipeReactionsTable.emoji);
+      // First get the recipe ID from the slug
+      const recipe = await ctx.db
+        .select({ id: EnglishRecipesTable.id })
+        .from(EnglishRecipesTable)
+        .where(eq(EnglishRecipesTable.slug, input.slug))
+        .get();
 
-      return reactions.map((r) => ({
-        emoji: r.emoji,
-        count: r.count,
-        hasReacted: Boolean(r.hasReacted),
-        timestamp: Date.now(), // Added for UI sorting
-      }));
+      if (!recipe) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Recipe not found",
+        });
+      }
+
+      const reactions = await ctx.db
+        .select()
+        .from(RecipeReactionsTable)
+        .where(eq(RecipeReactionsTable.recipeId, recipe.id))
+        .all();
+
+      return reactions;
     }),
 
-  toggleReaction: protectedProcedure
+  toggleReaction: publicProcedure
     .input(
       z.object({
-        recipeId: z.string(),
+        slug: z.string(),
         emoji: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user has already reacted with this emoji
+      const { user } = ctx;
+      if (!user) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to react to recipes",
+        });
+      }
+
+      // First get the recipe ID from the slug
+      const recipe = await ctx.db
+        .select({ id: EnglishRecipesTable.id })
+        .from(EnglishRecipesTable)
+        .where(eq(EnglishRecipesTable.slug, input.slug))
+        .get();
+
+      if (!recipe) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Recipe not found",
+        });
+      }
+
+      // Check if reaction already exists
       const existingReaction = await ctx.db
         .select()
         .from(RecipeReactionsTable)
         .where(
           and(
-            eq(RecipeReactionsTable.recipeId, input.recipeId),
-            eq(RecipeReactionsTable.userId, ctx.user.id),
+            eq(RecipeReactionsTable.recipeId, recipe.id),
+            eq(RecipeReactionsTable.userId, user.id),
             eq(RecipeReactionsTable.emoji, input.emoji),
           ),
         )
         .get();
 
       if (existingReaction) {
-        // Remove reaction if it exists
+        // Remove reaction
         await ctx.db
           .delete(RecipeReactionsTable)
           .where(eq(RecipeReactionsTable.id, existingReaction.id));
-        return { added: false };
+      } else {
+        // Add reaction
+        await ctx.db.insert(RecipeReactionsTable).values({
+          recipeId: recipe.id,
+          userId: user.id,
+          emoji: input.emoji,
+        });
       }
-      // Add new reaction
-      await ctx.db.insert(RecipeReactionsTable).values({
-        recipeId: input.recipeId,
-        userId: ctx.user.id,
-        emoji: input.emoji,
-      });
-      return { added: true };
+
+      // Return updated reactions
+      const reactions = await ctx.db
+        .select()
+        .from(RecipeReactionsTable)
+        .where(eq(RecipeReactionsTable.recipeId, recipe.id))
+        .all();
+
+      return reactions;
     }),
 });
