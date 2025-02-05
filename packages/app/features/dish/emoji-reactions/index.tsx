@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from "react";
+import { View, Pressable } from "react-native";
 import { SmilePlus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@dishify/ui";
-import { motion, AnimatePresence } from "framer-motion";
+import { MotiView, AnimatePresence } from "moti";
 import { trpc } from "app/utils/trpc";
 import { toast } from "app/utils/toast";
 import { useAtom } from "jotai";
@@ -33,7 +34,6 @@ interface EmojiReactionsProps {
 }
 
 export const EmojiReactions = ({ recipeId }: EmojiReactionsProps) => {
-  const utils = trpc.useUtils();
   const isOnline = useOnline();
   const [localReactions, setLocalReactions] = useAtom(recipeReactionsAtom);
 
@@ -139,25 +139,33 @@ export const EmojiReactions = ({ recipeId }: EmojiReactionsProps) => {
   }, [currentRecipeReactions]);
 
   return (
-    <div className="flex items-center gap-2">
+    <View className="flex flex-row items-center gap-2">
       <Popover>
         <PopoverTrigger asChild>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-200"
-            aria-label="Add reaction"
+          <Pressable
+            className="p-2 rounded-full bg-gray-100 active:bg-gray-200 transition-colors border border-gray-200"
+            accessibilityLabel="Add reaction"
           >
-            <SmilePlus className="h-4 w-4 aspect-square text-gray-700" />
-          </motion.button>
+            <MotiView
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", damping: 15 }}
+              from={{ scale: 0.95 }}
+            >
+              <SmilePlus className="h-4 w-4 aspect-square text-gray-700" />
+            </MotiView>
+          </Pressable>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0 bg-white/95 backdrop-blur-xl border-gray-200">
           <EmojiGrid reactions={AVAILABLE_REACTIONS} onSelect={handleAddReaction} />
         </PopoverContent>
       </Popover>
 
-      <motion.div layout className="flex gap-2">
-        <AnimatePresence mode="popLayout">
+      <MotiView
+        animate={{ opacity: 1 }}
+        transition={{ type: "timing", duration: 150 }}
+        style={{ flexDirection: "row", gap: 8 }}
+      >
+        <AnimatePresence>
           {sortedReactions.map(({ emoji, count, hasReacted }) => (
             <EmojiCounter
               key={emoji}
@@ -169,8 +177,8 @@ export const EmojiReactions = ({ recipeId }: EmojiReactionsProps) => {
             />
           ))}
         </AnimatePresence>
-      </motion.div>
-    </div>
+      </MotiView>
+    </View>
   );
 };
 
