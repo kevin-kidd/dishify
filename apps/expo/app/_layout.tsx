@@ -3,7 +3,7 @@ import { SplashScreen, Stack } from "expo-router";
 import { useNavigationContainerRef } from "expo-router";
 import { useEffect } from "react";
 import "./global.css";
-import useHasMounted from "app/utils/hooks/useHasMounted";
+import useHasMounted from "@dishify/app/utils/hooks/use-has-mounted";
 import * as Sentry from "@sentry/react-native";
 import { isRunningInExpoGo } from "expo";
 
