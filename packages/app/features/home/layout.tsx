@@ -1,8 +1,8 @@
 "use client";
 
-import { Pressable, ScrollView } from "react-native";
+import { ScrollView } from "react-native";
 import Search from "./search";
-import { Div, H1, P, Section } from "@dishify/ui/src";
+import { Button, Div, H1, P, Section } from "@dishify/ui/src";
 import { Link } from "solito/link";
 import { ArrowLeft } from "lucide-react-native";
 import ProfileButton from "../account/profile-button";
@@ -24,9 +24,9 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
       <Div className="flex flex-row items-center w-full justify-between pt-10 px-4 pb-0">
         <Div>
           {!isHome && (
-            <Pressable onPress={() => router.back()}>
+            <Button onClick={() => router.back()} variant="none">
               <ArrowLeft className="w-6 h-6 text-sage-900" />
-            </Pressable>
+            </Button>
           )}
         </Div>
 
