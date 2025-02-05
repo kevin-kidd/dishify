@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Popover, PopoverContent, PopoverTrigger } from "../popover";
@@ -29,7 +31,18 @@ interface FormElement extends React.ReactElement<any> {
 }
 
 export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, AutocompleteProps>(
-  ({ children, onSelect, getOptions, autocompleteOptions, className }, ref) => {
+  (
+    {
+      children,
+      onSelect,
+      getOptions,
+      autocompleteOptions,
+      isInteractive = true,
+      className,
+      onTemporaryChange,
+    },
+    ref,
+  ) => {
     const {
       triggerRef,
       inputRef,
@@ -42,7 +55,8 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
       handleFocus,
       handleInteractOutside,
       handleKeyPress,
-    } = useAutocomplete({ onSelect, getOptions, autocompleteOptions, children });
+      handleBlur,
+    } = useAutocomplete({ onSelect, getOptions, autocompleteOptions, children, onTemporaryChange });
 
     const sheetTriggerRef = React.useRef<HTMLButtonElement>(null);
     const insets = useSafeAreaInsets();
@@ -86,18 +100,29 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
               onFocus: (e: any) => {
                 // Stop propagation to prevent the event from bubbling up to the Form
                 e?.stopPropagation?.();
-                console.log("Autocomplete: onFocus called");
-                console.log("isMobileSize:", isMobileSize);
+                if (!isInteractive) return;
                 handleFocus();
                 if (isMobileSize) {
-                  console.log("Autocomplete: setting isOpen to true");
                   setIsOpen(true);
                   setIsSheetOpen(true);
                 }
                 // Call the original onFocus if it exists
                 inputElement.props.onFocus?.(e);
               },
-              ref: inputRef as any,
+              onBlur: (e: any) => {
+                handleBlur();
+                // Call the original onBlur if it exists
+                inputElement.props.onBlur?.(e);
+              },
+              ref: (node: any) => {
+                // Forward the ref to both our inputRef and any provided ref
+                inputRef.current = node;
+                if (typeof inputElement.props.ref === "function") {
+                  inputElement.props.ref(node);
+                } else if (inputElement.props.ref) {
+                  (inputElement.props.ref as React.MutableRefObject<any>).current = node;
+                }
+              },
               onKeyPress: handleKeyPress,
             });
           }
@@ -143,9 +168,12 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
       setIsOpen,
       inputRef,
       handleKeyPress,
+      isInteractive,
+      handleBlur,
     ]);
 
     const handleSheetOpenChange = (open: boolean) => {
+      if (!isInteractive) return;
       setIsOpen(open);
       setIsSheetOpen(open);
       if (!open) {
@@ -155,6 +183,7 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
     };
 
     const shouldShowOptions =
+      isInteractive &&
       isOpen &&
       autocompleteOptions &&
       autocompleteOptions.length > 0 &&
@@ -174,16 +203,19 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
               onPointerDownOutside={(e) => e.preventDefault()}
               onOpenAutoFocus={(e) => e.preventDefault()}
               insets={contentInsets}
+              side="bottom"
+              avoidCollisions={false}
               className={cn(
-                shouldShowOptions ? "w-[--radix-popover-trigger-width] p-1 mt-1" : "hidden",
-                "shadow-lg rounded-lg border border-primary/60",
+                shouldShowOptions
+                  ? "w-[--radix-popover-trigger-width] border-none p-0 mt-1 bg-transparent rounded-xl"
+                  : "hidden",
               )}
               animationDuration={0}
             >
               <OptionsList
                 options={autocompleteOptions || []}
                 selectedIndex={selectedIndex}
-                onSelect={handleSelectOption}
+                onSelect={(option) => handleSelectOption(option, true)}
               />
             </PopoverContent>
           </Popover>
@@ -210,7 +242,7 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
                   options={autocompleteOptions || []}
                   selectedIndex={selectedIndex}
                   onSelect={(option) => {
-                    handleSelectOption(option);
+                    handleSelectOption(option, true);
                     setIsOpen(false);
                     setIsSheetOpen(false);
                   }}

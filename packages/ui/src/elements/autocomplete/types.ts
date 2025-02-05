@@ -1,10 +1,13 @@
 import type { ReactElement } from "react";
+import type { ViewProps } from "react-native";
 
-export interface AutocompleteProps {
+export interface AutocompleteProps extends ViewProps {
   children: ReactElement;
-  onSelect: (option: string) => void;
-  getOptions: () => Promise<void>;
+  onSelect: (value: string) => void;
+  getOptions: (query: string) => Promise<void>;
   autocompleteOptions?: string[];
+  isInteractive?: boolean;
+  onTemporaryChange?: (value: string) => void;
   className?: string;
 }
 

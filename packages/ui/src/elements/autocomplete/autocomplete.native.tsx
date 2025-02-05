@@ -13,6 +13,7 @@ interface TextInputElement extends React.ReactElement<any> {
   type: typeof TextInput;
   props: {
     onFocus?: (...args: any[]) => void;
+    onBlur?: (...args: any[]) => void;
     children?: React.ReactNode;
   };
 }
@@ -24,17 +25,30 @@ interface FormElement extends React.ReactElement<any> {
 }
 
 export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, AutocompleteProps>(
-  ({ children, onSelect, getOptions, autocompleteOptions = [], className, ...props }, ref) => {
+  (
+    {
+      children,
+      onSelect,
+      getOptions,
+      autocompleteOptions = [],
+      isInteractive = true,
+      className,
+      onTemporaryChange,
+      ...props
+    },
+    ref,
+  ) => {
     const insets = useSafeAreaInsets();
     const bottomSheetRef = React.useRef<BottomSheet>(null);
     const snapPoints = React.useMemo(() => ["90%"], []);
     const [selectedIndex, setSelectedIndex] = React.useState(-1);
 
-    const { isOpen, setIsOpen, inputValue, handleSelectOption } = useAutocomplete({
+    const { isOpen, setIsOpen, inputValue, handleSelectOption, handleBlur } = useAutocomplete({
       onSelect,
       getOptions,
       autocompleteOptions,
       children,
+      onTemporaryChange,
     });
 
     const handleSheetChanges = React.useCallback(
@@ -47,7 +61,7 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
     );
 
     const handleSelect = React.useCallback(
-      (option: string) => {
+      (option: string, shouldSubmit: boolean) => {
         handleSelectOption(option);
         bottomSheetRef.current?.close();
       },
@@ -73,10 +87,17 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
           return React.cloneElement(inputElement, {
             ...inputElement.props,
             onFocus: (...args: any[]) => {
+              if (!isInteractive) return;
               setIsOpen(true);
               bottomSheetRef.current?.expand();
               if (inputElement.props.onFocus) {
                 inputElement.props.onFocus(...args);
+              }
+            },
+            onBlur: (...args: any[]) => {
+              handleBlur();
+              if (inputElement.props.onBlur) {
+                inputElement.props.onBlur(...args);
               }
             },
           });
@@ -98,6 +119,7 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
     });
 
     const shouldShowOptions =
+      isInteractive &&
       isOpen &&
       autocompleteOptions &&
       autocompleteOptions.length > 0 &&
@@ -126,7 +148,7 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
                 <OptionsList
                   options={autocompleteOptions}
                   selectedIndex={selectedIndex}
-                  onSelect={handleSelect}
+                  onSelect={(option) => handleSelect(option, true)}
                 />
               )}
             </BottomSheetView>
