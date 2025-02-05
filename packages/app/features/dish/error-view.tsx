@@ -23,7 +23,7 @@ export function ErrorView({ error, onRetry, onHome }: ErrorViewProps) {
             : "Something went wrong while loading the dish. Please try again later."}
         </Text>
         <View className="flex-row space-x-4">
-          <Button onPress={onHome}>
+          <Button onClick={onHome}>
             <Text>Return Home</Text>
           </Button>
           {!isNotFound && (
