@@ -1,6 +1,11 @@
 "use client";
 
-import React, { type ComponentType } from "react";
+import React, {
+  type ComponentType,
+  type ForwardRefExoticComponent,
+  type RefAttributes,
+  type PropsWithoutRef,
+} from "react";
 import { Platform } from "react-native";
 import { cn } from ".";
 
@@ -16,30 +21,31 @@ export function withWebTag<
   tagName: T,
   baseClassName?: string,
 ): ComponentType<P & React.ComponentProps<T>> {
-  return ({ onPress, children, className, ...restProps }: P & React.ComponentProps<T>) => {
-    const combinedClassName = cn(baseClassName, className);
-    const handleClick = onPress
-      ? () => {
-          // Call the onPress event with the native event if needed.
-          onPress();
-        }
-      : undefined;
-    if (Platform.OS === "web") {
-      const combinedProps = {
+  const WithWebTag = React.forwardRef<HTMLElement, P & React.ComponentProps<T>>(
+    ({ onPress, children, className, onClick, ...restProps }, ref) => {
+      const combinedClassName = cn(baseClassName, className);
+
+      if (Platform.OS === "web") {
+        const combinedProps = {
+          ...restProps,
+          onClick: onClick || onPress,
+          className: combinedClassName,
+          ref,
+        };
+        return React.createElement(tagName, combinedProps, children);
+      }
+
+      const nativeProps: unknown = {
         ...restProps,
-        onClick: handleClick,
+        onPress,
+        children,
         className: combinedClassName,
+        ref,
       };
-      // Create an element with the appropriate tag name for the web.
-      return React.createElement(tagName, combinedProps, children);
-    }
-    // For native, just spread the props and render the component.
-    const nativeProps: unknown = {
-      ...restProps,
-      onPress,
-      children,
-      className: combinedClassName,
-    };
-    return <Component {...(nativeProps as P)}>{children}</Component>;
-  };
+      return <Component {...(nativeProps as P)}>{children}</Component>;
+    },
+  );
+
+  WithWebTag.displayName = `WithWebTag(${Component.displayName || Component.name || "Component"})`;
+  return WithWebTag as ComponentType<P & React.ComponentProps<T>>;
 }
