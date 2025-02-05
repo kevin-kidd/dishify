@@ -1,36 +1,39 @@
-import { H1, TextLink, P, Image } from "@dishify/ui";
+import { TextLink, P, Image, Main, Section, Text } from "@dishify/ui";
 import { SignInForm } from "./form";
 import { OAuthButtons } from "../OAuthButtons";
-import { View } from "react-native";
+import AccountLayout from "../layout";
 
 export function SignInScreen() {
   return (
-    <View className="flex-1 flex-col items-center justify-center bg-background">
-      <Image
-        className="w-40 sm:w-48 2xl:w-56"
-        alt="Dishify"
-        width={400}
-        height={200}
-        src="/logo/logo-full.webp"
-        contentFit="contain"
-        priority
-      />
-      <H1 className="my-2 text-2xl font-bold 2xl:text-3xl text-center text-primary">
-        Sign in to your account
-      </H1>
-      <P className="text-sm text-primary 2xl:text-base text-center">
-        Don&apos;t have an account?{" "}
-        <TextLink
-          href="/account/sign-up"
-          className="font-normal text-sm 2xl:text-base text-light-blue"
-        >
-          Sign up
-        </TextLink>
-      </P>
-      <View className="w-full flex flex-col max-w-md gap-1 px-6 py-6 sm:px-0">
-        <OAuthButtons />
-        <SignInForm />
-      </View>
-    </View>
+    <AccountLayout>
+      <Main className="flex flex-col min-h-screen items-center gap-0 justify-center max-w-xl w-full container mx-auto">
+        <Image
+          className="w-32 sm:w-40 2xl:w-48 mx-auto"
+          width={400}
+          height={200}
+          alt="Dishify"
+          src="/logo-large.png"
+          priority
+          contentFit="contain"
+          fill={false}
+        />
+        <Text className="mt-6 text-2xl font-bold 2xl:text-3xl text-center text-foreground">
+          Sign in to your account
+        </Text>
+        <P className="text-sm text-sage-700 2xl:text-base text-center py-0">
+          Don&apos;t have an account?{" "}
+          <TextLink
+            href="/account/sign-up"
+            className="font-normal text-sm 2xl:text-base text-sage-500 hover:text-sage-600 transition-colors"
+          >
+            Sign up
+          </TextLink>
+        </P>
+        <Section className="w-full flex flex-col gap-1 px-6 py-4 sm:px-0">
+          <OAuthButtons />
+          <SignInForm />
+        </Section>
+      </Main>
+    </AccountLayout>
   );
 }
