@@ -1,65 +1,89 @@
+"use client";
+
 import type { AppRouter } from "@dishify/api/src/router";
-import { createTRPCReact } from "@trpc/react-query";
-
-import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink } from "@trpc/client";
-import { useState } from "react";
 import superjson from "superjson";
-import { supabase } from "../supabase/client";
-import { replaceLocalhost } from "./localhost.native";
-import { parseErrorMessage } from "../helpers";
+import { useState } from "react";
+import { createTRPCReact, httpBatchLink, loggerLink } from "@trpc/react-query";
+import {
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+  defaultShouldDehydrateQuery,
+} from "@tanstack/react-query";
 import { toast } from "../toast";
+import { parseErrorMessage } from "../helpers";
+import { authClient } from "../auth/client";
 
-/**
- * A set of typesafe hooks for consuming the API.
- */
+export function makeQueryClient() {
+  return new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        if (query.meta?.showToastOnError) {
+          return;
+        }
+        toast.error("Error", {
+          description: parseErrorMessage(error),
+          duration: 10000,
+        });
+      },
+    }),
+    defaultOptions: {
+      queries: {
+        staleTime: 30 * 1000,
+      },
+      dehydrate: {
+        serializeData: superjson.serialize,
+        shouldDehydrateQuery: (query) =>
+          defaultShouldDehydrateQuery(query) || query.state.status === "pending",
+      },
+      hydrate: {
+        deserializeData: superjson.deserialize,
+      },
+    },
+  });
+}
+
 export const trpc = createTRPCReact<AppRouter>();
 
-const getApiUrl = () => {
-  const apiUrl = `${process.env.EXPO_PUBLIC_API_URL}`;
-  return replaceLocalhost(apiUrl);
-};
+let clientQueryClientSingleton: QueryClient;
+function getQueryClient() {
+  if (typeof window === "undefined") {
+    // Server: always make a new query client
+    return makeQueryClient();
+  }
+  // Browser: use singleton pattern to keep the same query client
+  if (!clientQueryClientSingleton) {
+    clientQueryClientSingleton = makeQueryClient();
+  }
+  return clientQueryClientSingleton;
+}
 
-export const TRPCProvider: React.FC<{
-  children: React.ReactNode;
-}> = ({ children }) => {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        queryCache: new QueryCache({
-          onError: (error, query) => {
-            if (query.meta?.showToastOnError) {
-              return;
-            }
-            toast.error("Error", {
-              description: parseErrorMessage(error),
-              duration: 10000,
-            });
-          },
-        }),
-      }),
-  );
+export function TRPCProvider(props: { children: React.ReactNode }) {
+  const queryClient = getQueryClient();
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
+        loggerLink({
+          enabled: (opts) =>
+            process.env.NODE_ENV === "development" ||
+            (opts.direction === "down" && opts.result instanceof Error),
+        }),
         httpBatchLink({
           transformer: superjson,
-          async headers() {
-            const { data } = await supabase.auth.getSession();
-            const token = data?.session?.access_token;
-            return {
-              Authorization: token ? `Bearer ${token}` : undefined,
-            };
+          url: `${process.env.NEXT_PUBLIC_API_URL}/trpc`,
+          fetch(url, options) {
+            return fetch(url, {
+              ...options,
+              credentials: "include",
+            });
           },
-          url: `${getApiUrl()}/trpc`,
         }),
       ],
     }),
   );
-
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{props.children}</QueryClientProvider>
     </trpc.Provider>
   );
-};
+}
