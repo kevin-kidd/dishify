@@ -12,13 +12,12 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "../toast";
 import { parseErrorMessage } from "../helpers";
-import { authClient } from "../auth/client";
 
 export function makeQueryClient() {
   return new QueryClient({
     queryCache: new QueryCache({
       onError: (error, query) => {
-        if (query.meta?.showToastOnError) {
+        if (query.meta?.skipErrorToast) {
           return;
         }
         toast.error("Error", {
