@@ -68,7 +68,7 @@ export default function CameraPopup({
             canvas: "Canvas is not supported.",
           }}
         />
-        <Button size="sm" className="absolute bottom-3 right-3" onPress={takePhoto}>
+        <Button size="sm" className="absolute bottom-3 right-3" onClick={takePhoto}>
           <Text>Confirm</Text>
         </Button>
       </DialogContent>
