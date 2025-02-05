@@ -12,6 +12,7 @@ import {
 } from "@dishify/ui";
 import { type BaseSyntheticEvent, useMemo } from "react";
 import type { UseFormWatch } from "react-hook-form";
+import React from "react";
 
 interface ImagePreviewProps {
   watch: UseFormWatch<SearchValues>;
@@ -63,7 +64,7 @@ export default function ImagePreview({
               className="w-full h-full"
               style={{ borderRadius: 8 }}
             />
-            <Button size="sm" className="absolute bottom-3 right-3" onPress={handleConfirm}>
+            <Button size="sm" className="absolute bottom-3 right-3" onClick={handleConfirm}>
               <Text>Confirm</Text>
             </Button>
           </>
