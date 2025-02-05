@@ -51,7 +51,7 @@ export default function Search() {
     },
     onSuccess: (response) => {
       setIsGenerating(false);
-      router.push(`/dish/${response.id}`);
+      router.push(`/dish/${response.slug}`);
     },
   });
 
@@ -64,7 +64,7 @@ export default function Search() {
       {
         enabled: false,
         placeholderData: (prevData) => prevData,
-        meta: { showToastOnError: false },
+        meta: { skipErrorToast: true },
       },
     );
 
