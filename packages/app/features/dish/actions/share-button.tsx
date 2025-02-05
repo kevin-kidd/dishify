@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, Platform, Pressable } from "react-native";
+import { View, Platform } from "react-native";
 import { Share2, Copy, Check } from "lucide-react";
 import { MotiView } from "moti";
 import {
@@ -22,44 +22,28 @@ interface ShareButtonProps {
   title: string;
   url: string;
   className?: string;
-  onClick?: () => Promise<void>;
-  onShare?: (platform: "facebook" | "twitter" | "pinterest" | "whatsapp") => Promise<void>;
-  onCopy?: () => void;
 }
 
-export function ShareButton({ title, url, className, onClick, onShare, onCopy }: ShareButtonProps) {
+export function ShareButton({ title, url, className }: ShareButtonProps) {
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const truncatedUrl = url.length > 40 ? `${url.slice(0, 37)}...` : url;
 
   const handleCopyLink = useCallback(async () => {
-    if (onClick) {
-      await onClick();
-    }
-
     try {
-      if (onCopy) {
-        await onCopy();
-      }
-
       if (Platform.OS === "web") {
         await navigator.clipboard.writeText(url);
+        setIsLinkCopied(true);
       }
-      setIsLinkCopied(true);
-      toast.success("Link copied to clipboard");
       setTimeout(() => setIsLinkCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy link:", error);
       toast.error("Failed to copy link to clipboard");
     }
-  }, [url, onClick, onCopy]);
+  }, [url]);
 
   const handleSocialShare = useCallback(
     async (platform: "facebook" | "twitter" | "pinterest" | "whatsapp") => {
       try {
-        if (onShare) {
-          await onShare(platform);
-        }
-
         if (Platform.OS === "web") {
           const shareUrls = {
             facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
@@ -99,21 +83,18 @@ export function ShareButton({ title, url, className, onClick, onShare, onCopy }:
         }
       }
     },
-    [title, url, onShare],
+    [title, url],
   );
 
   const handleNativeShare = useCallback(async () => {
-    if (onClick) {
-      await onClick();
-    }
-
+    // TODO: Implement native share
     try {
       toast.success("Shared successfully");
     } catch (error) {
       console.error("Error sharing:", error);
       toast.error("Failed to share recipe");
     }
-  }, [onClick]);
+  }, []);
 
   if (Platform.OS !== "web") {
     return (
@@ -128,7 +109,7 @@ export function ShareButton({ title, url, className, onClick, onShare, onCopy }:
             "flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100",
             className,
           )}
-          onClick={handleNativeShare}
+          onPress={handleNativeShare}
         >
           <Share2 className="h-4 w-4 text-gray-600" />
         </Button>
@@ -170,7 +151,7 @@ export function ShareButton({ title, url, className, onClick, onShare, onCopy }:
               variant="ghost"
               size="sm"
               className="hover:bg-neutral-50"
-              onClick={() => handleSocialShare("twitter")}
+              onPress={() => handleSocialShare("twitter")}
             >
               <X className="h-5 w-5 text-black" />
             </IconButton>
@@ -178,7 +159,7 @@ export function ShareButton({ title, url, className, onClick, onShare, onCopy }:
               variant="ghost"
               size="sm"
               className="hover:bg-red-50"
-              onClick={() => handleSocialShare("pinterest")}
+              onPress={() => handleSocialShare("pinterest")}
             >
               <Pinterest className="h-5 w-5 text-[#E60023]" />
             </IconButton>
@@ -186,13 +167,13 @@ export function ShareButton({ title, url, className, onClick, onShare, onCopy }:
               variant="ghost"
               size="sm"
               className="hover:bg-green-50"
-              onClick={() => handleSocialShare("whatsapp")}
+              onPress={() => handleSocialShare("whatsapp")}
             >
               <WhatsApp className="h-5 w-5 text-[#25D366]" />
             </IconButton>
           </View>
           <Button
-            onClick={handleCopyLink}
+            onPress={handleCopyLink}
             className="flex flex-row items-center gap-2 px-3 py-2 bg-gray-50 rounded-md hover:bg-gray-100 active:bg-gray-200 transition-colors"
           >
             <View className="flex-1">
