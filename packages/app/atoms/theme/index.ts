@@ -1,5 +1,5 @@
 import { atomWithMMKV } from "app/provider/kv";
-import { ColorSchemeVariant, ThemeVariant } from "app/utils/theme";
+import type { ColorSchemeVariant, ThemeVariant } from "app/utils/theme";
 
 export const appThemeKey = "appTheme";
 

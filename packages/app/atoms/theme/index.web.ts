@@ -1,5 +1,4 @@
-import { ColorSchemeVariant, ThemeVariant } from "app/utils/theme";
-import { useAtom } from "jotai";
+import type { ColorSchemeVariant, ThemeVariant } from "app/utils/theme";
 import { atomWithStorage } from "jotai/utils";
 
 export const appThemeKey = "appTheme";
