@@ -11,6 +11,9 @@ import {
   PopoverContent,
   Text,
   IconButton,
+  Button,
+  cn,
+  Div,
 } from "@dishify/ui";
 import { Facebook, X, Pinterest, WhatsApp } from "@dishify/ui/src/icons/social";
 import { toast } from "app/utils/toast";
@@ -19,16 +22,20 @@ interface ShareButtonProps {
   title: string;
   url: string;
   className?: string;
-  onPress?: () => Promise<void>;
+  onClick?: () => Promise<void>;
   onShare?: (platform: "facebook" | "twitter" | "pinterest" | "whatsapp") => Promise<void>;
-  onCopy?: () => Promise<void>;
+  onCopy?: () => void;
 }
 
-export function ShareButton({ title, url, className, onPress, onShare, onCopy }: ShareButtonProps) {
+export function ShareButton({ title, url, className, onClick, onShare, onCopy }: ShareButtonProps) {
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const truncatedUrl = url.length > 40 ? `${url.slice(0, 37)}...` : url;
 
   const handleCopyLink = useCallback(async () => {
+    if (onClick) {
+      await onClick();
+    }
+
     try {
       if (onCopy) {
         await onCopy();
@@ -44,7 +51,7 @@ export function ShareButton({ title, url, className, onPress, onShare, onCopy }:
       console.error("Failed to copy link:", error);
       toast.error("Failed to copy link to clipboard");
     }
-  }, [url, onCopy]);
+  }, [url, onClick, onCopy]);
 
   const handleSocialShare = useCallback(
     async (platform: "facebook" | "twitter" | "pinterest" | "whatsapp") => {
@@ -96,16 +103,17 @@ export function ShareButton({ title, url, className, onPress, onShare, onCopy }:
   );
 
   const handleNativeShare = useCallback(async () => {
+    if (onClick) {
+      await onClick();
+    }
+
     try {
-      if (onPress) {
-        await onPress();
-      }
       toast.success("Shared successfully");
     } catch (error) {
       console.error("Error sharing:", error);
       toast.error("Failed to share recipe");
     }
-  }, [onPress]);
+  }, [onClick]);
 
   if (Platform.OS !== "web") {
     return (
@@ -115,12 +123,15 @@ export function ShareButton({ title, url, className, onPress, onShare, onCopy }:
         exit={{ scale: 0.9 }}
         transition={{ type: "timing", duration: 150 }}
       >
-        <Pressable
-          className={`flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 ${className}`}
-          onPress={handleNativeShare}
+        <Button
+          className={cn(
+            "flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100",
+            className,
+          )}
+          onClick={handleNativeShare}
         >
           <Share2 className="h-4 w-4 text-gray-600" />
-        </Pressable>
+        </Button>
       </MotiView>
     );
   }
@@ -129,21 +140,17 @@ export function ShareButton({ title, url, className, onPress, onShare, onCopy }:
     <Popover>
       <Tooltip>
         <TooltipTrigger>
-          <MotiView
-            from={{ scale: 1 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0.9 }}
-            transition={{ type: "timing", duration: 150 }}
-          >
-            <PopoverTrigger asChild>
-              <Pressable
-                className={`hidden md:flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 ${className}`}
-              >
-                <Share2 className="h-4 w-4 text-gray-600" />
-                <span className="sr-only">Share Recipe</span>
-              </Pressable>
-            </PopoverTrigger>
-          </MotiView>
+          <PopoverTrigger>
+            <Div
+              className={cn(
+                "hidden md:flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-200",
+                className,
+              )}
+            >
+              <Share2 className="h-4 w-4 text-gray-600" />
+              <span className="sr-only">Share Recipe</span>
+            </Div>
+          </PopoverTrigger>
         </TooltipTrigger>
         <TooltipContent position="top">Share Recipe</TooltipContent>
       </Tooltip>
@@ -184,8 +191,8 @@ export function ShareButton({ title, url, className, onPress, onShare, onCopy }:
               <WhatsApp className="h-5 w-5 text-[#25D366]" />
             </IconButton>
           </View>
-          <Pressable
-            onPress={handleCopyLink}
+          <Button
+            onClick={handleCopyLink}
             className="flex flex-row items-center gap-2 px-3 py-2 bg-gray-50 rounded-md hover:bg-gray-100 active:bg-gray-200 transition-colors"
           >
             <View className="flex-1">
@@ -208,7 +215,7 @@ export function ShareButton({ title, url, className, onPress, onShare, onCopy }:
                 <Copy className="h-4 w-4 text-gray-600" />
               )}
             </MotiView>
-          </Pressable>
+          </Button>
         </View>
       </PopoverContent>
     </Popover>
