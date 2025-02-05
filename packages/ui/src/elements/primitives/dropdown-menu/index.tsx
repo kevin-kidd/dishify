@@ -95,7 +95,7 @@ function useRootContext() {
   return context;
 }
 
-const Trigger = React.forwardRef<DropdownMenuTriggerRef, SlottablePressableProps>(
+const Trigger = React.forwardRef<React.ComponentRef<typeof Pressable>, SlottablePressableProps>(
   ({ asChild, onPress: onPressProp, disabled = false, ...props }, ref) => {
     const { open, onOpenChange, setTriggerPosition } = useRootContext();
 
@@ -145,17 +145,11 @@ Trigger.displayName = "TriggerNativeDropdownMenu";
 /**
  * @warning when using a custom `<PortalHost />`, you might have to adjust the Content's sideOffset to account for nav elements like headers.
  */
-function Portal({ forceMount, hostName, children }: DropdownMenuPortalProps) {
+function Portal({ hostName, children }: DropdownMenuPortalProps) {
   const value = useRootContext();
 
   if (!value.triggerPosition) {
     return null;
-  }
-
-  if (!forceMount) {
-    if (!value.open) {
-      return null;
-    }
   }
 
   return (
@@ -166,8 +160,8 @@ function Portal({ forceMount, hostName, children }: DropdownMenuPortalProps) {
 }
 
 const Overlay = React.forwardRef<PressableRef, SlottablePressableProps & DropdownMenuOverlayProps>(
-  ({ asChild, forceMount, onPress: OnPressProp, closeOnPress = true, ...props }, ref) => {
-    const { open, onOpenChange, setContentLayout, setTriggerPosition } = useRootContext();
+  ({ asChild, onPress: OnPressProp, closeOnPress = true, ...props }, ref) => {
+    const { onOpenChange, setContentLayout, setTriggerPosition } = useRootContext();
 
     function onPress(ev: GestureResponderEvent) {
       if (closeOnPress) {
@@ -176,12 +170,6 @@ const Overlay = React.forwardRef<PressableRef, SlottablePressableProps & Dropdow
         onOpenChange(false);
       }
       OnPressProp?.(ev);
-    }
-
-    if (!forceMount) {
-      if (!open) {
-        return null;
-      }
     }
 
     const Component = asChild ? Slot.Pressable : Pressable;
@@ -234,7 +222,7 @@ const Content = React.forwardRef<PressableRef, SlottablePressableProps & Positio
         setContentLayout(null);
         backHandler.remove();
       };
-    }, []);
+    }, [onOpenChange, setContentLayout, setTriggerPosition]);
 
     const positionStyle = useRelativePosition({
       align,

@@ -65,7 +65,7 @@ function useRootContext() {
   return context;
 }
 
-const Trigger = React.forwardRef<DropdownMenuTriggerRef, SlottablePressableProps>(
+const Trigger = React.forwardRef<React.ComponentRef<typeof Pressable>, SlottablePressableProps>(
   ({ asChild, disabled = false, ...props }, ref) => {
     const { open, onOpenChange } = useRootContext();
     const augmentedRef = useAugmentedRef({
@@ -85,7 +85,7 @@ const Trigger = React.forwardRef<DropdownMenuTriggerRef, SlottablePressableProps
         const augRef = augmentedRef.current as unknown as HTMLDivElement;
         augRef.dataset.state = open ? "open" : "closed";
       }
-    }, [open]);
+    }, [open, augmentedRef.current]);
 
     React.useLayoutEffect(() => {
       if (augmentedRef.current) {
@@ -96,7 +96,7 @@ const Trigger = React.forwardRef<DropdownMenuTriggerRef, SlottablePressableProps
           augRef.dataset.disabled = undefined;
         }
       }
-    }, [disabled]);
+    }, [disabled, augmentedRef.current]);
 
     const Component = asChild ? Slot.Pressable : Pressable;
     return (
@@ -109,8 +109,8 @@ const Trigger = React.forwardRef<DropdownMenuTriggerRef, SlottablePressableProps
 
 Trigger.displayName = "TriggerWebDropdownMenu";
 
-function Portal({ forceMount, container, children }: DropdownMenuPortalProps) {
-  return <DropdownMenu.Portal forceMount={forceMount} container={container} children={children} />;
+function Portal({ container, children }: DropdownMenuPortalProps) {
+  return <DropdownMenu.Portal container={container}>{children}</DropdownMenu.Portal>;
 }
 
 const Overlay = React.forwardRef<PressableRef, SlottablePressableProps & DropdownMenuOverlayProps>(
