@@ -1,282 +1,235 @@
-import type { ChatCompletionMessageParam } from "groq-sdk/resources/chat/completions";
 import { SearchSchema } from "../../../schemas/search";
-import { type RecipeResponse, RecipeResponseSchema } from "../../../schemas/recipe-response";
 import { publicProcedure } from "../../trpc";
-import { EnglishRecipeNameTable } from "../../db/schema";
-import Groq from "groq-sdk";
+import { EnglishRecipesTable } from "../../db/schema/recipes";
 import { TRPCError } from "@trpc/server";
-// biome-ignore lint/style/useNodejsImportProtocol: this package functions in Workers, but has to be installed
-import { Buffer } from "buffer";
+import { createId } from "@paralleldrive/cuid2";
+import { and, eq, ne } from "drizzle-orm";
 
-type AiTextGenerationResponse = {
-  response?: string;
-  tool_calls?: {
-    name: string;
-    arguments: unknown;
-  }[];
-};
-
-async function completionWithGroq(
-  groq: Groq,
-  messages: ChatCompletionMessageParam[],
-  user?: string,
-  image?: number[],
-): Promise<string | null | undefined> {
-  try {
-    let completion: Groq.Chat.ChatCompletion;
-    if (image) {
-      // Convert Uint8Array to base64
-      const base64Image = Buffer.from(image).toString("base64");
-      const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-      messages.push({
-        role: "user",
-        content: [
-          {
-            type: "image_url",
-            image_url: {
-              url: imageUrl,
-            },
-          },
-        ],
-      });
-      completion = await groq.chat.completions.create({
-        model: "llama-3.2-11b-vision-preview",
-        stream: false,
-        response_format: { type: "json_object" },
-        messages,
-      });
-    } else {
-      completion = await groq.chat.completions.create(
-        {
-          model: "llama-3.1-70b-versatile",
-          messages,
-          response_format: { type: "json_object" },
-          stream: false,
-          user,
-        },
-        {
-          maxRetries: 3,
-        },
-      );
-    }
-    return completion.choices?.[0]?.message.content;
-  } catch (error) {
-    if (error instanceof Groq.APIError) {
-      switch (error.status) {
-        case 429:
-          console.error("Groq: Rate limit exceeded");
-          break;
-        case 500:
-          console.error("Groq: Internal server error.");
-          break;
-        case 503:
-          console.error("Groq: Service unavailable.");
-          break;
-        default:
-          console.error("Groq API error:", error);
-      }
-    } else {
-      console.error(error);
-    }
-    return null;
-  }
-}
-
-async function completionWithWorkers(
-  ai: Ai,
-  messages: RoleScopedChatInput[],
-  gatewayId: string,
-  image?: number[],
-): Promise<string | null | undefined> {
-  try {
-    if (image) {
-      const completion = (await ai.run(
-        "@cf/meta/llama-3.2-11b-vision-instruct" as BaseAiImageToTextModels,
-        {
-          prompt: messages.map((message) => message.content).join("\n"),
-          image,
-        },
-        {
-          gateway: {
-            id: gatewayId,
-          },
-        },
-      )) as AiTextGenerationResponse;
-      console.log(completion.response);
-      return completion.response;
-    }
-    const completion = (await ai.run(
-      "@cf/meta/llama-3.1-8b-instruct",
-      {
-        messages,
-        stream: false,
-      },
-      {
-        gateway: {
-          id: gatewayId,
-        },
-      },
-    )) as AiTextGenerationResponse;
-    return completion.response;
-  } catch (error) {
-    console.error("CloudFlare AI Worker error:", error);
-    return null;
-  }
-}
+const RECIPE_STATE_PREFIX = "recipe_state:";
+const GENERATION_TIMEOUT = 60000; // 1 minute timeout
 
 export const generate = publicProcedure
   .input(SearchSchema)
-  .mutation(async ({ ctx, input: { dishName, image } }) => {
-    let response: string | null | undefined;
-    const messages: RoleScopedChatInput[] = [];
-    let provider = "groq";
-    if (image) {
-      messages.push({
-        role: "user",
-        content: `
-            You are a helpful assistant that generates recipes and shopping lists. Provide the response in JSON format like this: { dishName: "", shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}.
-            Identify whether this image is of food, drink, dessert, etc... If it is not, you must respond with { dishName: "unknown" }. It is best to err on the side of unknown, unless it is obvious this image is of a specific food, drink, etc...
-            If you incorrectly identify the dish and recipe, you will be fined 1 million dollars.
-          `,
-      });
-    } else {
-      messages.push(
-        {
-          role: "system",
-          content: `
-            You are a helpful assistant that generates recipes and shopping lists.
-            Provide the response in JSON format like this: { dishName: "", shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}.
-            Identify whether this dish name is of food, drink, dessert, etc... If it is not, you must respond with { dishName: "unknown" }. It is best to err on the side of unknown, unless it is obvious this image is of a specific food, drink, etc...
-            If you incorrectly identify the dish and recipe, you will be fined 1 million dollars.
-          `,
-        },
-        {
-          role: "user",
-          content: `Generate a recipe and shopping list for the following dish: ${dishName}`,
-        },
-      );
+  .mutation(async ({ ctx, input: { dishName, image, retryId } }) => {
+    // First check if recipe exists in database
+    let existingRecipeId: string | null = null;
+
+    // If we have a retryId, check that recipe first
+    if (retryId) {
+      const retryingRecipe = await ctx.db
+        .select()
+        .from(EnglishRecipesTable)
+        .where(eq(EnglishRecipesTable.id, retryId))
+        .get();
+
+      if (retryingRecipe && retryingRecipe.status === "error") {
+        existingRecipeId = retryingRecipe.id;
+      }
+    } else if (!image && dishName) {
+      // First check if we're retrying a specific recipe
+      const retryingRecipe = await ctx.db
+        .select()
+        .from(EnglishRecipesTable)
+        .where(
+          and(
+            eq(EnglishRecipesTable.searchQuery, dishName),
+            eq(EnglishRecipesTable.status, "error"),
+          ),
+        )
+        .get();
+
+      if (retryingRecipe) {
+        // We found the specific recipe we're retrying
+        existingRecipeId = retryingRecipe.id;
+      } else {
+        // Check for existing recipes with this name
+        const existingRecipe = await ctx.db
+          .select()
+          .from(EnglishRecipesTable)
+          .where(
+            and(
+              eq(EnglishRecipesTable.name, dishName.toLowerCase()),
+              ne(EnglishRecipesTable.status, "moved"),
+            ),
+          )
+          .get();
+
+        if (existingRecipe) {
+          if (existingRecipe.status === "completed") {
+            return {
+              id: existingRecipe.id,
+              status: "completed",
+            };
+          }
+
+          // Check if recipe is stuck in generating state
+          const isGenerating = await ctx.recipeState.get(RECIPE_STATE_PREFIX + existingRecipe.id);
+
+          // If recipe exists but is stuck in generating state, allow retrying
+          if (existingRecipe.status === "generating" && !isGenerating) {
+            // Recipe is stuck, update status to error and allow retry
+            await ctx.db
+              .update(EnglishRecipesTable)
+              .set({
+                status: "error",
+                errorMessage: "Recipe generation was interrupted. Please try again.",
+                updatedAt: new Date().toISOString(),
+              })
+              .where(eq(EnglishRecipesTable.id, existingRecipe.id));
+
+            existingRecipeId = existingRecipe.id;
+          } else if (existingRecipe.status === "generating" && isGenerating) {
+            // If recipe is currently being generated, return its ID
+            return {
+              id: existingRecipe.id,
+              status: "generating",
+            };
+          } else if (existingRecipe.status === "moved") {
+            // If recipe was moved, return the target recipe ID
+            if (!existingRecipe.movedToRecipeId) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Recipe was moved but target recipe ID is missing",
+              });
+            }
+            return {
+              id: existingRecipe.movedToRecipeId,
+              status: "completed",
+            };
+          } else if (existingRecipe.status === "error") {
+            // If recipe is in error state, allow retry with same ID
+            existingRecipeId = existingRecipe.id;
+          }
+        }
+
+        // Also check if there's a completed recipe with this name that was moved
+        const movedRecipe = await ctx.db
+          .select()
+          .from(EnglishRecipesTable)
+          .where(
+            and(
+              eq(EnglishRecipesTable.name, dishName.toLowerCase()),
+              eq(EnglishRecipesTable.status, "moved"),
+            ),
+          )
+          .get();
+
+        if (movedRecipe?.movedToRecipeId) {
+          // If we find a moved recipe, return the target recipe ID
+          return {
+            id: movedRecipe.movedToRecipeId,
+            status: "completed",
+          };
+        }
+      }
     }
 
-    // Attempt to get a response from Groq
-    response = await completionWithGroq(
-      ctx.groq,
-      messages as ChatCompletionMessageParam[],
-      ctx.user?.id,
-      image,
-    );
-    if (!response) {
-      // If Groq fails, try CloudFlare AI Worker
-      provider = "workers";
-      response = await completionWithWorkers(
-        ctx.ai.client,
-        messages as RoleScopedChatInput[],
-        ctx.ai.gatewayId,
-        image,
-      );
-    }
-
-    if (!response) {
-      // If both fail, throw an error
-      console.error("Both Groq and CloudFlare AI Worker completions failed.", {
-        response,
-        request: { messages: JSON.stringify(messages, null, 2), image },
-      });
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Our AI agents are currently under maintenance. Please try again later.",
-      });
-    }
+    // Create a new recipe entry with 'generating' status
+    const recipeId = existingRecipeId ?? createId();
 
     try {
-      // Extract the JSON from the response
-      const jsonRegex = /{[^{}]*(?:{[^{}]*}[^{}]*)*}/;
-      const jsonMatch = response.match(jsonRegex);
-
-      if (!jsonMatch) {
-        console.error("No valid JSON found in the AI response", {
-          response,
-          request: messages,
-          provider,
-        });
-        throw new Error("An unexpected error occurred. Please try again.");
-      }
-
-      let jsonResponse = jsonMatch[0];
-
-      // Attempt to parse the JSON
-      let parsedResponse: RecipeResponse;
-      try {
-        parsedResponse = JSON.parse(jsonResponse);
-      } catch (parseError) {
-        jsonResponse = jsonResponse.replace(/(\w+):/g, '"$1":');
-        parsedResponse = JSON.parse(jsonResponse);
-      }
-      // Check if the dish name is unknown, any empty fields, or if any fields contain only "unknown"
-      if (containsUnknown(parsedResponse)) {
-        console.error("Unknown dish", { response, request: messages, provider });
+      // Check if this recipe is already being generated
+      const isGenerating = await ctx.recipeState.get(RECIPE_STATE_PREFIX + recipeId);
+      if (isGenerating) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Unknown dish ${image ? "for image" : `for ${dishName}`}`,
+          code: "CONFLICT",
+          message: "Recipe is already being generated. Please wait.",
         });
       }
 
-      // Validate the response
-      const validatedResponse = RecipeResponseSchema.safeParse(parsedResponse);
-      if (!validatedResponse.success) {
-        console.error("Failed to validate recipe response", {
-          response,
-          request: messages,
-          validationError: validatedResponse.error.issues,
-          provider,
-        });
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to fetch recipe ${image ? "from image" : `for ${dishName}`}. Please try again.`,
-        });
+      // For image queries, if we don't have the image data, set error status
+      if (image === undefined && dishName === undefined) {
+        await ctx.db
+          .insert(EnglishRecipesTable)
+          .values({
+            id: recipeId,
+            name: `temp_${recipeId}`,
+            data: {
+              dishName: `temp_${recipeId}`,
+              cuisine: "Unknown",
+              shoppingList: [],
+              cookingTime: "",
+              servings: "",
+              instructions: [],
+            },
+            status: "error",
+            errorMessage: "Image data was lost. Please try uploading the image again.",
+            searchQuery: null,
+            imageQuery: "true",
+            updatedAt: new Date().toISOString(),
+            ratings: [],
+          })
+          .onConflictDoUpdate({
+            target: [EnglishRecipesTable.id],
+            set: {
+              status: "error",
+              errorMessage: "Image data was lost. Please try uploading the image again.",
+            },
+          });
+
+        return {
+          id: recipeId,
+          status: "error" as const,
+          errorMessage: "Image data was lost. Please try uploading the image again.",
+        };
       }
 
-      // If successful, save recipe to database
-      const addRecipe = await ctx.db
-        .insert(EnglishRecipeNameTable)
-        .values({ name: validatedResponse.data.dishName.toLowerCase() })
-        .onConflictDoNothing();
-      if (addRecipe.error) {
-        console.error("Failed to save recipe to database", {
-          dishName,
-          error: addRecipe.error,
-          provider,
+      // Save initial recipe entry with generating status
+      await ctx.db
+        .insert(EnglishRecipesTable)
+        .values({
+          id: recipeId,
+          name: `temp_${recipeId}`, // Use a temporary unique name
+          data: {
+            dishName: `temp_${recipeId}`,
+            cuisine: "Unknown",
+            shoppingList: [], // Empty array, will be stored as JSON
+            cookingTime: "",
+            servings: "",
+            instructions: [],
+          },
+          status: "generating",
+          searchQuery: dishName || null,
+          imageQuery: image ? "true" : null,
+          updatedAt: new Date().toISOString(),
+          ratings: [],
+        })
+        .onConflictDoUpdate({
+          target: [EnglishRecipesTable.id],
+          set: {
+            status: "generating",
+            updatedAt: new Date().toISOString(),
+          },
         });
-      }
 
-      return validatedResponse.data;
+      // Add to KV with expiration
+      await ctx.recipeState.put(RECIPE_STATE_PREFIX + recipeId, "true", {
+        expirationTtl: Math.ceil(GENERATION_TIMEOUT / 1000), // Convert ms to seconds
+      });
+
+      // Add to queue
+      await ctx.env.RECIPE_QUEUE.send({
+        recipeId,
+        dishName,
+        image,
+      });
+
+      // Return immediately with the recipe ID and generating status
+      return {
+        id: recipeId,
+        status: "generating",
+      };
     } catch (error) {
-      console.error("Error generating recipe", {
+      // Clean up if initial save fails
+      await ctx.recipeState.delete(RECIPE_STATE_PREFIX + recipeId);
+      console.error("Failed to create initial recipe entry", {
         error,
-        input: dishName,
-        provider,
+        query: dishName || "image",
+        recipeId,
       });
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message:
-          error instanceof TRPCError
-            ? error.message
-            : "Failed to generate recipe. Please try again.",
+        message: "Failed to start recipe generation. Please try again.",
       });
     }
   });
-
-function containsUnknown(obj: any): boolean {
-  if (obj === null || obj === undefined) {
-    return true;
-  }
-  if (typeof obj === "string" && obj.trim().toLowerCase().includes("unknown")) {
-    return true;
-  }
-  if (Array.isArray(obj)) {
-    return obj.some(containsUnknown);
-  }
-  if (typeof obj === "object") {
-    return Object.values(obj).some(containsUnknown);
-  }
-  return false;
-}
