@@ -3,6 +3,7 @@
 import { Button, LI, Tooltip, TooltipContent, TooltipGroup, TooltipTrigger, UL } from "@dishify/ui";
 import { Facebook, Google, Microsoft } from "@dishify/ui/src/icons/social";
 import type React from "react";
+import { Platform } from "react-native";
 
 export function OAuthButtons() {
   return (
@@ -11,21 +12,21 @@ export function OAuthButtons() {
         <LI className="z-30">
           <OAuthButton
             Icon={Google}
-            onPress={() => console.log("XD")}
+            onAction={() => console.log("XD")}
             label="Sign in with Google"
           />
         </LI>
         <LI className="z-20">
           <OAuthButton
             Icon={Microsoft}
-            onPress={() => console.log("XD")}
+            onAction={() => console.log("XD")}
             label="Sign in with Microsoft"
           />
         </LI>
         <LI className="z-20">
           <OAuthButton
             Icon={Facebook}
-            onPress={() => console.log("XD")}
+            onAction={() => console.log("XD")}
             label="Sign in with Facebook"
           />
         </LI>
@@ -36,20 +37,21 @@ export function OAuthButtons() {
 
 function OAuthButton({
   Icon,
-  onPress,
+  onAction,
   label,
 }: {
   Icon: React.ElementType;
-  onPress: () => void;
+  onAction: () => void;
   label: string;
 }) {
   return (
     <Tooltip>
       <TooltipTrigger delayDuration={300}>
         <Button
+          variant="none"
           aria-label={label}
           role="link"
-          onPress={onPress}
+          onClick={onAction}
           className="h-12 w-12 rounded-lg border border-sage-400 bg-background p-3 hover:bg-sage-100 2xl:h-14 2xl:w-14 2xl:p-[0.875rem] transition-colors duration-200"
         >
           <Icon className="h-full w-full" />
