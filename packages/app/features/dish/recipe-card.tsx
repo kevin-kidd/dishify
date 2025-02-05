@@ -151,7 +151,7 @@ export default function RecipeCard() {
           <View className="flex-row space-x-4">
             {!isImageRecipe && (
               <Button
-                onPress={() =>
+                onClick={() =>
                   generate.mutateAsync({
                     dishName: recipe?.searchQuery || undefined,
                     retryId: recipeId as string,
@@ -205,10 +205,10 @@ export default function RecipeCard() {
             The recipe data appears to be incomplete. Please try generating it again.
           </Text>
           <View className="flex-row space-x-4">
-            <Button onPress={() => router.push("/")}>
+            <Button onClick={() => router.push("/")}>
               <Text>Try Again</Text>
             </Button>
-            <Button variant="outline" onPress={() => refetch()}>
+            <Button variant="outline" onClick={() => refetch()}>
               <Text>Retry</Text>
             </Button>
           </View>
