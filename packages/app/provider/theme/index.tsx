@@ -4,7 +4,7 @@ import type React from "react";
 import { useEffect } from "react";
 import { View, Appearance, Text } from "react-native";
 import { themes } from "@dishify/ui/src/theme/themes";
-import useHasMounted from "app/utils/hooks/useHasMounted";
+import useHasMounted from "app/utils/hooks/use-has-mounted";
 import { useAtom, useAtomValue } from "jotai";
 import { appColorSchemeAtom, appThemeAtom } from "app/atoms/theme";
 import { Button, cn } from "@dishify/ui";
