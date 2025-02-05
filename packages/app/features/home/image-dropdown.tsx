@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@dishify/ui";
-import { ImageIcon } from "@dishify/ui/src/icons/image";
+import type React from "react";
 import { CameraIcon } from "@dishify/ui/src/icons/camera";
 import { UploadIcon } from "lucide-react-native";
 import { Button, Text } from "@dishify/ui/src";
@@ -94,8 +94,8 @@ export default function ImageDropdown({ setImageData, watch, onSubmit }: ImageDr
             size="icon"
             className={cn(
               "relative h-9 sm:h-10 aspect-square w-auto rounded-xl overflow-hidden flex items-center justify-center",
-              "bg-gradient-to-br from-primary/80 to-primary",
-              "hover:from-primary hover:to-[#137991]",
+              "bg-gradient-to-br from-sage-400 to-sage-500",
+              "hover:from-sage-500 hover:to-sage-600",
               "web:transition-all transition-all duration-300 ease-in-out",
               "hover:scale-105 scale-100 active:scale-95",
               "text-white",
@@ -103,7 +103,7 @@ export default function ImageDropdown({ setImageData, watch, onSubmit }: ImageDr
           >
             <CameraIcon
               className={cn(
-                "h-4 sm:h-5 w-auto aspect-square transition-all duration-300 text-white overflow-visible",
+                "h-5 sm:h-6 w-auto aspect-square transition-all duration-300 text-white overflow-visible",
                 "group-hover:scale-105 group-hover:rotate-[-8deg] group-hover:mr-[4px] group-hover:mt-[2px]",
               )}
             />
@@ -113,18 +113,16 @@ export default function ImageDropdown({ setImageData, watch, onSubmit }: ImageDr
           <DropdownMenuGroup>
             <DropdownMenuItem
               onPress={handleUpload}
-              className="flex items-center gap-2 py-2 cursor-pointer rounded-xl transition-colors duration-200 ease-in-out"
-              textClassName="group-hover:text-primary transition-colors duration-200 ease-in-out"
+              className="flex items-center gap-2 py-2 hover:cursor-pointer rounded-xl transition-colors duration-200 ease-in-out web:hover:bg-sage-50 web:focus:bg-sage-50"
             >
-              <UploadIcon className="text-primary h-4 w-4" />
+              <UploadIcon className="text-sage-500 h-4 w-4" />
               <Text>Upload</Text>
             </DropdownMenuItem>
             <DropdownMenuItem
               onPress={handleTakePhoto}
-              className="flex items-center gap-2 py-2 cursor-pointer rounded-xl transition-colors duration-200 ease-in-out"
-              textClassName="group-hover:text-primary transition-colors duration-200 ease-in-out"
+              className="flex items-center gap-2 py-2 hover:cursor-pointer rounded-xl transition-colors duration-200 ease-in-out web:hover:bg-sage-50 web:focus:bg-sage-50"
             >
-              <CameraIcon className="text-primary h-4 w-4" />
+              <CameraIcon className="text-sage-500 h-4 w-4" />
               <Text>Take photo</Text>
             </DropdownMenuItem>
           </DropdownMenuGroup>
