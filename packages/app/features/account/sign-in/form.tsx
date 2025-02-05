@@ -93,7 +93,7 @@ export function SignInForm() {
         )}
       />
       <Button
-        onPress={onSubmit}
+        onClick={onSubmit}
         aria-label="Submit"
         className="flex w-full h-10 items-center justify-center gap-2 rounded-md text-center transition ease-in-out"
       >
