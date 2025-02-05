@@ -13,8 +13,9 @@ Dishify is an AI-powered culinary companion application with cross-platform supp
 - tRPC (11.0.0) for type-safe API communication
 - Cloudflare Workers (3.73.0) for serverless backend with Hono
 - Cloudflare D1 for database
-- Supabase for authentication
+- Better Auth for authentication
 - TypeScript (5.5.4) as the primary language
+- Bun for package manager
 
 ## Project Structure
 
