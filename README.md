@@ -32,7 +32,7 @@ Dishify is your AI-powered culinary companion. Enter any dish name for instant r
 - [tRPC](https://trpc.io/) for type-safe API communication
 - [Cloudflare Workers](https://workers.cloudflare.com/) for serverless backend with [Hono](https://hono.dev/)
 - [Cloudflare D1](https://developers.cloudflare.com/d1/) for database
-- [Supabase](https://supabase.com/) for authentication
+- [Better Auth](https://better-auth.com/) for authentication
 
 ## Getting Started
 
