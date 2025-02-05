@@ -8,9 +8,17 @@ interface EmojiCounterProps {
   label: string;
   isSelected: boolean;
   onClick: () => void;
+  isSignedIn?: boolean;
 }
 
-const EmojiCounter = ({ emoji, count, label, isSelected, onClick }: EmojiCounterProps) => {
+const EmojiCounter = ({
+  emoji,
+  count,
+  label,
+  isSelected,
+  onClick,
+  isSignedIn = true,
+}: EmojiCounterProps) => {
   return (
     <MotiView
       from={{ opacity: 0, scale: 0.8 }}
@@ -22,10 +30,11 @@ const EmojiCounter = ({ emoji, count, label, isSelected, onClick }: EmojiCounter
         onPress={onClick}
         accessibilityLabel={`${label} reaction`}
         className={cn(
-          "relative flex flex-row items-center gap-1.5 px-2 py-1 rounded-full transition-colors",
-          "bg-gray-100 active:bg-gray-200",
+          "relative flex flex-row items-center gap-1.5 px-2 py-1 rounded-full transition-all hover:scale-105 active:scale-95 duration-200",
+          "bg-gray-100 active:bg-gray-200 hover:bg-gray-200",
           "border border-gray-200",
           isSelected && "bg-gray-200 border-gray-300",
+          !isSignedIn && "cursor-not-allowed opacity-50",
         )}
       >
         <Text className="text-base">{emoji}</Text>
