@@ -1,2 +1,2 @@
-export * from "./elements";
+export * from "./elements/index.tsx";
 export * from "./utils";
