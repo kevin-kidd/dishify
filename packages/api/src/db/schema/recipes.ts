@@ -36,11 +36,13 @@ export const EnglishRecipesTable = sqliteTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     name: text("name").notNull().unique(),
+    slug: text("slug").notNull().unique(),
     data: text("data", { mode: "json" }).$type<RecipeResponse>(),
     status: text("status", { enum: ["generating", "completed", "error", "moved"] })
       .notNull()
       .default("generating"),
     movedToRecipeId: text("moved_to_recipe_id"),
+    movedToSlug: text("moved_to_slug"),
     errorMessage: text("error_message"),
     searchQuery: text("search_query"),
     imageQuery: text("image_query", { enum: ["true", "false"] }),
@@ -52,7 +54,10 @@ export const EnglishRecipesTable = sqliteTable(
       .$defaultFn(() => new Date().toISOString()),
     ratings: text("ratings", { mode: "json" }).$type<Rating[]>(),
   },
-  (table) => [uniqueIndex("english_recipe_name_idx").on(table.name)],
+  (table) => [
+    uniqueIndex("english_recipe_name_idx").on(table.name),
+    uniqueIndex("english_recipe_slug_idx").on(table.slug),
+  ],
 );
 
 // One to one relationship between recipe and recipe name
