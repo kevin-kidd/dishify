@@ -1,27 +1,23 @@
+"use client";
+
 import { trpc } from "app/utils/trpc";
 import { useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SearchSchema, type SearchValues } from "@dishify/api/schemas/search";
 import { isWeb } from "@tamagui/constants";
-import { SendHorizontal } from "@dishify/ui/src/icons/send-horizontal";
-import { LoaderCircle } from "@dishify/ui/src/icons/loader-circle";
 import ImageDropdown from "./image-dropdown";
 import { toast } from "app/utils/toast";
-import { Keyboard, type Pressable } from "react-native";
-import { Autocomplete, Button, cn, Div, Form, FormInput, TextInput } from "@dishify/ui";
-import { useAtom } from "jotai";
+import { Keyboard, View, type Pressable } from "react-native";
+import { Autocomplete, cn, Form, FormInput, TextInput, Skeleton } from "@dishify/ui";
 import { Search as SearchIcon } from "@dishify/ui/src/icons/search";
-import { recipeAtom } from "app/atoms/recipe";
+import { useRouter } from "solito/navigation";
+import { TRPCClientError } from "@trpc/client";
+import type React from "react";
 
 export default function Search() {
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    watch,
-    setValue,
-  } = useForm<SearchValues>({
+  const router = useRouter();
+  const { control, handleSubmit, watch, setValue } = useForm<SearchValues>({
     resolver: zodResolver(SearchSchema),
     mode: "onSubmit",
     defaultValues: {
@@ -30,9 +26,35 @@ export default function Search() {
     },
   });
   const [isFocused, setIsFocused] = useState(false);
-  const [recipe, setRecipe] = useAtom(recipeAtom);
-  const submitButtonRef = useRef<React.ElementRef<typeof Pressable>>(null);
-  const generate = trpc.recipe.generate.useMutation();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const generate = trpc.recipe.generate.useMutation({
+    onMutate: () => {
+      setIsGenerating(true);
+      // Dismiss keyboard on mutation start
+      if (!isWeb) {
+        Keyboard.dismiss();
+      }
+    },
+    onError: (error) => {
+      setIsGenerating(false);
+      // Handle specific error types
+      if (error instanceof TRPCClientError) {
+        toast.error(error.message);
+        return;
+      }
+      // Handle unexpected errors
+      toast.error("Failed to generate recipe", {
+        description: "Something went wrong. Please try again later.",
+      });
+    },
+    onSuccess: (response) => {
+      setIsGenerating(false);
+      router.push(`/dish/${response.id}`);
+    },
+  });
+
   const { data: autocompleteOptions, refetch: refetchAutocomplete } =
     trpc.recipe.autocomplete.useQuery(
       {
@@ -47,53 +69,72 @@ export default function Search() {
     );
 
   const getOptions = useCallback(async () => {
+    if (isGenerating) return;
     await refetchAutocomplete();
-  }, [refetchAutocomplete]);
+  }, [refetchAutocomplete, isGenerating]);
 
-  const onSubmitImage = handleSubmit(async (data) => {
-    setRecipe((prev) => {
-      prev.isLoading = true;
-      prev.data = null;
-    });
-    try {
-      const response = await generate.mutateAsync({ image: data.image });
-      if (response) {
-        setRecipe((prev) => {
-          prev.data = response;
-        });
+  const handleGenerate = useCallback(
+    async (data: SearchValues) => {
+      if (isWeb) {
+        inputRef.current?.focus();
       }
-    } catch (error) {
-      toast.error(error.message);
-    }
-    setRecipe((prev) => {
-      prev.isLoading = false;
-    });
-  });
+      // Don't catch errors here, let them propagate up
+      return generate.mutateAsync(data);
+    },
+    [generate],
+  );
 
-  const onSubmit = handleSubmit(async (data) => {
-    setRecipe((prev) => {
-      prev.isLoading = true;
-      prev.data = null;
-    });
-    if (isWeb) {
-      submitButtonRef.current?.focus();
-    } else {
-      Keyboard.dismiss();
-    }
-    try {
-      const response = await generate.mutateAsync({ dishName: data.dishName });
-      if (response) {
-        setRecipe((prev) => {
-          prev.data = response;
-        });
+  const submitForm = useCallback(
+    async (data: SearchValues) => {
+      if (isGenerating) return;
+      // Don't catch errors here, let them propagate up
+
+      if (data.image?.length) {
+        await handleGenerate({ image: data.image });
+      } else if (data.dishName) {
+        await handleGenerate({ dishName: data.dishName });
       }
-    } catch (error) {
-      toast.error(error.message);
-    }
-    setRecipe((prev) => {
-      prev.isLoading = false;
-    });
-  });
+    },
+    [handleGenerate, isGenerating],
+  );
+
+  const onSubmit = useCallback(
+    async (e?: React.BaseSyntheticEvent) => {
+      e?.preventDefault();
+      if (!isGenerating) {
+        try {
+          await handleSubmit(submitForm)(e);
+          // Blur the input after form submission
+          inputRef.current?.blur();
+          setIsFocused(false);
+        } catch (error) {
+          // Let the mutation's onError handle the error display
+          // This ensures the loading state is properly reset
+          console.error("Form submission failed:", error);
+        }
+      }
+    },
+    [isGenerating, handleSubmit, submitForm],
+  );
+
+  const handleImageSubmit = useCallback(
+    async (e?: React.BaseSyntheticEvent) => {
+      e?.preventDefault();
+      if (!isGenerating) {
+        try {
+          const values = control._formValues as SearchValues;
+          if (values.image?.length) {
+            await submitForm({ image: values.image });
+          }
+        } catch (error) {
+          // Let the mutation's onError handle the error display
+          // This ensures the loading state is properly reset
+          console.error("Image submission failed:", error);
+        }
+      }
+    },
+    [isGenerating, control, submitForm],
+  );
 
   return (
     <Controller
@@ -102,29 +143,43 @@ export default function Search() {
       rules={{
         required: true,
       }}
-      render={({ field: { onChange, onBlur, name, value } }) => (
+      render={({ field: { onChange, onBlur, name, value, ref } }) => (
         <Autocomplete
           onSelect={onChange}
           getOptions={getOptions}
           autocompleteOptions={autocompleteOptions}
+          isInteractive={!isGenerating}
+          onTemporaryChange={(text) => {
+            // This is for keyboard navigation - just update the field value without triggering validation
+            setValue("dishName", text, { shouldValidate: false });
+          }}
         >
           <Form
+            ref={formRef}
             className={cn(
               "p-1 sm:p-2",
               "group relative flex-1 w-full items-center flex max-h-12 sm:max-h-14",
               "rounded-2xl overflow-hidden",
-              "bg-white border border-primary/60",
-              "transition-all duration-300 ease-in-out",
-              isFocused && "ring-2 ring-primary/80 border-transparent",
+              "bg-white border border-sage-200",
+              "transition-all duration-200 ease-in-out",
+              isFocused && "ring-2 ring-sage-500 border-transparent",
+              isGenerating && "opacity-50 pointer-events-none",
             )}
             onSubmit={onSubmit}
           >
-            <FormInput
-              error={errors.dishName?.message}
-              id={name}
-              className="flex-1 w-full flex-row relative items-center gap-0"
-            >
-              <SearchIcon className="absolute left-2 h-5 w-5 transition-all duration-300 text-primary" />
+            <FormInput id={name} className="flex-1 w-full flex-row relative items-center gap-0">
+              <View className="absolute left-2 h-5 w-5 flex items-center justify-center">
+                {isGenerating ? (
+                  <Skeleton className="h-5 w-5 rounded-full animate-pulse" />
+                ) : (
+                  <SearchIcon
+                    className={cn(
+                      "h-5 w-5 transition-all duration-200 text-sage-400",
+                      isFocused && "text-sage-500",
+                    )}
+                  />
+                )}
+              </View>
               <TextInput
                 inputMode="search"
                 id={name}
@@ -135,14 +190,23 @@ export default function Search() {
                   onBlur();
                 }}
                 onChange={onChange}
-                className="text-md sm:text-lgflex border-0 bg-transparent pl-10 sm:pl-12 web:focus-visible:ring-0 web:focus-visible:ring-offset-0 placeholder:text-primary/70 transition-colors duration-300"
-                placeholder="Search any dish..."
+                onChangeText={onChange}
+                onSubmitEditing={onSubmit}
+                returnKeyType="search"
+                className={cn(
+                  "text-md sm:text-lgflex border-0 bg-transparent pl-10 sm:pl-12",
+                  "web:focus-visible:ring-0 web:focus-visible:ring-offset-0",
+                  "placeholder:text-sage-400 transition-colors duration-200",
+                  isGenerating && "text-sage-200",
+                )}
+                placeholder={isGenerating ? "Generating recipe..." : "Search any dish..."}
                 maxLength={80}
+                editable={!isGenerating}
               />
               <ImageDropdown
                 setImageData={(imageData: number[] | undefined) => setValue("image", imageData)}
                 watch={watch}
-                onSubmit={onSubmitImage}
+                onSubmit={handleImageSubmit}
               />
             </FormInput>
           </Form>
