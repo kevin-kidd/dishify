@@ -112,14 +112,14 @@ export default function ImageDropdown({ setImageData, watch, onSubmit }: ImageDr
         <DropdownMenuContent align="end" className="w-48 rounded-xl">
           <DropdownMenuGroup>
             <DropdownMenuItem
-              onPress={handleUpload}
+              onClick={handleUpload}
               className="flex items-center gap-2 py-2 hover:cursor-pointer rounded-xl transition-colors duration-200 ease-in-out web:hover:bg-sage-50 web:focus:bg-sage-50"
             >
               <UploadIcon className="text-sage-500 h-4 w-4" />
               <Text>Upload</Text>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onPress={handleTakePhoto}
+              onClick={handleTakePhoto}
               className="flex items-center gap-2 py-2 hover:cursor-pointer rounded-xl transition-colors duration-200 ease-in-out web:hover:bg-sage-50 web:focus:bg-sage-50"
             >
               <CameraIcon className="text-sage-500 h-4 w-4" />
