@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { Star } from "lucide-react";
-import { motion } from "framer-motion";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@dishify/ui";
+import { Tooltip, TooltipTrigger, TooltipContent, Button, cn, Span } from "@dishify/ui";
 import { trpc } from "app/utils/trpc";
 import { useAtom } from "jotai";
 import { useOnline } from "app/utils/hooks/use-online";
@@ -13,10 +12,10 @@ import { useOfflineSync } from "app/utils/hooks/use-offline-sync";
 interface FavoriteButtonProps {
   recipe: EnglishRecipe;
   className?: string;
-  onPress?: () => Promise<void>;
+  onClick?: () => Promise<void>;
 }
 
-export function FavoriteButton({ recipe, className, onPress }: FavoriteButtonProps) {
+export function FavoriteButton({ recipe, className, onClick }: FavoriteButtonProps) {
   const isOnline = useOnline();
   const [favoritedRecipes, setFavoritedRecipes] = useAtom(favoritedRecipesAtom);
   const isFavorited = !!favoritedRecipes[recipe.id];
@@ -45,8 +44,8 @@ export function FavoriteButton({ recipe, className, onPress }: FavoriteButtonPro
   );
 
   const handleToggleFavorite = useCallback(async () => {
-    if (onPress) {
-      await onPress();
+    if (onClick) {
+      await onClick();
     }
     setFavoritedRecipes((prev) => {
       const next = { ...prev };
@@ -61,46 +60,33 @@ export function FavoriteButton({ recipe, className, onPress }: FavoriteButtonPro
     if (!isOnline) {
       toast.info("Changes will sync when you're back online");
     }
-  }, [isOnline, recipe, setFavoritedRecipes, isFavorited, onPress]);
+  }, [isOnline, recipe, setFavoritedRecipes, isFavorited, onClick]);
 
   const isLoading = mutation.isPending;
 
   return (
     <Tooltip>
       <TooltipTrigger>
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          className={`hidden md:flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+        <Button
+          variant="none"
+          className={cn(
+            "hidden md:flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all duration-200",
+            className,
+          )}
           onClick={handleToggleFavorite}
           disabled={isLoading}
         >
-          <motion.div
-            initial={false}
-            animate={{
-              scale: isFavorited ? [1, 1.2, 1] : 1,
-              color: isFavorited ? "#FFD700" : "#4B5563",
-              opacity: isLoading ? 0.5 : 1,
-            }}
-            transition={{
-              duration: 0.3,
-              scale: {
-                type: "spring",
-                stiffness: 300,
-                damping: 10,
-              },
-            }}
-          >
-            <Star
-              className="h-4 w-4"
-              fill={isFavorited ? "currentColor" : "none"}
-              strokeWidth={2}
-            />
-          </motion.div>
-          <span className="sr-only">
+          <Star
+            className={cn(
+              "h-4 w-4 transition-colors duration-200",
+              isFavorited ? "fill-yellow-500 text-yellow-500" : "text-gray-500",
+            )}
+            strokeWidth={2}
+          />
+          <Span className="sr-only">
             {isFavorited ? "Remove from Favorites" : "Add to Favorites"}
-          </span>
-        </motion.button>
+          </Span>
+        </Button>
       </TooltipTrigger>
       <TooltipContent position="top">
         {isFavorited ? "Remove from Favorites" : "Add to Favorites"}
