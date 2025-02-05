@@ -7,4 +7,4 @@ export const appThemeAtom = atomWithMMKV<ThemeVariant>(appThemeKey, "default");
 
 export const appColorSchemeKey = "appColorScheme";
 
-export const appColorSchemeAtom = atomWithMMKV<ColorSchemeVariant>(appColorSchemeKey, "system");
+export const appColorSchemeAtom = atomWithMMKV<ColorSchemeVariant>(appColorSchemeKey, "light");
