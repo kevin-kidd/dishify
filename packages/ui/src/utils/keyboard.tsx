@@ -27,7 +27,7 @@ export function useKeyboard(
       showListener.remove();
       hideListener.remove();
     };
-  }, []);
+  }, [eventType]);
 
   function dismissKeyboard() {
     Keyboard.dismiss();
