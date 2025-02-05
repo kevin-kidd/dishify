@@ -10,9 +10,10 @@ interface Reaction {
 interface EmojiGridProps {
   reactions: readonly Reaction[];
   onSelect: (emoji: string) => void;
+  isSignedIn?: boolean;
 }
 
-const EmojiGrid = ({ reactions, onSelect }: EmojiGridProps) => {
+const EmojiGrid = ({ reactions, onSelect, isSignedIn = true }: EmojiGridProps) => {
   return (
     <View className="grid grid-cols-3 gap-1 p-2">
       {reactions.map(({ emoji, label }) => (
@@ -20,7 +21,10 @@ const EmojiGrid = ({ reactions, onSelect }: EmojiGridProps) => {
           key={emoji}
           onPress={() => onSelect(emoji)}
           accessibilityLabel={label}
-          className="flex aspect-square items-center justify-center rounded-lg p-2 active:bg-gray-100"
+          className={cn(
+            "flex aspect-square items-center justify-center rounded-lg p-2 active:bg-gray-100",
+            !isSignedIn && "cursor-not-allowed opacity-50",
+          )}
         >
           <MotiView
             animate={{ scale: 1 }}
