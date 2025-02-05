@@ -19,6 +19,7 @@ interface TextInputElement extends React.ReactElement<any> {
     onChangeText?: (text: string) => void;
     onKeyPress?: (event: any) => void;
     children?: React.ReactNode;
+    ref?: React.RefObject<any> | React.MutableRefObject<any> | ((instance: any) => void);
   };
 }
 
@@ -116,11 +117,15 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
               },
               ref: (node: any) => {
                 // Forward the ref to both our inputRef and any provided ref
-                inputRef.current = node;
-                if (typeof inputElement.props.ref === "function") {
-                  inputElement.props.ref(node);
-                } else if (inputElement.props.ref) {
-                  (inputElement.props.ref as React.MutableRefObject<any>).current = node;
+                if (node) {
+                  // Cast to MutableRefObject to allow assignment
+                  (inputRef as React.MutableRefObject<any>).current = node;
+                  if (typeof inputElement.props.ref === "function") {
+                    inputElement.props.ref(node);
+                  } else if (inputElement.props.ref && "current" in inputElement.props.ref) {
+                    // Cast to MutableRefObject and assign
+                    (inputElement.props.ref as React.MutableRefObject<any>).current = node;
+                  }
                 }
               },
               onKeyPress: handleKeyPress,
