@@ -16,6 +16,7 @@ export const SearchSchema = z
       .optional()
       .or(z.literal("")),
     image: z.number().array().optional(),
+    retryId: z.string().optional(),
   })
   .superRefine(({ dishName, image }, ctx) => {
     if (!image && !dishName) {
