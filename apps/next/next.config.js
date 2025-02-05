@@ -8,8 +8,20 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
+  scope: "/",
   sw: "service-worker.js",
-  swcMinify: true,
+  reloadOnOnline: true,
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  extendDefaultRuntimeCaching: true,
+  workboxOptions: {
+    disableDevLogs: true,
+  },
+  iconPaths: {
+    favicon: "/pwa/icons/favicon.ico",
+    apple: "/pwa/icons/touch-icon-iphone-retina.png",
+    android: "/pwa/icons/android-chrome-192x192.png",
+  },
 });
 
 const boolVals = {
@@ -64,6 +76,7 @@ module.exports = () => {
     reactStrictMode: false,
     transpilePackages: [
       "react-native-css-interop",
+      "solito",
       "nativewind",
       "sonner-native",
       "@rn-primitives/slot",
@@ -81,6 +94,8 @@ module.exports = () => {
       "react-camera-pro",
       "embla-carousel-react",
       "lucide-react-native",
+      "moti",
+      "react-native-circular-progress",
     ],
     experimental: {
       scrollRestoration: true,
