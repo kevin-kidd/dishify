@@ -4,13 +4,58 @@ import { EnglishRecipesTable } from "../../db/schema/recipes";
 import { TRPCError } from "@trpc/server";
 import { createId } from "@paralleldrive/cuid2";
 import { and, eq, ne } from "drizzle-orm";
+import { z } from "zod";
 
 const RECIPE_STATE_PREFIX = "recipe_state:";
 const GENERATION_TIMEOUT = 60000; // 1 minute timeout
+const MAX_DISH_NAME_LENGTH = 100; // Maximum length for dish name
+const MAX_SLUG_LENGTH = 80; // Maximum length for slug
+
+// Define return type for better type safety
+const GenerateResponseSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  status: z.enum(["generating", "completed", "error"]),
+  errorMessage: z.string().optional(),
+});
+
+type GenerateResponse = z.infer<typeof GenerateResponseSchema>;
+
+/**
+ * Generates a URL-friendly slug from a dish name
+ * @param text The text to slugify (either dish name or search query)
+ * @param id A unique identifier to append
+ * @returns A URL-friendly slug
+ */
+function generateSlug(text: string, id: string): string {
+  // Convert to lowercase and replace spaces and special characters with hyphens
+  const baseSlug = text
+    .toLowerCase()
+    .trim()
+    // Replace special characters with spaces
+    .replace(/[^a-z0-9\s-]/g, " ")
+    // Replace multiple spaces with single hyphen
+    .replace(/\s+/g, "-")
+    // Remove leading/trailing hyphens
+    .replace(/^-+|-+$/g, "")
+    // Limit the base slug length to leave room for the ID
+    .slice(0, MAX_SLUG_LENGTH - id.length - 1);
+
+  // Append first 8 characters of the ID to ensure uniqueness
+  return `${baseSlug}-${id.slice(0, 8)}`;
+}
 
 export const generate = publicProcedure
   .input(SearchSchema)
   .mutation(async ({ ctx, input: { dishName, image, retryId } }) => {
+    // Validate dish name length
+    if (dishName && dishName.length > MAX_DISH_NAME_LENGTH) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Dish name must be ${MAX_DISH_NAME_LENGTH} characters or less`,
+      });
+    }
+
     // First check if recipe exists in database
     let existingRecipeId: string | null = null;
 
@@ -58,8 +103,9 @@ export const generate = publicProcedure
           if (existingRecipe.status === "completed") {
             return {
               id: existingRecipe.id,
+              slug: existingRecipe.slug,
               status: "completed",
-            };
+            } satisfies GenerateResponse;
           }
 
           // Check if recipe is stuck in generating state
@@ -79,23 +125,25 @@ export const generate = publicProcedure
 
             existingRecipeId = existingRecipe.id;
           } else if (existingRecipe.status === "generating" && isGenerating) {
-            // If recipe is currently being generated, return its ID
+            // If recipe is currently being generated, return its ID and slug
             return {
               id: existingRecipe.id,
+              slug: existingRecipe.slug,
               status: "generating",
-            };
+            } satisfies GenerateResponse;
           } else if (existingRecipe.status === "moved") {
-            // If recipe was moved, return the target recipe ID
-            if (!existingRecipe.movedToRecipeId) {
+            // If recipe was moved, return the target recipe details
+            if (!existingRecipe.movedToRecipeId || !existingRecipe.movedToSlug) {
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
-                message: "Recipe was moved but target recipe ID is missing",
+                message: "Recipe was moved but target recipe details are missing",
               });
             }
             return {
               id: existingRecipe.movedToRecipeId,
+              slug: existingRecipe.movedToSlug,
               status: "completed",
-            };
+            } satisfies GenerateResponse;
           } else if (existingRecipe.status === "error") {
             // If recipe is in error state, allow retry with same ID
             existingRecipeId = existingRecipe.id;
@@ -114,18 +162,22 @@ export const generate = publicProcedure
           )
           .get();
 
-        if (movedRecipe?.movedToRecipeId) {
-          // If we find a moved recipe, return the target recipe ID
+        if (movedRecipe?.movedToRecipeId && movedRecipe?.movedToSlug) {
+          // If we find a moved recipe, return the target recipe details
           return {
             id: movedRecipe.movedToRecipeId,
+            slug: movedRecipe.movedToSlug,
             status: "completed",
-          };
+          } satisfies GenerateResponse;
         }
       }
     }
 
     // Create a new recipe entry with 'generating' status
     const recipeId = existingRecipeId ?? createId();
+    const initialSlug = generateSlug(dishName || `recipe-${recipeId}`, recipeId);
+    const searchQuery =
+      typeof dishName === "string" ? dishName.toLowerCase() : `recipe-${recipeId}`;
 
     try {
       // Check if this recipe is already being generated
@@ -144,8 +196,9 @@ export const generate = publicProcedure
           .values({
             id: recipeId,
             name: `temp_${recipeId}`,
+            slug: initialSlug,
             data: {
-              dishName: `temp_${recipeId}`,
+              dishName: dishName || `Recipe ${recipeId}`,
               cuisine: "Unknown",
               shoppingList: [],
               cookingTime: "",
@@ -154,7 +207,7 @@ export const generate = publicProcedure
             },
             status: "error",
             errorMessage: "Image data was lost. Please try uploading the image again.",
-            searchQuery: null,
+            searchQuery,
             imageQuery: "true",
             updatedAt: new Date().toISOString(),
             ratings: [],
@@ -169,9 +222,10 @@ export const generate = publicProcedure
 
         return {
           id: recipeId,
+          slug: initialSlug,
           status: "error" as const,
           errorMessage: "Image data was lost. Please try uploading the image again.",
-        };
+        } satisfies GenerateResponse;
       }
 
       // Save initial recipe entry with generating status
@@ -179,11 +233,12 @@ export const generate = publicProcedure
         .insert(EnglishRecipesTable)
         .values({
           id: recipeId,
-          name: `temp_${recipeId}`, // Use a temporary unique name
+          name: `temp_${recipeId}`,
+          slug: initialSlug,
           data: {
-            dishName: `temp_${recipeId}`,
+            dishName: dishName || `Recipe ${recipeId}`,
             cuisine: "Unknown",
-            shoppingList: [], // Empty array, will be stored as JSON
+            shoppingList: [],
             cookingTime: "",
             servings: "",
             instructions: [],
@@ -214,11 +269,12 @@ export const generate = publicProcedure
         image,
       });
 
-      // Return immediately with the recipe ID and generating status
+      // Return immediately with the recipe ID, slug and generating status
       return {
         id: recipeId,
+        slug: initialSlug,
         status: "generating",
-      };
+      } satisfies GenerateResponse;
     } catch (error) {
       // Clean up if initial save fails
       await ctx.recipeState.delete(RECIPE_STATE_PREFIX + recipeId);
