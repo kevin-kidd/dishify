@@ -1,19 +1,12 @@
 {
-  "version": "5",
+  "version": "7",
   "dialect": "sqlite",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1725326053476,
-      "tag": "0000_bouncy_vulture",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1726795952912,
-      "tag": "0001_sticky_doctor_faustus",
+      "version": "6",
+      "when": 1738667571289,
+      "tag": "0000_safe_marvel_boy",
       "breakpoints": true
     }
   ]
