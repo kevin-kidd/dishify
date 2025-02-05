@@ -14,9 +14,10 @@ import { ErrorView } from "./error-view";
 import { EmojiReactions } from "./emoji-reactions/index";
 import { MarketplaceLinks } from "./marketplace-links";
 import { FavoriteButton, ShareButton, PrintButton } from "./actions";
-import { toast } from "app/utils/toast";
 import Animated, { FadeIn, FadeInDown, LinearTransition } from "react-native-reanimated";
 import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
+import { useAtom } from "jotai";
+import { favoritedRecipesAtom } from "app/atoms/favorites";
 
 // Mock data for demo - replace with real data from API
 const MOCK_MARKETPLACES = [
@@ -60,17 +61,23 @@ function toTitleCase(str: string) {
 
 export default function RecipeCard() {
   const router = useRouter();
-  const { recipeId } = useParams();
+  const params = useParams();
+  const slug = typeof params.slug === "string" ? params.slug : undefined;
+  const isLocalStorage = slug ? slug.startsWith("local-") : false;
+
+  // Get recipe from local storage if needed
+  const [favoritedRecipes] = useAtom(favoritedRecipesAtom);
+  const localRecipe = isLocalStorage && slug ? favoritedRecipes[slug.replace("local-", "")] : null;
 
   const {
     data: recipe,
     isLoading,
     error,
     refetch,
-  } = trpc.recipe.getRecipe.useQuery(
-    { id: recipeId as string },
+  } = trpc.recipe.getRecipeBySlug.useQuery(
+    { slug: slug as string },
     {
-      enabled: !!recipeId,
+      enabled: !!slug && !isLocalStorage,
       // Poll every second while recipe is generating
       refetchInterval: (query) => {
         if (!query?.state?.data?.status) return false;
@@ -97,9 +104,6 @@ export default function RecipeCard() {
     onSuccess: () => {
       void refetch().catch((error) => console.error(error));
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
   });
 
   const costIndicators = useMemo(() => {
@@ -124,37 +128,56 @@ export default function RecipeCard() {
     return <ErrorView error={error} onRetry={refetch} onHome={() => router.push("/")} />;
   }
 
+  if (recipe?.status === "error") {
+    console.error(recipe.errorMessage);
+    return (
+      <ErrorView
+        error={new Error(recipe.errorMessage || "Failed to load dish")}
+        onRetry={refetch}
+        onHome={() => router.push("/")}
+      />
+    );
+  }
+
   // Show loading skeleton while loading
   if (isLoading) {
     return <LoadingSkeleton />;
   }
 
-  if (!recipe) {
-    return null;
+  // Use local recipe if available
+  const recipeData = localRecipe || recipe;
+  if (!recipeData && !error) {
+    return (
+      <ErrorView
+        error={new Error("Failed to load dish")}
+        onRetry={refetch}
+        onHome={() => router.push("/")}
+      />
+    );
   }
 
-  if (recipe.status === "moved" && recipe.movedToRecipeId) {
-    router.replace(`/dish/${recipe.movedToRecipeId}`);
+  if (recipe?.status === "moved" && recipe?.movedToSlug) {
+    router.replace(`/dish/${recipe.movedToSlug}`);
     return <LoadingSkeleton />;
   }
 
   // Show error state if recipe generation failed
-  if (recipe.status === "error") {
-    const isImageRecipe = recipe.imageQuery === "true";
+  if (recipeData?.status === "error") {
+    const isImageRecipe = recipeData.imageQuery === "true";
     return (
       <View className="flex h-full items-center justify-center p-4 my-6">
         <View className="flex items-center space-y-4">
           <Text className="text-2xl font-semibold">Failed to generate recipe</Text>
           <Text className="text-center text-gray-500 max-w-[350px]">
-            {recipe.errorMessage || "Something went wrong while generating the recipe."}
+            {recipeData.errorMessage || "Something went wrong while generating the recipe."}
           </Text>
           <View className="flex-row space-x-4">
             {!isImageRecipe && (
               <Button
                 onClick={() =>
                   generate.mutateAsync({
-                    dishName: recipe?.searchQuery || undefined,
-                    retryId: recipeId as string,
+                    dishName: recipeData?.searchQuery || undefined,
+                    retryId: recipeData.id,
                   })
                 }
                 disabled={generate.isPending}
@@ -174,7 +197,7 @@ export default function RecipeCard() {
   }
 
   // Show loading state while recipe is being generated
-  if (recipe.status === "generating") {
+  if (recipeData?.status === "generating") {
     return (
       <View className="flex h-full items-center justify-center p-4 my-6">
         <View className="flex items-center space-y-4">
@@ -192,10 +215,10 @@ export default function RecipeCard() {
 
   // Show completed recipe
   if (
-    !recipe.data?.dishName ||
-    !recipe.data?.cuisine ||
-    !recipe.data?.shoppingList ||
-    !recipe.data?.instructions
+    !recipeData?.data?.dishName ||
+    !recipeData?.data?.cuisine ||
+    !recipeData?.data?.shoppingList ||
+    !recipeData?.data?.instructions
   ) {
     return (
       <View className="flex h-full items-center justify-center p-4 my-6">
@@ -218,7 +241,7 @@ export default function RecipeCard() {
   }
 
   return (
-    <Section className="max-w-6xl mx-auto px-4 pt-14 pb-10">
+    <Section className="max-w-6xl mx-auto px-4 pt-14">
       <Animated.View
         entering={FadeIn}
         layout={LinearTransition.springify().mass(0.8).damping(15).stiffness(100)}
@@ -230,49 +253,49 @@ export default function RecipeCard() {
                 <View className="flex-1 min-w-0">
                   <CardTitle>
                     <Text className="text-4xl font-bold tracking-tight text-sage-900 truncate">
-                      {toTitleCase(recipe.name)}
+                      {toTitleCase(recipeData.data.dishName)}
                     </Text>
                   </CardTitle>
                 </View>
                 <View className="flex flex-row items-center gap-1.5">
-                  <PrintButton recipe={recipe} />
-                  <ShareButton title={recipe.name} url={window.location.href} />
-                  <FavoriteButton recipe={recipe} />
+                  <PrintButton recipe={recipeData} />
+                  <ShareButton title={recipeData.name} url={window.location.href} />
+                  <FavoriteButton recipe={recipeData} />
                 </View>
               </View>
-              <CuisineLabel cuisine={recipe.data.cuisine} />
+              <CuisineLabel cuisine={recipeData.data.cuisine} />
               <View className="mt-6 flex flex-row items-center justify-between w-full">
                 <View className="flex flex-row items-center flex-wrap gap-4">
                   <View className="flex flex-row items-center gap-2">
                     <Clock className="h-4 w-4 text-sage-500" />
-                    <Text className="text-sm">{recipe.data.cookingTime}</Text>
+                    <Text className="text-sm">{recipeData.data.cookingTime}</Text>
                   </View>
                   <View className="flex flex-row items-center gap-2">
                     <Utensils className="h-4 w-4 text-sage-500" />
-                    <Text className="text-sm">{recipe.data.servings} servings</Text>
+                    <Text className="text-sm">{recipeData.data.servings} servings</Text>
                   </View>
                   <View className="flex flex-row items-center gap-1">{costIndicators}</View>
                 </View>
                 <View className="flex-shrink-0">
-                  <EmojiReactions recipeId={recipeId as string} />
+                  <EmojiReactions slug={recipeData.slug} />
                 </View>
               </View>
             </View>
           </CardHeader>
 
-          <CardContent className="grid gap-12 p-8 lg:grid-cols-[1fr_300px]">
+          <CardContent className="grid gap-12 p-8 lg:grid-cols-[1fr_400px]">
             <View className="space-y-8">
               <View>
                 <Text className="mb-6 text-xl font-semibold text-sage-900">Instructions</Text>
                 <View className="relative space-y-4">
-                  {recipe.data.instructions.map((instruction, index) => (
+                  {recipeData.data.instructions.map((instruction, index) => (
                     <Animated.View
                       key={instruction.slice(0, 32)}
                       entering={FadeInDown.delay(index * 100)}
                       layout={LinearTransition.springify().mass(0.5).damping(15).stiffness(120)}
                       className="group relative"
                     >
-                      {index < (recipe.data?.instructions?.length ?? 0) - 1 && (
+                      {index < (recipeData.data?.instructions?.length ?? 0) - 1 && (
                         <View className="absolute left-[13.5px] top-[31px] h-[calc(100%+8px)] w-0.5 bg-sage-100 group-hover:bg-sage-200 transition-colors duration-200" />
                       )}
                       <View className="flex flex-row items-start gap-6">
@@ -284,7 +307,7 @@ export default function RecipeCard() {
                           </View>
                         </View>
                         <View className="flex-1 rounded-xl bg-white p-4 shadow-sm ring-1 ring-sage-100 hover:ring-sage-200 transition-all duration-200">
-                          <Text className="text-base leading-relaxed text-sage-800">
+                          <Text className="text-sm leading-relaxed text-sage-800">
                             {instruction}
                           </Text>
                         </View>
@@ -299,7 +322,7 @@ export default function RecipeCard() {
               <View>
                 <Text className="mb-6 text-xl font-semibold text-sage-900">Ingredients</Text>
                 <View className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-sage-100">
-                  {recipe.data.shoppingList.map((item, index) => (
+                  {recipeData.data.shoppingList.map((item, index) => (
                     <View
                       key={`${item.item}-${item.quantity}`}
                       className="flex flex-row items-center justify-between border-b border-sage-50 py-3 last:border-0"
