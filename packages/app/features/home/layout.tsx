@@ -24,7 +24,7 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
       <Div className="flex flex-row items-center w-full justify-between pt-10 px-4 pb-0">
         <Div>
           {!isHome && (
-            <Button onClick={() => router.back()} variant="none">
+            <Button onClick={() => router.push("/")} variant="none">
               <ArrowLeft className="w-6 h-6 text-sage-900" />
             </Button>
           )}
