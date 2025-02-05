@@ -5,35 +5,46 @@
   "license": "MIT",
   "scripts": {
     "dev": "wrangler dev",
-    "generate": "drizzle-kit generate:sqlite --schema=./src/db/schema.ts --out=./migrations",
-    "migrate": "wrangler d1 migrations apply dishify_production",
-    "migrate:local": "wrangler d1 migrations apply dishify_preview --local",
+    "generate": "drizzle-kit generate",
+    "migrate:local": "wrangler d1 migrations apply dishify_production --local",
+    "migrate:preview": "wrangler d1 migrations apply --env preview dishify_preview",
+    "migrate:prod": "wrangler d1 migrations apply dishify_production --remote",
+    "studio:local": "cross-env DB_LOCAL_PATH=$(find .wrangler/state/v3/d1/miniflare-D1DatabaseObject -type f -name '*.sqlite' -print -quit) drizzle-kit studio",
     "seed": "wrangler d1 execute dishify_production --file=./seed/seed.sql",
     "seed:local": "ts-node seed-local.ts",
     "studio": "drizzle-kit studio",
-    "deploy": "wrangler deploy --minify src/worker.ts",
+    "deploy": "wrangler deploy --minify src/worker.ts && wrangler deploy --config wrangler.queue.toml --minify",
+    "deploy:preview": "wrangler deploy --minify src/worker.ts --env preview && wrangler deploy --config wrangler.queue.toml --minify --env preview",
     "postinstall": "bun generate",
     "clean": "rm -rf .turbo node_modules"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^1.1.6",
+    "@better-auth/expo": "^1.1.15",
     "@hono/trpc-server": "0.3.2",
+    "@paralleldrive/cuid2": "^2.2.2",
     "@trpc/server": "11.0.0-rc.490",
     "@tsndr/cloudflare-worker-jwt": "2.2.7",
+    "ai": "^4.1.13",
+    "better-auth": "^1.1.15",
     "buffer": "^6.0.3",
-    "drizzle-orm": "^0.38.4",
-    "drizzle-valibot": "^0.3.1",
+    "drizzle-orm": "^0.39.1",
+    "drizzle-valibot": "^0.4.0",
     "glin-profanity": "1.1.7",
     "groq-sdk": "^0.6.1",
     "hono": "4.5.10",
     "miniflare": "3.20231025.1",
+    "npm-run-all": "^4.1.5",
+    "resend": "^4.1.2",
     "superjson": "2.2.1",
-    "valibot": "^1.0.0-beta.14"
+    "valibot": "^1.0.0-beta.14",
+    "workers-ai-provider": "^0.0.10"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "4.20240925.0",
-    "bun-types": "^1.0.8",
-    "drizzle-kit": "^0.20.1",
+    "bun-types": "^1.2.1",
+    "drizzle-kit": "^0.30.4",
     "typescript": "5.5.4",
-    "wrangler": "3.105.1"
+    "wrangler": "3.107.2"
   }
 }
