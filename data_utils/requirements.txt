@@ -12,3 +12,4 @@ six==1.16.0
 threadpoolctl==3.5.0
 tqdm==4.66.5
 tzdata==2024.1
+cuid2==2.0.0

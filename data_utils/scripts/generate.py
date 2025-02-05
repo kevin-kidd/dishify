@@ -3,6 +3,8 @@ import json
 import csv
 import argparse
 from typing import List
+from cuid2 import cuid_wrapper
+from typing import Callable
 
 # Define fixed directories relative to the project root
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -10,6 +12,10 @@ INPUT_DIR = os.path.join(PROJECT_ROOT, "data", "sanitized")
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data")
 
 COLUMN_NAME = "name"
+COLUMN_ID = "id"
+
+# Initialize CUID generator
+cuid_generator: Callable[[], str] = cuid_wrapper()
 
 
 def read_input_file(file_name: str) -> List[str]:
@@ -71,8 +77,9 @@ def generate_sql_file(recipe_names: List[str], output_file: str, table_name: str
 
         # Generate individual INSERT statements for each recipe name
         for name in recipe_names:
+            unique_id = cuid_generator()
             f.write(
-                f"INSERT INTO {table_name} ({COLUMN_NAME}) VALUES ('{escape_name(name)}');\n"
+                f"INSERT INTO {table_name} ({COLUMN_ID}, {COLUMN_NAME}) VALUES ('{unique_id}', '{escape_name(name)}');\n"
             )
 
     print(f"Generated SQL file: {output_path}")
