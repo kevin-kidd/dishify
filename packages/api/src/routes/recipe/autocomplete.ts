@@ -4,7 +4,7 @@ import {
   GermanRecipeNameTable,
   ItalianRecipeNameTable,
   SpanishRecipeNameTable,
-} from "../../db/schema";
+} from "../../db/schema/recipes";
 import { publicProcedure } from "../../trpc";
 import { and, like, sql } from "drizzle-orm";
 import { AutoCompleteRequestSchema } from "../../../schemas/autocomplete";
