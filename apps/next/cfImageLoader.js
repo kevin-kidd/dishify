@@ -9,7 +9,6 @@ export default function cloudflareLoader({ src, width, quality }) {
   }
   if (isDev) {
     return `${appUrl}/${src}`;
-  } else {
-    return `${appUrl}/cdn-cgi/image/${params.join(",")}${src}`;
   }
+  return `${appUrl}/cdn-cgi/image/${params.join(",")}${src}`;
 }
