@@ -85,14 +85,8 @@ Trigger.displayName = "TriggerNativeDialog";
 /**
  * @warning when using a custom `<PortalHost />`, you might have to adjust the Content's sideOffset to account for nav elements like headers.
  */
-function Portal({ forceMount, hostName, children }: DialogPortalProps) {
+function Portal({ hostName, children }: DialogPortalProps) {
   const value = useRootContext();
-
-  if (!forceMount) {
-    if (!value.open) {
-      return null;
-    }
-  }
 
   return (
     <RNPPortal hostName={hostName} name={`${value.nativeID}_portal`}>
@@ -138,7 +132,7 @@ const Content = React.forwardRef<ViewRef, SlottableViewProps & DialogContentProp
       return () => {
         backHandler.remove();
       };
-    }, []);
+    }, [onOpenChange]);
 
     if (!forceMount) {
       if (!open) {

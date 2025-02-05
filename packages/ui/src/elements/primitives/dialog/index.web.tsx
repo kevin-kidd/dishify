@@ -66,7 +66,7 @@ const Trigger = React.forwardRef<PressableRef, SlottablePressableProps>(
         augRef.dataset.state = open ? "open" : "closed";
         augRef.type = "button";
       }
-    }, [open]);
+    }, [open, augmentedRef.current]);
 
     const Component = asChild ? Slot.Pressable : Pressable;
     return (
@@ -85,12 +85,8 @@ const Trigger = React.forwardRef<PressableRef, SlottablePressableProps>(
 
 Trigger.displayName = "TriggerWebDialog";
 
-function Portal({ forceMount, container, children }: DialogPortalProps) {
-  return (
-    <Dialog.Portal forceMount={forceMount} container={container}>
-      {children}
-    </Dialog.Portal>
-  );
+function Portal({ container, children }: DialogPortalProps) {
+  return <Dialog.Portal container={container}>{children}</Dialog.Portal>;
 }
 
 const Overlay = React.forwardRef<PressableRef, SlottablePressableProps & DialogOverlayProps>(
@@ -155,7 +151,7 @@ const Close = React.forwardRef<PressableRef, SlottablePressableProps>(
         const augRef = augmentedRef.current as unknown as HTMLButtonElement;
         augRef.type = "button";
       }
-    }, []);
+    }, [augmentedRef.current]);
 
     const Component = asChild ? Slot.Pressable : Pressable;
     return (
