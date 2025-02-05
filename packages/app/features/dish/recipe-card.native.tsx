@@ -14,7 +14,8 @@ import { FavoriteButton, ShareButton } from "./actions";
 
 export default function RecipeCard() {
   const router = useRouter();
-  const { recipeId } = useParams();
+  const params = useParams();
+  const slug = typeof params.slug === "string" ? params.slug : undefined;
   const [refreshing, setRefreshing] = useState(false);
   const [reactions, setReactions] = useState<
     Array<{ emoji: string; count: number; hasReacted: boolean; timestamp?: number }>
@@ -33,10 +34,10 @@ export default function RecipeCard() {
     error,
     isFetching,
     refetch,
-  } = trpc.recipe.getRecipe.useQuery(
-    { id: recipeId as string },
+  } = trpc.recipe.getRecipeBySlug.useQuery(
+    { slug: slug as string },
     {
-      enabled: !!recipeId,
+      enabled: !!slug,
       retry: (failureCount, error) => {
         // Don't retry on NOT_FOUND errors
         if (error instanceof TRPCClientError && error.data?.code === "NOT_FOUND") {
@@ -189,7 +190,7 @@ export default function RecipeCard() {
           </View>
         </View>
         <View className="mb-4">
-          <EmojiReactions recipeId={recipeId as string} />
+          <EmojiReactions slug={slug as string} />
         </View>
       </CardHeader>
 
