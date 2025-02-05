@@ -19,6 +19,18 @@ const theme = {
       xxs: ["0.625rem", "0.75rem"],
     },
     colors: {
+      sage: {
+        50: "#f6f7f6",
+        100: "#e3e7e3",
+        200: "#c5cdc5",
+        300: "#a4b0a4",
+        400: "#84a98c",
+        500: "#629469",
+        600: "#4d7652",
+        700: "#3f5d43",
+        800: "#354a38",
+        900: "#2e3e30",
+      },
       border: "hsl(var(--border))",
       input: "hsl(var(--input))",
       ring: "hsl(var(--ring))",
