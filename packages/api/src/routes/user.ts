@@ -1,18 +1,15 @@
 import { eq } from "drizzle-orm";
-import { parse } from "valibot";
-import { UserTable, insertUserSchema } from "../db/schema";
+import { UserTable } from "../db/schema/user";
 import { protectedProcedure, router } from "../trpc";
+import { TRPCError } from "@trpc/server";
 
 export const userRouter = router({
   current: protectedProcedure.query(async ({ ctx }) => {
-    const { db } = ctx;
-    const user = await db.select().from(UserTable).where(eq(UserTable.id, ctx.user.id)).get();
-    return user;
+    const { db, user } = ctx;
+    if (!user) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    const userRow = await db.select().from(UserTable).where(eq(UserTable.id, user.id)).get();
+    return userRow;
   }),
-  create: protectedProcedure
-    .input((raw) => parse(insertUserSchema, raw))
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-      await db.insert(UserTable).values(input).run();
-    }),
 });
