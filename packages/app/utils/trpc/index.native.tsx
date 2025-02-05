@@ -30,8 +30,6 @@ export const TRPCProvider: React.FC<{
           onError: (error, query) => {
             // Skip toast if query has custom error handling
             if (query.meta?.skipErrorToast) return;
-            // Skip toast if query explicitly disabled it
-            if (query.meta?.showToastOnError === false) return;
 
             toast.error("Error", {
               description: parseErrorMessage(error),
