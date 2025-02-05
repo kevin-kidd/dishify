@@ -9,6 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        none: "",
         default: "bg-primary web:hover:opacity-90 active:opacity-90",
         destructive: "bg-destructive web:hover:opacity-90 active:opacity-90",
         outline:
@@ -36,6 +37,7 @@ const buttonTextVariants = cva(
   {
     variants: {
       variant: {
+        none: "",
         default: "text-primary-foreground",
         destructive: "text-destructive-foreground",
         outline: "group-active:text-accent-foreground",
