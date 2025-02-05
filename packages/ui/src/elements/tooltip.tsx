@@ -1,3 +1,5 @@
+"use client";
+
 import { type ReactNode, createContext, useContext, useRef, useState } from "react";
 import { View } from "react-native";
 import { cn } from "../utils";
@@ -147,7 +149,7 @@ export const TooltipContent = ({
   return (
     <div
       className={cn(
-        "w-max absolute z-20 overflow-hidden rounded-md text-popover-foreground text-sm border border-border bg-popover px-3 py-1.5 shadow-md transition ease-in",
+        "w-max absolute z-20 overflow-hidden rounded-md text-popover-foreground text-sm border border-border bg-popover px-3 py-1.5 shadow-sm transition ease-in",
         positionClasses[position],
         textClassName,
         className,
