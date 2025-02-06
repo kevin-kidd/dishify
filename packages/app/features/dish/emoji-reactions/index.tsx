@@ -36,42 +36,59 @@ interface EmojiReactionsProps {
 }
 
 export const EmojiReactions = ({ slug }: EmojiReactionsProps) => {
-  const isOnline = useOnline();
-  const [localReactions, setLocalReactions] = useAtom(recipeReactionsAtom);
   const { data: session } = authClient.useSession();
   const isSignedIn = !!session?.user?.id;
 
-  // Get reactions for this recipe from local storage or initialize empty
-  const currentRecipeReactions = localReactions[slug] || [];
+  const utils = trpc.useUtils();
+  const { data: recipe } = trpc.recipe.getRecipeBySlug.useQuery({ slug });
+  const { data: reactions } = trpc.recipe.reactions.getReactions.useQuery({ slug });
 
   // Toggle reaction mutation
   const toggleReaction = trpc.recipe.reactions.toggleReaction.useMutation({
     onError: (error) => {
       toast.error(error.message || "Failed to update reaction");
     },
-  });
+    onMutate: async ({ emoji }) => {
+      // Cancel any outgoing refetches
+      await utils.recipe.reactions.getReactions.cancel({ slug });
 
-  // Setup offline sync
-  useOfflineSync<RecipeReactions, { slug: string; emoji: string }>(
-    recipeReactionsAtom,
-    (payload) => {
-      toggleReaction.mutate(payload);
+      // Snapshot the previous value
+      const previousReactions = utils.recipe.reactions.getReactions.getData({ slug });
+
+      // Optimistically update the reactions
+      utils.recipe.reactions.getReactions.setData({ slug }, (old) => {
+        if (!old) return old;
+
+        const updatedReactions = { ...old };
+
+        // If reaction doesn't exist yet, initialize it
+        if (!updatedReactions[emoji]) {
+          updatedReactions[emoji] = {
+            count: 0,
+            hasReacted: false,
+          };
+        }
+
+        // Toggle the reaction
+        if (updatedReactions[emoji].hasReacted) {
+          updatedReactions[emoji].count = Math.max(0, updatedReactions[emoji].count - 1);
+          updatedReactions[emoji].hasReacted = false;
+        } else {
+          updatedReactions[emoji].count++;
+          updatedReactions[emoji].hasReacted = true;
+        }
+
+        return updatedReactions;
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousReactions };
     },
-    {
-      versionCheck: true,
-      getSyncPayload: (data) => {
-        const reactions = data[slug] || [];
-        // We only sync reactions that the user has reacted to
-        const reacted = reactions.find((r) => r.hasReacted);
-        return reacted
-          ? {
-              slug,
-              emoji: reacted.emoji,
-            }
-          : { slug, emoji: "" };
-      },
+    onSettled: () => {
+      // Sync with server after mutation completes
+      utils.recipe.reactions.getReactions.invalidate({ slug });
     },
-  );
+  });
 
   const handleToggleReaction = useCallback(
     (emoji: string) => {
@@ -80,37 +97,14 @@ export const EmojiReactions = ({ slug }: EmojiReactionsProps) => {
         return;
       }
 
-      setLocalReactions((prev) => {
-        const recipeReactions = prev[slug] || [];
-        const existing = recipeReactions.find((r) => r.emoji === emoji);
-
-        let updatedReactions: ReactionState[];
-        if (existing) {
-          // Toggle existing reaction
-          updatedReactions = recipeReactions.map((r) =>
-            r.emoji === emoji
-              ? { ...r, hasReacted: !r.hasReacted, count: r.count + (r.hasReacted ? -1 : 1) }
-              : r,
-          );
-        } else {
-          // Add new reaction
-          updatedReactions = [
-            ...recipeReactions,
-            { emoji, count: 1, hasReacted: true, timestamp: Date.now() },
-          ];
-        }
-
-        return {
-          ...prev,
-          [slug]: updatedReactions,
-        };
-      });
-
-      if (!isOnline) {
-        toast.info("Changes will sync when you're back online");
+      if (!recipe?.id) {
+        toast.error("Recipe not found");
+        return;
       }
+
+      toggleReaction.mutate({ slug, emoji });
     },
-    [slug, setLocalReactions, isOnline, isSignedIn],
+    [slug, recipe?.id, isSignedIn, toggleReaction.mutate],
   );
 
   const handleAddReaction = useCallback(
@@ -120,17 +114,14 @@ export const EmojiReactions = ({ slug }: EmojiReactionsProps) => {
         return;
       }
 
-      const existing = currentRecipeReactions.find((r) => r.emoji === emoji);
-      if (!existing?.hasReacted) {
-        handleToggleReaction(emoji);
-      }
+      handleToggleReaction(emoji);
     },
-    [currentRecipeReactions, handleToggleReaction, isSignedIn],
+    [handleToggleReaction, isSignedIn],
   );
 
   const sortedReactions = useMemo(() => {
     // If there are no reactions with count > 0, show default thumbs up with count 0
-    const hasAnyReactions = currentRecipeReactions.some((r) => r.count > 0);
+    const hasAnyReactions = Object.values(reactions ?? {}).some((r) => r.count > 0);
 
     if (!hasAnyReactions) {
       return [
@@ -143,13 +134,14 @@ export const EmojiReactions = ({ slug }: EmojiReactionsProps) => {
       ];
     }
 
-    return currentRecipeReactions
-      .filter((r) => r.count > 0)
-      .sort((a, b) => {
-        if (a.count !== b.count) return b.count - a.count;
-        return (b.timestamp ?? 0) - (a.timestamp ?? 0);
-      });
-  }, [currentRecipeReactions]);
+    return Object.entries(reactions ?? {})
+      .filter(([_, data]) => data.count > 0)
+      .map(([emoji, data]) => ({
+        emoji,
+        count: data.count,
+        hasReacted: data.hasReacted,
+      }));
+  }, [reactions]);
 
   return (
     <View className="flex flex-row items-center gap-2">

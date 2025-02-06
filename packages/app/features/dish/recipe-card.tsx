@@ -23,7 +23,7 @@ import { favoritedRecipesAtom } from "app/atoms/favorites";
 const MOCK_MARKETPLACES = [
   {
     name: "Walmart",
-    logo: "https://logo.clearbit.com/walmart.com",
+    logo: "https://corporate.walmart.com/content/dam/corporate/site-images/WMT-Spark-New-SparkYellow-RGB.svg",
     price: 3.99,
     url: "https://walmart.com",
   },
@@ -45,7 +45,7 @@ const MOCK_MARKETPLACES = [
 const MOCK_SINGLE_MARKETPLACE = [
   {
     name: "Walmart",
-    logo: "https://logo.clearbit.com/walmart.com",
+    logo: "https://corporate.walmart.com/content/dam/corporate/site-images/WMT-Spark-New-SparkYellow-RGB.svg",
     price: 3.99,
     url: "https://walmart.com",
   },

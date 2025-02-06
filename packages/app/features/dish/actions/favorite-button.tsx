@@ -2,12 +2,10 @@ import { useCallback } from "react";
 import { Star } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, Button, cn, Span } from "@dishify/ui";
 import { trpc } from "app/utils/trpc";
-import { useAtom } from "jotai";
-import { useOnline } from "app/utils/hooks/use-online";
 import { toast } from "app/utils/toast";
-import { favoritedRecipesAtom } from "app/atoms/favorites";
+
 import type { EnglishRecipe } from "@dishify/api/src/db/schema/recipes";
-import { useOfflineSync } from "app/utils/hooks/use-offline-sync";
+
 import { authClient } from "app/utils/auth/client";
 
 interface FavoriteButtonProps {
@@ -17,33 +15,42 @@ interface FavoriteButtonProps {
 }
 
 export function FavoriteButton({ recipe, className, onClick }: FavoriteButtonProps) {
-  const isOnline = useOnline();
-  const [favoritedRecipes, setFavoritedRecipes] = useAtom(favoritedRecipesAtom);
   const { data: session } = authClient.useSession();
   const isSignedIn = !!session?.user?.id;
-  const isFavorited = !!favoritedRecipes[recipe.id];
+  const utils = trpc.useUtils();
+  const { data: isFavorited } = trpc.recipe.favorites.isFavorited.useQuery({ id: recipe.id });
 
-  const mutation = trpc.recipe.toggleFavorite.useMutation({
-    onError: (error) => {
-      toast.error(error.message || "Failed to update favorites");
+  const mutation = trpc.recipe.favorites.toggleFavorite.useMutation({
+    onMutate: async ({ recipeId }) => {
+      // Cancel any outgoing refetches
+      await utils.recipe.favorites.isFavorited.cancel({ id: recipeId });
+
+      // Snapshot the previous value
+      const previousValue = utils.recipe.favorites.isFavorited.getData({ id: recipeId });
+
+      // Optimistically update to the new value
+      utils.recipe.favorites.isFavorited.setData({ id: recipeId }, !previousValue);
+
+      // Return a context object with the snapshotted value
+      return { previousValue };
     },
-  });
+    onError: (error, variables, context) => {
+      console.error(error);
+      toast.error(error.message || "Failed to update favorite status");
 
-  useOfflineSync<Record<string, EnglishRecipe>, { recipes: (typeof recipe)[] }>(
-    favoritedRecipesAtom,
-    (payload) => {
-      for (const r of payload.recipes) {
-        mutation.mutate({ recipeId: r.id, recipe: r });
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousValue !== undefined) {
+        utils.recipe.favorites.isFavorited.setData(
+          { id: variables.recipeId },
+          context.previousValue,
+        );
       }
     },
-    {
-      versionCheck: true,
-      getSyncPayload: (data) => {
-        const allRecipes = Object.values(data);
-        return { recipes: allRecipes };
-      },
+    onSettled: (_, __, { recipeId }) => {
+      // Sync with server after mutation completes
+      utils.recipe.favorites.isFavorited.invalidate({ id: recipeId });
     },
-  );
+  });
 
   const handleToggleFavorite = useCallback(async () => {
     if (!isSignedIn) {
@@ -54,22 +61,9 @@ export function FavoriteButton({ recipe, className, onClick }: FavoriteButtonPro
     if (onClick) {
       await onClick();
     }
-    setFavoritedRecipes((prev) => {
-      const next = { ...prev };
-      if (isFavorited) {
-        delete next[recipe.id];
-      } else {
-        next[recipe.id] = recipe;
-      }
-      return next;
-    });
 
-    if (!isOnline) {
-      toast.info("Changes will sync when you're back online");
-    }
-  }, [isOnline, recipe, setFavoritedRecipes, isFavorited, onClick, isSignedIn]);
-
-  const isLoading = mutation.isPending;
+    mutation.mutate({ recipeId: recipe.id, recipe });
+  }, [recipe, onClick, isSignedIn, mutation]);
 
   return (
     <Tooltip>
@@ -81,8 +75,8 @@ export function FavoriteButton({ recipe, className, onClick }: FavoriteButtonPro
             !isSignedIn && "cursor-not-allowed opacity-50 hover:scale-100 active:scale-100",
             className,
           )}
-          onClick={handleToggleFavorite}
-          disabled={isLoading || !isSignedIn}
+          onPress={handleToggleFavorite}
+          disabled={mutation.isPending || !isSignedIn}
         >
           <Star
             className={cn(

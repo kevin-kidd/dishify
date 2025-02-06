@@ -1,6 +1,7 @@
 import { View, Pressable } from "react-native";
 import { MotiView, AnimatePresence } from "moti";
 import { cn, Text } from "@dishify/ui";
+import { useRef, useEffect } from "react";
 
 interface EmojiCounterProps {
   emoji: string;
@@ -19,6 +20,14 @@ const EmojiCounter = ({
   onClick,
   isSignedIn = true,
 }: EmojiCounterProps) => {
+  const prevCount = useRef(count);
+  const isIncreasing = useRef(true);
+
+  useEffect(() => {
+    isIncreasing.current = count > prevCount.current;
+    prevCount.current = count;
+  }, [count]);
+
   return (
     <MotiView
       from={{ opacity: 0, scale: 0.8 }}
@@ -38,18 +47,43 @@ const EmojiCounter = ({
         )}
       >
         <Text className="text-base">{emoji}</Text>
-        <AnimatePresence>
-          <MotiView
-            key={count}
-            from={{ opacity: 0, translateY: -10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            exit={{ opacity: 0, translateY: 10 }}
-            transition={{ type: "timing", duration: 100 }}
-            className="min-w-[1ch]"
-          >
-            <Text className="text-sm font-medium text-gray-700">{count}</Text>
-          </MotiView>
-        </AnimatePresence>
+        <View className="relative h-[20px] min-w-[1ch] overflow-hidden">
+          <AnimatePresence>
+            <MotiView
+              key={count}
+              from={{
+                opacity: 0,
+                translateY: isIncreasing.current ? 20 : -20,
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+              }}
+              animate={{
+                opacity: 1,
+                translateY: 0,
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+              }}
+              exit={{
+                opacity: 0,
+                translateY: isIncreasing.current ? -20 : 20,
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+              }}
+              transition={{
+                type: "timing",
+                duration: 150,
+              }}
+            >
+              <Text className="text-sm font-medium text-gray-700 text-center">{count}</Text>
+            </MotiView>
+          </AnimatePresence>
+        </View>
       </Pressable>
     </MotiView>
   );

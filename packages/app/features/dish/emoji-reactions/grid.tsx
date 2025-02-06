@@ -1,5 +1,4 @@
 import { View, Pressable } from "react-native";
-import { MotiView } from "moti";
 import { cn, Text } from "@dishify/ui";
 
 interface Reaction {
@@ -22,20 +21,13 @@ const EmojiGrid = ({ reactions, onSelect, isSignedIn = true }: EmojiGridProps) =
           onPress={() => onSelect(emoji)}
           accessibilityLabel={label}
           className={cn(
-            "flex aspect-square items-center justify-center rounded-lg p-2 active:bg-gray-100",
+            "flex aspect-square items-center justify-center rounded-lg p-2 active:bg-gray-100 group hover:bg-gray-200 transition-colors duration-200",
             !isSignedIn && "cursor-not-allowed opacity-50",
           )}
         >
-          <MotiView
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", damping: 15 }}
-            className="flex items-center justify-center"
-            from={{ scale: 0.8 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            exitTransition={{ type: "timing", duration: 100 }}
-          >
-            <Text className="text-2xl">{emoji}</Text>
-          </MotiView>
+          <Text className="text-2xl group-hover:scale-110 transition-all duration-200">
+            {emoji}
+          </Text>
         </Pressable>
       ))}
     </View>
