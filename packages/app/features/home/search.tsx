@@ -68,10 +68,12 @@ export default function Search() {
     },
   });
 
+  const dishName = watch("dishName");
+
   const { data: autocompleteOptions, refetch: refetchAutocomplete } =
     trpc.recipe.autocomplete.useQuery(
       {
-        query: watch("dishName") ?? "",
+        query: dishName ?? "",
         language: "en",
       },
       {
@@ -82,9 +84,18 @@ export default function Search() {
     );
 
   const getOptions = useCallback(async () => {
-    if (isGenerating || !isFocused) return;
+    console.log("Getting options:", { query: dishName, isGenerating, isFocused });
+    if (isGenerating || !isFocused || !dishName || dishName.length < 2) return;
+    console.log("Fetching autocomplete for:", dishName);
     await refetchAutocomplete();
-  }, [refetchAutocomplete, isGenerating, isFocused]);
+  }, [refetchAutocomplete, isGenerating, isFocused, dishName]);
+
+  // Add effect to trigger options fetch when input changes
+  useEffect(() => {
+    if (dishName && dishName.length >= 2 && isFocused && !isGenerating) {
+      void getOptions();
+    }
+  }, [dishName, isFocused, isGenerating, getOptions]);
 
   const handleGenerate = useCallback(
     async (data: SearchValues) => {
@@ -153,7 +164,7 @@ export default function Search() {
       rules={{
         required: true,
       }}
-      render={({ field: { onChange, onBlur, name, value, ref } }) => (
+      render={({ field: { onChange, onBlur, name, value } }) => (
         <Autocomplete
           onSelect={onChange}
           getOptions={getOptions}
@@ -173,7 +184,7 @@ export default function Search() {
               "bg-white border border-sage-200",
               "transition-all duration-200 ease-in-out",
               isFocused && "ring-2 ring-sage-500 border-transparent",
-              isGenerating && "opacity-50 pointer-events-none",
+              isGenerating && "pointer-events-none opacity-75",
             )}
             onSubmit={onSubmit}
           >
