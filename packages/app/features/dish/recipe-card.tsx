@@ -122,6 +122,19 @@ export default function RecipeCard() {
       </View>
     );
   }, []);
+  const recipeData = localRecipe || recipe;
+
+  // Show loading state while recipe is being generated
+  if (
+    recipeData?.status === "generating" ||
+    (recipe?.status === "moved" && recipe?.movedToSlug) ||
+    isLoading
+  ) {
+    if (recipe?.status === "moved" && recipe?.movedToSlug) {
+      router.replace(`/dish/${recipe.movedToSlug}`);
+    }
+    return <LoadingSkeleton />;
+  }
 
   // Show error state if query failed
   if (error) {
@@ -139,13 +152,7 @@ export default function RecipeCard() {
     );
   }
 
-  // Show loading skeleton while loading
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
-
   // Use local recipe if available
-  const recipeData = localRecipe || recipe;
   if (!recipeData && !error) {
     return (
       <ErrorView
@@ -154,11 +161,6 @@ export default function RecipeCard() {
         onHome={() => router.push("/")}
       />
     );
-  }
-
-  if (recipe?.status === "moved" && recipe?.movedToSlug) {
-    router.replace(`/dish/${recipe.movedToSlug}`);
-    return <LoadingSkeleton />;
   }
 
   // Show error state if recipe generation failed
@@ -191,23 +193,6 @@ export default function RecipeCard() {
               Please upload the image again to retry.
             </Text>
           )}
-        </View>
-      </View>
-    );
-  }
-
-  // Show loading state while recipe is being generated
-  if (recipeData?.status === "generating") {
-    return (
-      <View className="flex h-full items-center justify-center p-4 my-6">
-        <View className="flex items-center space-y-4">
-          <LoadingSkeleton />
-          <Text className="text-center text-gray-500">
-            Generating your recipe... This may take a few moments.
-          </Text>
-          <Text className="text-center text-gray-400 text-sm">
-            The page will automatically update when the recipe is ready.
-          </Text>
         </View>
       </View>
     );
