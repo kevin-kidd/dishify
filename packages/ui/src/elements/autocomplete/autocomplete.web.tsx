@@ -192,8 +192,15 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
       isOpen &&
       autocompleteOptions &&
       autocompleteOptions.length > 0 &&
-      inputValue.length >= 3 &&
-      inputValue.slice(0, 3) === autocompleteOptions[0].slice(0, 3);
+      inputValue.length >= 2;
+
+    console.log("Autocomplete state:", {
+      isInteractive,
+      isOpen,
+      hasOptions: Boolean(autocompleteOptions?.length),
+      inputLength: inputValue.length,
+      shouldShowOptions,
+    });
 
     if (!isMobileSize) {
       return (
