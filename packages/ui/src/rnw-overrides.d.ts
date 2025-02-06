@@ -27,4 +27,8 @@ declare module "react-native" {
     href?: string;
     onClick?: (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
   }
+  interface ImageStyle {
+    $$css?: boolean;
+    className?: string;
+  }
 }
