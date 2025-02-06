@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useOnline } from "./use-online";
 import { toast } from "../toast";
 import { authClient } from "../auth/client"; // or client.native if you need
@@ -55,81 +55,110 @@ function ensureLocalDataVersion() {
  *   const { syncAll, data } = useOfflineSync(yourAtom, mutation.mutate);
  */
 export function useOfflineSync<TData, TSyncInput>(
-  atomToSync: any, // pass your Jotai atom instance here
-  syncFn: (toSync: TSyncInput) => void,
+  atomToSync: any,
+  syncFn: (toSync: TSyncInput) => Promise<void>,
   options?: {
     versionCheck?: boolean;
     onError?: (error: Error) => void;
-    getSyncPayload?: (data: TData) => TSyncInput;
-    customOnlinePredicate?: () => boolean; // override isOnline check
+    getSyncPayload?: (data: TData) => TSyncInput | null;
+    customOnlinePredicate?: () => boolean;
   },
 ) {
-  // For a real app, you'd ensure user is authenticated or handle gracefully
   const { useSession } = authClient;
   const session = useSession();
   const isUserLoggedIn = !!session?.data?.user?.id;
-
   const isOnline = useOnline();
   const [localData] = useAtom<TData>(atomToSync);
 
-  const debouncedSyncRef = useRef(
-    debounce((data: TData) => {
+  // Store pending changes in localStorage to persist across page loads
+  const STORAGE_KEY = `offline_sync_${atomToSync.toString()}`;
+
+  // Initialize pending changes from localStorage
+  const [pendingChanges, setPendingChanges] = useState<TSyncInput[]>(() => {
+    if (typeof window === "undefined") return [];
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  // Update localStorage when pendingChanges changes
+  useEffect(() => {
+    if (pendingChanges.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(pendingChanges));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [pendingChanges, STORAGE_KEY]);
+
+  // Function to add a change to the queue
+  const queueChange = useCallback((change: TSyncInput) => {
+    setPendingChanges((prev) => [...prev, change]);
+  }, []);
+
+  // Function to remove a change from the queue
+  const removeChange = useCallback((change: TSyncInput) => {
+    setPendingChanges((prev) =>
+      prev.filter((item) => JSON.stringify(item) !== JSON.stringify(change)),
+    );
+  }, []);
+
+  // Process the sync queue
+  const processSyncQueue = useCallback(async () => {
+    if (!isUserLoggedIn || !isOnline || pendingChanges.length === 0) return;
+
+    for (const change of pendingChanges) {
       try {
-        if (!isUserLoggedIn) {
-          // We might queue or just skip if not logged in.
-          throw new Error("User not authenticated. Cannot sync.");
-        }
-        if (options?.getSyncPayload) {
-          const payload = options?.getSyncPayload(data);
-          syncFn(payload);
-        } else {
-          // If no transform needed, cast as unknown
-          syncFn(data as unknown as TSyncInput);
-        }
-      } catch (err: unknown) {
+        await syncFn(change);
+        removeChange(change);
+      } catch (err) {
         if (options?.onError && err instanceof Error) {
           options.onError(err);
         }
+        // Stop processing on first error
+        break;
+      }
+    }
+  }, [isUserLoggedIn, isOnline, pendingChanges, syncFn, removeChange, options?.onError]);
+
+  // Process queue when online status changes
+  useEffect(() => {
+    if (isOnline) {
+      processSyncQueue();
+    }
+  }, [isOnline, processSyncQueue]);
+
+  // Process queue when data changes (but debounced)
+  const debouncedSync = useRef(
+    debounce(() => {
+      if (!options?.getSyncPayload) return;
+
+      const payload = options.getSyncPayload(localData);
+      if (payload) {
+        queueChange(payload);
+        if (isOnline) {
+          processSyncQueue();
+        }
       }
     }, 1000),
-  );
+  ).current;
 
-  // Handle initial version checks or migrations
+  // Run debounced sync when options.getSyncPayload changes
+  useEffect(() => {
+    debouncedSync();
+  }, [debouncedSync]); // localData is already captured in the debounced function closure
+
+  // Handle initial version checks
   useEffect(() => {
     if (options?.versionCheck) {
       ensureLocalDataVersion();
     }
   }, [options?.versionCheck]);
 
-  /**
-   * On each localData or online status change,
-   * attempt to push local changes to the server.
-   * We debounce calls to avoid updates on every keystroke, etc.
-   */
-  useEffect(() => {
-    const canSync = options?.customOnlinePredicate ? options?.customOnlinePredicate() : isOnline;
-    if (!canSync) return;
-
-    // Debianched push to server:
-    debouncedSyncRef.current(localData);
-  }, [localData, isOnline, options?.customOnlinePredicate]);
-
-  /**
-   * Provide a manual sync method if needed.
-   */
-  const forceSync = useCallback(() => {
-    try {
-      debouncedSyncRef.current(localData);
-    } catch (err) {
-      const castErr = err as TRPCClientError<any>;
-      toast.error(castErr.message ?? "Failed to sync");
-    }
-  }, [localData]);
-
   return {
     data: localData,
     isOnline,
     isUserLoggedIn,
-    forceSync,
+    pendingChanges,
+    queueChange,
+    processSyncQueue,
   };
 }
