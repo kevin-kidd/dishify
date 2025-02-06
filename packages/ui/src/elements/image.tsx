@@ -19,7 +19,17 @@ type ImageProps = CommonImageProps & Omit<ComponentProps<typeof SolitoImage>, "s
 export function Image({ className, src, alt, style, fill = false, ...rest }: ImageProps) {
   return (
     <View className={className}>
-      <SolitoImage {...rest} src={src as any} alt={alt} fill={fill} style={style} />
+      <SolitoImage
+        {...rest}
+        src={src as any}
+        alt={alt}
+        fill={fill}
+        style={{
+          $$css: true,
+          className,
+          ...style,
+        }}
+      />
     </View>
   );
 }
