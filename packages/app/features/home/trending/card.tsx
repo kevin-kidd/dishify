@@ -2,7 +2,7 @@ import { Card, Text } from "@dishify/ui/src";
 import { ChevronRight } from "@dishify/ui/src/icons/chevron-right";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
-import { useCallback } from "react";
+import { Fragment, useCallback } from "react";
 import { Skeleton } from "@dishify/ui";
 import { Link } from "solito/link";
 import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
@@ -77,7 +77,11 @@ export default function TrendingCard({
             <span className="text-sm text-gray-600 select-none">{prepTime}</span>
           </div>
 
-          <div className="flex items-center justify-end w-full">{getCostDisplay(cost)}</div>
+          <div className="flex items-center justify-end w-full">
+            {getCostDisplay(cost).map((item) => (
+              <Fragment key={`dollar-${crypto.randomUUID()}`}>{item}</Fragment>
+            ))}
+          </div>
         </div>
 
         <div className="mt-2 flex items-center justify-between border-t border-border pt-3 w-full">
