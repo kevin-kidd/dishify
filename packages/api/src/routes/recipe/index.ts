@@ -2,7 +2,7 @@ import { router } from "../../trpc";
 import { autocomplete } from "./autocomplete";
 import { generate } from "./generate";
 import { getRecipe, getRecipeBySlug } from "./get";
-import { toggleFavorite } from "./toggle-favorite";
+import { recipeFavoritesRouter } from "./favorites";
 import { recipeReactionsRouter } from "./reactions";
 import { trending } from "./trending";
 
@@ -11,7 +11,7 @@ export const recipeRouter = router({
   autocomplete,
   getRecipe,
   getRecipeBySlug,
-  toggleFavorite,
+  favorites: recipeFavoritesRouter,
   reactions: recipeReactionsRouter,
   trending,
 });

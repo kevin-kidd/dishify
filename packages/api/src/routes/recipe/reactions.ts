@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure, publicProcedure, router } from "../../trpc";
 import { RecipeReactionsTable, EnglishRecipesTable } from "../../db/schema/recipes";
@@ -32,10 +32,32 @@ export const recipeReactionsRouter = router({
         .where(eq(RecipeReactionsTable.recipeId, recipe.id))
         .all();
 
-      return reactions;
+      // Get current user's reactions if they're authenticated
+      const userReactions = ctx.user
+        ? new Set(
+            reactions
+              .filter((reaction) => reaction.userId === ctx.user?.id)
+              .map((reaction) => reaction.emoji),
+          )
+        : new Set<string>();
+
+      // Return count and hasReacted for each emoji
+      return reactions.reduce(
+        (acc, reaction) => {
+          if (!acc[reaction.emoji]) {
+            acc[reaction.emoji] = {
+              count: 0,
+              hasReacted: userReactions.has(reaction.emoji),
+            };
+          }
+          acc[reaction.emoji].count++;
+          return acc;
+        },
+        {} as Record<string, { count: number; hasReacted: boolean }>,
+      );
     }),
 
-  toggleReaction: publicProcedure
+  toggleReaction: protectedProcedure
     .input(
       z.object({
         slug: z.string(),
@@ -91,14 +113,5 @@ export const recipeReactionsRouter = router({
           emoji: input.emoji,
         });
       }
-
-      // Return updated reactions
-      const reactions = await ctx.db
-        .select()
-        .from(RecipeReactionsTable)
-        .where(eq(RecipeReactionsTable.recipeId, recipe.id))
-        .all();
-
-      return reactions;
     }),
 });

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure } from "../../trpc";
+import { protectedProcedure, router } from "../../trpc";
 import { EnglishRecipesTable, FavoritesTable } from "../../db/schema/recipes";
 import { and, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
@@ -54,3 +54,36 @@ export const toggleFavorite = protectedProcedure
       favorited: true,
     };
   });
+
+export const getFavorites = protectedProcedure.query(async ({ ctx }) => {
+  const { db, user } = ctx;
+
+  const favorites = await db.query.FavoritesTable.findMany({
+    where: eq(FavoritesTable.userId, user.id),
+  });
+
+  return favorites;
+});
+
+export const isFavorited = protectedProcedure
+  .input(
+    z.object({
+      id: z.string(),
+    }),
+  )
+  .query(async ({ ctx, input }) => {
+    const { db, user } = ctx;
+    const { id } = input;
+
+    const favorite = await db.query.FavoritesTable.findFirst({
+      where: and(eq(FavoritesTable.userId, user.id), eq(FavoritesTable.recipeId, id)),
+    });
+
+    return !!favorite;
+  });
+
+export const recipeFavoritesRouter = router({
+  toggleFavorite,
+  getFavorites,
+  isFavorited,
+});
