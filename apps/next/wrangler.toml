@@ -1,10 +1,9 @@
 name = "dishify"
-compatibility_date = "2023-10-30"
-send_metrics = false
-node_compat = true
-route = "dishify.app/*"
-workers_dev = false
+main = ".worker-next/index.mjs"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+assets = { directory = ".open-next/assets", binding = "ASSETS" }
 
-[env.preview]
-name = "dishify-preview"
-workers_dev = true
+[[kv_namespaces]]
+binding = "NEXT_CACHE_WORKERS_KV"
+id = "81584d35b7a146cab34cdd01d354f8dd"
