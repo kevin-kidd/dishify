@@ -24,9 +24,7 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
         <Div>
           {!isHome && (
             <Link href="/">
-              <Button variant="none">
-                <ArrowLeft className="w-6 h-6 text-sage-900" />
-              </Button>
+              <ArrowLeft className="w-6 h-6 text-sage-900" />
             </Link>
           )}
         </Div>
