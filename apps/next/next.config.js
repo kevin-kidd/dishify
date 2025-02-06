@@ -98,6 +98,7 @@ module.exports = () => {
       "react-native-circular-progress",
     ],
     experimental: {
+      instrumentationHook: true,
       scrollRestoration: true,
       forceSwcTransforms: true,
       swcPlugins: [
