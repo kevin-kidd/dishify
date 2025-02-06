@@ -4,6 +4,7 @@ import { generate } from "./generate";
 import { getRecipe, getRecipeBySlug } from "./get";
 import { toggleFavorite } from "./toggle-favorite";
 import { recipeReactionsRouter } from "./reactions";
+import { trending } from "./trending";
 
 export const recipeRouter = router({
   generate,
@@ -12,6 +13,7 @@ export const recipeRouter = router({
   getRecipeBySlug,
   toggleFavorite,
   reactions: recipeReactionsRouter,
+  trending,
 });
 
 export type RecipeRouter = typeof recipeRouter;
