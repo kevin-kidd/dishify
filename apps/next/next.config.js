@@ -137,6 +137,9 @@ module.exports = () => {
 module.exports = withSentryConfig(module.exports, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
+  sourcemaps: {
+    disable: true,
+  },
 
   org: process.env.NEXT_PUBLIC_SENTRY_ORG,
   project: process.env.NEXT_PUBLIC_SENTRY_PROJECT,
