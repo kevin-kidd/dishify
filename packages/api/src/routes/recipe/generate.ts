@@ -204,6 +204,7 @@ export const generate = publicProcedure
               cookingTime: "",
               servings: "",
               instructions: [],
+              difficulty: "Medium",
             },
             status: "error",
             errorMessage: "Image data was lost. Please try uploading the image again.",
@@ -236,6 +237,7 @@ export const generate = publicProcedure
           name: `temp_${recipeId}`,
           slug: initialSlug,
           data: {
+            difficulty: "Medium",
             dishName: dishName || `Recipe ${recipeId}`,
             cuisine: "Unknown",
             shoppingList: [],
