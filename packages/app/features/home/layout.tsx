@@ -7,12 +7,11 @@ import { Link } from "solito/link";
 import { ArrowLeft } from "lucide-react-native";
 import ProfileButton from "../account/profile-button";
 import { usePathname } from "solito/navigation";
-import { useRouter } from "solito/navigation";
 
 export default function HomeLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const router = useRouter();
+
   return (
     <ScrollView
       contentContainerStyle={{
@@ -24,9 +23,11 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
       <Div className="flex flex-row items-center w-full justify-between pt-10 px-4 pb-0">
         <Div>
           {!isHome && (
-            <Button onClick={() => router.push("/")} variant="none">
-              <ArrowLeft className="w-6 h-6 text-sage-900" />
-            </Button>
+            <Link href="/">
+              <Button variant="none">
+                <ArrowLeft className="w-6 h-6 text-sage-900" />
+              </Button>
+            </Link>
           )}
         </Div>
 
