@@ -39,6 +39,7 @@ export const RecipeResponseSchema = z.object({
     "Other",
     "Unknown",
   ]),
+  difficulty: z.enum(["Easy", "Medium", "Hard"]),
   instructions: z.array(z.string()),
   servings: z.string(),
   cookingTime: z.string(),
