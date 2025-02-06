@@ -11,6 +11,7 @@ import { PasswordRequirements } from "./password-requirements";
 import { useState } from "react";
 import { authClient } from "app/utils/auth/client";
 import { useRouter } from "solito/navigation";
+import { LoaderCircle } from "@dishify/ui/src/icons/loader-circle";
 
 export function SignUpForm() {
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
@@ -18,7 +19,7 @@ export function SignUpForm() {
   const {
     control,
     handleSubmit,
-    formState: { errors, submitCount },
+    formState: { errors, submitCount, isSubmitting },
     getValues,
   } = useForm<SignUpFormValues>({
     resolver: zodResolver(formSchema),
@@ -181,11 +182,15 @@ export function SignUpForm() {
         )}
       />
       <Button
-        onClick={onSubmit}
+        onPress={onSubmit}
         aria-label="Submit"
         className="flex w-full h-10 items-center justify-center gap-2 rounded-md text-center transition ease-in-out"
       >
-        <Text className="text-background">Sign up</Text>
+        {isSubmitting ? (
+          <LoaderCircle className="w-4 h-4 animate-spin" />
+        ) : (
+          <Text className="text-background">Sign up</Text>
+        )}
       </Button>
     </Form>
   );

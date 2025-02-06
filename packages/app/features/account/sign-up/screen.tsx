@@ -6,9 +6,9 @@ import AccountLayout from "../layout";
 export function SignUpScreen() {
   return (
     <AccountLayout>
-      <Main className="flex flex-col min-h-screen items-center gap-0 justify-center max-w-xl w-full container mx-auto">
+      <Main className="flex flex-col min-h-screen items-center gap-0 justify-center max-w-xl w-full container mx-auto py-10">
         <Image
-          className="w-32 sm:w-40 2xl:w-48 mx-auto"
+          className="w-24 sm:w-32 2xl:w-40 mx-auto"
           width={400}
           height={200}
           alt="Dishify"
