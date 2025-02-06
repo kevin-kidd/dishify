@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { Text } from "../../elements/text";
 import { cn } from "../../utils";
 import type { OptionItemProps, OptionsListProps } from "./types";
