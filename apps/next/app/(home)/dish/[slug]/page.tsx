@@ -13,8 +13,9 @@ export default async function RecipePage({ params }: { params: { slug: string } 
     try {
       // Attempt to fetch recipe and reactions data server-side
       await Promise.all([
-        serverClient.recipe.getRecipeBySlug.query({ slug }),
-        serverClient.recipe.reactions.getReactions.query({ slug }),
+        serverClient.recipe.getRecipeBySlug.usePrefetchQuery({ slug }),
+        serverClient.recipe.reactions.getReactions.usePrefetchQuery({ slug }),
+        serverClient.recipe.favorites.isFavorited.usePrefetchQuery({ id: slug }),
       ]);
     } catch (error) {
       console.error("Failed to fetch recipe data:", error);
@@ -42,7 +43,7 @@ export async function generateMetadata({
 
   try {
     // fetch data
-    const recipe = await serverClient.recipe.getRecipeBySlug.query({ slug });
+    const { data: recipe } = serverClient.recipe.getRecipeBySlug.useQuery({ slug });
     if (!recipe) {
       return {
         title: "Dishify - Recipe not found",

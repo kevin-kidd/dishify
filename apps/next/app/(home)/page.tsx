@@ -3,7 +3,11 @@ import { serverClient } from "utils/trpc";
 
 export default async function HomePage() {
   // Prefetch trending recipes
-  await serverClient.recipe.trending.query();
+  try {
+    serverClient.recipe.trending.usePrefetchQuery();
+  } catch (error) {
+    console.error(error);
+  }
 
   return (
     <main>
