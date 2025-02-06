@@ -55,33 +55,23 @@ export default function ProfileButton() {
         className="flex items-center focus:outline-none"
         aria-label="Open profile menu"
       >
-        <Div className="relative group">
-          <Div
-            className="sm:w-12 sm:h-12 w-10 h-10 rounded-full overflow-hidden border-1 border-sage-200 shadow-md backdrop-blur-sm
-                       transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg
-                       bg-gradient-to-br from-sage-50 to-sage-100"
-          >
-            {session.user.image ? (
-              <Image
-                src={session.user.image}
-                width={44}
-                height={44}
-                alt={session.user.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Div
-                className="w-full h-full bg-gradient-to-br from-sage-50 to-sage-100
-                           flex items-center justify-center group-hover:from-sage-100
-                           group-hover:to-sage-200 transition-colors duration-300"
-              >
-                <User
-                  className="w-5 h-5 text-gray-500 group-hover:text-gray-600 
+        <Div
+          className={cn(
+            "relative group inline-flex flex-row items-center justify-center",
+            "p-3 rounded-full aspect-square text-sm font-medium tracking-wide",
+            "transition-all duration-300 ease-out",
+            "backdrop-blur-sm",
+            "bg-sage-500 text-white",
+            "hover:scale-105",
+            "active:scale-95",
+            "shadow-[0_0_10px_rgba(98,148,105,1)]",
+            "hover:shadow-[0_0_15px_rgba(98,148,105,1)]",
+          )}
+        >
+          <User
+            className="w-6 h-6 text-background group-hover:text-sage-50 
                              transition-colors duration-300"
-                />
-              </Div>
-            )}
-          </Div>
+          />
         </Div>
       </DropdownMenuTrigger>
 
@@ -112,7 +102,7 @@ export default function ProfileButton() {
 
         <Button
           variant="none"
-          onClick={() => router.push("/favorites")}
+          onPress={() => router.push("/favorites")}
           className="w-full px-4 py-2.5 text-left items-center text-sm text-gray-700 
                            hover:bg-sage-100 flex justify-start space-x-3 
                            transition-all duration-200 hover:text-gray-900 flex-row rounded-lg"
