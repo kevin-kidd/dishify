@@ -1,7 +1,7 @@
 "use client";
 
 import { trpc } from "app/utils/trpc";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SearchSchema, type SearchValues } from "@dishify/api/schemas/search";
@@ -11,12 +11,13 @@ import { toast } from "app/utils/toast";
 import { Keyboard, View, type Pressable } from "react-native";
 import { Autocomplete, cn, Form, FormInput, TextInput, Skeleton } from "@dishify/ui";
 import { Search as SearchIcon } from "@dishify/ui/src/icons/search";
-import { useRouter } from "solito/navigation";
+import { useRouter, usePathname } from "solito/navigation";
 import { TRPCClientError } from "@trpc/client";
 import type React from "react";
 
 export default function Search() {
   const router = useRouter();
+  const pathname = usePathname();
   const { control, handleSubmit, watch, setValue } = useForm<SearchValues>({
     resolver: zodResolver(SearchSchema),
     mode: "onSubmit",
@@ -29,13 +30,25 @@ export default function Search() {
   const [isGenerating, setIsGenerating] = useState(false);
   const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const lastPathRef = useRef(pathname);
+
+  // Reset generating state when pathname changes
+  useEffect(() => {
+    if (lastPathRef.current !== pathname) {
+      setIsGenerating(false);
+      lastPathRef.current = pathname;
+    }
+  }, [pathname]);
+
   const generate = trpc.recipe.generate.useMutation({
     onMutate: () => {
       setIsGenerating(true);
-      // Dismiss keyboard on mutation start
+      // Dismiss keyboard and blur input on mutation start
       if (!isWeb) {
         Keyboard.dismiss();
       }
+      inputRef.current?.blur();
+      setIsFocused(false);
     },
     onError: (error) => {
       setIsGenerating(false);
@@ -50,8 +63,8 @@ export default function Search() {
       });
     },
     onSuccess: (response) => {
-      setIsGenerating(false);
       router.push(`/dish/${response.slug}`);
+      // Don't reset isGenerating here, let the pathname change handle it
     },
   });
 
@@ -69,15 +82,12 @@ export default function Search() {
     );
 
   const getOptions = useCallback(async () => {
-    if (isGenerating) return;
+    if (isGenerating || !isFocused) return;
     await refetchAutocomplete();
-  }, [refetchAutocomplete, isGenerating]);
+  }, [refetchAutocomplete, isGenerating, isFocused]);
 
   const handleGenerate = useCallback(
     async (data: SearchValues) => {
-      if (isWeb) {
-        inputRef.current?.focus();
-      }
       // Don't catch errors here, let them propagate up
       return generate.mutateAsync(data);
     },
