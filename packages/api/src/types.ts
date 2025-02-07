@@ -1,8 +1,4 @@
-import type { KVNamespace } from "@cloudflare/workers-types";
-
 export interface Env {
-  APP_URL: string;
-
   // Auth-related environment variables
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
