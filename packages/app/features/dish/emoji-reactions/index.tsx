@@ -41,7 +41,8 @@ export const EmojiReactions = ({ slug }: EmojiReactionsProps) => {
 
   const utils = trpc.useUtils();
   const { data: recipe } = trpc.recipe.getRecipeBySlug.useQuery({ slug });
-  const { data: reactions } = trpc.recipe.reactions.getReactions.useQuery({ slug });
+  const { data: reactions, isLoading: reactionsLoading } =
+    trpc.recipe.reactions.getReactions.useQuery({ slug });
 
   // Toggle reaction mutation
   const toggleReaction = trpc.recipe.reactions.toggleReaction.useMutation({
@@ -142,6 +143,10 @@ export const EmojiReactions = ({ slug }: EmojiReactionsProps) => {
         hasReacted: data.hasReacted,
       }));
   }, [reactions]);
+
+  if (reactionsLoading) {
+    return null;
+  }
 
   return (
     <View className="flex flex-row items-center gap-2">
