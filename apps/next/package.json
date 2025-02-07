@@ -19,8 +19,6 @@
     "@expo/next-adapter": "^6.0.0",
     "@next/bundle-analyzer": "14.2.7",
     "@opennextjs/cloudflare": "^0.4.5",
-    "@sentry/core": "^8.54.0",
-    "@sentry/nextjs": "^8.54.0",
     "@tsndr/cloudflare-worker-jwt": "2.2.7",
     "framer-motion": "^12.0.6",
     "million": "latest",
