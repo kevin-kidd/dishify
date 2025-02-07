@@ -1,11 +1,9 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
 import { Button } from "@dishify/ui";
 import { SolitoImage } from "solito/image";
 const customerCareEmail = process.env.NEXT_PUBLIC_CUSTOMER_CARE_EMAIL;
 import Link from "next/link";
-import { useEffect } from "react";
 import HomeLayout from "app/features/home/layout";
 
 export default function ErrorPage({
@@ -15,9 +13,7 @@ export default function ErrorPage({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    Sentry.captureException(error);
-  }, [error]);
+  console.error(error);
   return (
     <HomeLayout>
       <main className="flex h-full w-full items-center justify-center">
