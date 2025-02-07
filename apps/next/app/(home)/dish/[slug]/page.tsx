@@ -9,13 +9,14 @@ export default async function RecipePage({ params }: { params: { slug: string } 
 
   // Check if this is a local storage request (format: local-{recipeId})
   const isLocalStorage = slug.startsWith("local-");
+
   if (!isLocalStorage) {
     try {
-      // Attempt to fetch recipe and reactions data server-side
+      // Fetch data server-side without hooks
       await Promise.all([
-        serverClient.recipe.getRecipeBySlug.usePrefetchQuery({ slug }),
-        serverClient.recipe.reactions.getReactions.usePrefetchQuery({ slug }),
-        serverClient.recipe.favorites.isFavorited.usePrefetchQuery({ id: slug }),
+        serverClient.recipe.getRecipeBySlug.query({ slug }),
+        serverClient.recipe.reactions.getReactions.query({ slug }),
+        serverClient.recipe.favorites.isFavorited.query({ id: slug }),
       ]);
     } catch (error) {
       console.error("Failed to fetch recipe data:", error);
@@ -29,7 +30,7 @@ export async function generateMetadata({
   params,
 }: { params: { slug: string } }): Promise<Metadata> {
   // read route params
-  const slug = (await params).slug;
+  const slug = params.slug;
 
   // Check if this is a local storage request
   const isLocalStorage = slug.startsWith("local-");
@@ -42,8 +43,8 @@ export async function generateMetadata({
   }
 
   try {
-    // fetch data
-    const { data: recipe } = serverClient.recipe.getRecipeBySlug.useQuery({ slug });
+    // fetch data using the server client without hooks
+    const recipe = await serverClient.recipe.getRecipeBySlug.query({ slug });
     if (!recipe) {
       return {
         title: "Dishify - Recipe not found",
