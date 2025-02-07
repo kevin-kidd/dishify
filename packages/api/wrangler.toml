@@ -10,7 +10,7 @@ enabled = true
 [[d1_databases]]
 binding = "DB"
 database_name = "dishify_production"
-database_id = "2ebfeb64-c519-4be1-af5c-a117464635dd"
+database_id = "abc81903-a420-468d-9225-75dac50c4d17"
 migrations_dir = "migrations"
 
 [[kv_namespaces]]
@@ -25,12 +25,14 @@ binding = "RECIPE_STATE"
 id = "e56eb628894e4e22b0946a012d7fbef2"
 preview_id = "283853b45b91433eb5b13536b89ae162"
 
-[[queues.consumers]]
+
+[[queues.producers]]
+binding = "RECIPE_QUEUE"
 queue = "recipe-generation"
-max_batch_size = 1
-max_batch_timeout = 30
-max_retries = 3
-dead_letter_queue = "recipe-generation-dlq"
+
+[[queues.producers]]
+binding = "RECIPE_DLQ"
+queue = "recipe-generation-dlq"
 
 [env.preview]
 name = "preview"
