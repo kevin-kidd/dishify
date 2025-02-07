@@ -12,9 +12,15 @@ interface FavoriteButtonProps {
   recipe: EnglishRecipe;
   className?: string;
   onClick?: () => Promise<void>;
+  stopPropagation?: boolean;
 }
 
-export function FavoriteButton({ recipe, className, onClick }: FavoriteButtonProps) {
+export function FavoriteButton({
+  recipe,
+  className,
+  onClick,
+  stopPropagation,
+}: FavoriteButtonProps) {
   const { data: session } = authClient.useSession();
   const isSignedIn = !!session?.user?.id;
   const utils = trpc.useUtils();
@@ -52,21 +58,30 @@ export function FavoriteButton({ recipe, className, onClick }: FavoriteButtonPro
     onSettled: (_, __, { recipeId }) => {
       // Sync with server after mutation completes
       utils.recipe.favorites.isFavorited.invalidate({ id: recipeId });
+      // Also invalidate the getFavorites query to refresh the favorites screen
+      utils.recipe.favorites.getFavorites.invalidate();
     },
   });
 
-  const handleToggleFavorite = useCallback(async () => {
-    if (!isSignedIn) {
-      toast.error("Please sign in to favorite recipes");
-      return;
-    }
+  const handleToggleFavorite = useCallback(
+    async (e?: any) => {
+      if (stopPropagation && e?.stopPropagation) {
+        e.stopPropagation();
+      }
 
-    if (onClick) {
-      await onClick();
-    }
+      if (!isSignedIn) {
+        toast.error("Please sign in to favorite recipes");
+        return;
+      }
 
-    mutation.mutate({ recipeId: recipe.id, recipe });
-  }, [recipe, onClick, isSignedIn, mutation]);
+      if (onClick) {
+        await onClick();
+      }
+
+      mutation.mutate({ recipeId: recipe.id, recipe });
+    },
+    [recipe, onClick, isSignedIn, mutation, stopPropagation],
+  );
 
   return (
     <Tooltip>
