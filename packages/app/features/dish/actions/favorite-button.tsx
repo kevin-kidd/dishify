@@ -18,7 +18,10 @@ export function FavoriteButton({ recipe, className, onClick }: FavoriteButtonPro
   const { data: session } = authClient.useSession();
   const isSignedIn = !!session?.user?.id;
   const utils = trpc.useUtils();
-  const { data: isFavorited } = trpc.recipe.favorites.isFavorited.useQuery({ id: recipe.id });
+  const { data: isFavorited } = trpc.recipe.favorites.isFavorited.useQuery(
+    { id: recipe.id },
+    { meta: { skipErrorToast: true, enabled: isSignedIn } },
+  );
 
   const mutation = trpc.recipe.favorites.toggleFavorite.useMutation({
     onMutate: async ({ recipeId }) => {
