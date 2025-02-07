@@ -34,6 +34,14 @@ queue = "recipe-generation"
 binding = "RECIPE_DLQ"
 queue = "recipe-generation-dlq"
 
+[[queues.consumers]]
+queue = "recipe-generation"
+max_batch_size = 1
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "recipe-generation-dlq"
+
+
 [env.preview]
 name = "preview"
 [[env.preview.d1_databases]]
