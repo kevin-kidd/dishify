@@ -26,17 +26,19 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use(logger());
 
 // Setup CORS for the frontend
-app.use("/trpc/*", async (c, next) => {
+app.use("*", async (c, next) => {
   if (c.env.APP_URL === undefined) {
     console.log(
-      "APP_URL is not set. CORS errors may occur. Make sure the .dev.vars file is present at /packages/api/.dev.vars",
+      "APP_URL is not set. CORS errors may occur. Make sure the environment variables are properly configured",
     );
   }
+
   return await cors({
-    origin: (origin) => (origin.endsWith(new URL(c.env.APP_URL).host) ? origin : c.env.APP_URL),
+    origin: [c.env.APP_URL],
     credentials: true,
     allowMethods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-    // https://hono.dev/middleware/builtin/cors#options
+    exposeHeaders: ["Set-Cookie"],
+    maxAge: 86400, // 24 hours
   })(c, next);
 });
 
