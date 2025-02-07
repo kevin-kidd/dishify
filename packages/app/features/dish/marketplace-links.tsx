@@ -36,7 +36,7 @@ export function MarketplaceLinks({ ingredient, marketplaces }: MarketplaceLinksP
       <Animated.View entering={FadeIn} exiting={FadeOut}>
         <Button
           variant="none"
-          className="group flex flex-row items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/95 hover:bg-sage-50/95 active:bg-sage-100/95 ring-1 ring-sage-100/90 transition-colors duration-200"
+          className="group flex flex-row items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white/95 hover:bg-sage-50/95 active:bg-sage-100/95 ring-1 ring-sage-100/90 transition-colors duration-200"
           onClick={() => {
             window.open(marketplace.url, "_blank");
           }}
@@ -44,7 +44,7 @@ export function MarketplaceLinks({ ingredient, marketplaces }: MarketplaceLinksP
           <View className="rounded-lg overflow-hidden bg-gradient-to-br from-sage-50/90 to-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-1 ring-sage-100/90">
             <Image
               source={{ uri: marketplace.logo }}
-              className="h-[22px] w-[22px] p-0.5"
+              className="sm:h-[22px] sm:w-[22px] w-[18px] h-[18px] p-0.5"
               alt={`${marketplace.name} logo`}
               style={Platform.select({
                 web: {
@@ -53,7 +53,7 @@ export function MarketplaceLinks({ ingredient, marketplaces }: MarketplaceLinksP
               })}
             />
           </View>
-          <Text className="text-[13px] font-medium text-sage-700 group-hover:text-sage-800 transition-colors duration-200">
+          <Text className="text-[12px] sm:text-[13px] font-medium text-sage-700 group-hover:text-sage-800 transition-colors duration-200">
             ${marketplace.price.toFixed(2)}
           </Text>
           <ExternalLink className="h-3 w-3 text-sage-400 group-hover:text-sage-500 transition-colors duration-200" />
@@ -92,7 +92,7 @@ export function MarketplaceLinks({ ingredient, marketplaces }: MarketplaceLinksP
                 >
                   <Image
                     source={{ uri: marketplace.logo }}
-                    className="h-7 w-7 p-0.5"
+                    className="h-6 w-6 sm:h-7 sm:w-7 p-0.5"
                     alt={`${marketplace.name} logo`}
                     style={Platform.select({
                       web: {
@@ -105,7 +105,7 @@ export function MarketplaceLinks({ ingredient, marketplaces }: MarketplaceLinksP
             ))}
           </View>
           <View className="px-3.5 py-2 rounded-xl bg-white/95 hover:bg-sage-50/95 active:bg-sage-100/95 ring-1 ring-sage-100/90 transition-colors duration-200">
-            <Text className="text-[13px] font-medium text-sage-700 group-hover:text-sage-800 transition-colors duration-200">
+            <Text className="text-[11px] sm:text-[12px] font-medium text-sage-700 group-hover:text-sage-800 transition-colors duration-200">
               From ${lowestPrice.toFixed(2)}
             </Text>
           </View>
