@@ -226,7 +226,7 @@ export default function RecipeCard() {
   }
 
   return (
-    <Section className="max-w-6xl mx-auto px-4 pt-14">
+    <Section className="max-w-6xl mx-auto px-2 sm:px-4 pt-14">
       <Animated.View
         entering={FadeIn}
         layout={LinearTransition.springify().mass(0.8).damping(15).stiffness(100)}
@@ -249,7 +249,7 @@ export default function RecipeCard() {
                 </View>
               </View>
               <CuisineLabel cuisine={recipeData.data.cuisine} />
-              <View className="mt-6 flex flex-row items-center justify-between w-full">
+              <View className="mt-6 flex sm:flex-row gap-y-4 sm:items-center sm:justify-between flex-col w-full">
                 <View className="flex flex-row items-center flex-wrap gap-4">
                   <View className="flex flex-row items-center gap-2">
                     <Clock className="h-4 w-4 text-sage-500" />
