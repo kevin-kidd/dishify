@@ -13,7 +13,7 @@
     "seed": "wrangler d1 execute dishify_production --file=./seed/seed.sql --remote",
     "seed:local": "ts-node seed-local.ts",
     "studio": "drizzle-kit studio",
-    "deploy": "wrangler deploy --minify src/worker.ts && wrangler deploy --config wrangler.queue.toml --minify",
+    "deploy": "wrangler deploy --minify src/worker.ts",
     "deploy:preview": "wrangler deploy --minify src/worker.ts --env preview && wrangler deploy --config wrangler.queue.toml --minify --env preview",
     "postinstall": "bun generate",
     "clean": "rm -rf .turbo node_modules"
