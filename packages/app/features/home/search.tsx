@@ -31,6 +31,7 @@ export default function Search() {
   const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const lastPathRef = useRef(pathname);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Reset generating state when pathname changes
   useEffect(() => {
@@ -85,10 +86,10 @@ export default function Search() {
 
   const getOptions = useCallback(async () => {
     console.log("Getting options:", { query: dishName, isGenerating, isFocused });
-    if (isGenerating || !isFocused || !dishName || dishName.length < 2) return;
+    if (isGenerating || !isFocused || !dishName || dishName.length < 2 || isNavigating) return;
     console.log("Fetching autocomplete for:", dishName);
     await refetchAutocomplete();
-  }, [refetchAutocomplete, isGenerating, isFocused, dishName]);
+  }, [refetchAutocomplete, isGenerating, isFocused, dishName, isNavigating]);
 
   // Add effect to trigger options fetch when input changes
   useEffect(() => {
@@ -166,11 +167,15 @@ export default function Search() {
       }}
       render={({ field: { onChange, onBlur, name, value } }) => (
         <Autocomplete
-          onSelect={onChange}
+          onSelect={(val) => {
+            onChange(val);
+            setIsNavigating(false);
+          }}
           getOptions={getOptions}
           autocompleteOptions={autocompleteOptions}
           isInteractive={!isGenerating}
           onTemporaryChange={(text) => {
+            setIsNavigating(true);
             // This is for keyboard navigation - just update the field value without triggering validation
             setValue("dishName", text, { shouldValidate: false });
           }}
