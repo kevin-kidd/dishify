@@ -20,7 +20,8 @@
       "**/.android/**",
       "**/.DS_Store/**",
       "**/Thumbs.db/**",
-      "**/.next*"
+      "**/.next*",
+      "**/.open-next/**"
     ]
   },
   "linter": {
