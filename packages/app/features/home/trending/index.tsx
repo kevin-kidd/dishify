@@ -6,6 +6,22 @@ import AutoScroll from "embla-carousel-auto-scroll";
 import { Carousel, CarouselContent, CarouselItem } from "@dishify/ui/src/elements/carousel";
 import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 import { trpc } from "@dishify/app/utils/trpc";
+import type { TrendingRecipe } from "@dishify/api/src/routes/recipe/trending";
+
+const LOADING_CARDS: TrendingRecipe[] = Array.from({ length: 4 }, (_, i) => ({
+  id: `skeleton-${i}`,
+  data: {
+    dishName: "",
+    difficulty: "Medium",
+    cuisine: "Other",
+    cookingTime: "30 minutes",
+    shoppingList: [],
+    instructions: [],
+    servings: "",
+  },
+  slug: "",
+  trendingScore: 0,
+}));
 
 export function TrendingSection() {
   const { data: trendingRecipes, isLoading } = trpc.recipe.trending.useQuery();
@@ -20,6 +36,8 @@ export function TrendingSection() {
       startDelay: 0,
     }),
   ];
+
+  const recipesToRender: TrendingRecipe[] = isLoading ? LOADING_CARDS : trendingRecipes ?? [];
 
   return (
     <section className="w-full py-20">
@@ -45,14 +63,16 @@ export function TrendingSection() {
               className="w-full [mask-image:linear-gradient(to_right,transparent,black_20px,black_calc(100%_-_20px),transparent)] md:[mask-image:linear-gradient(to_right,transparent,black_100px,black_calc(100%_-_100px),transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,black_20px,black_calc(100%_-_20px),transparent)] md:[-webkit-mask-image:linear-gradient(to_right,transparent,black_100px,black_calc(100%_-_100px),transparent)]"
             >
               <CarouselContent className="-ml-4 md:-ml-6">
-                {trendingRecipes?.map((recipe) => {
+                {recipesToRender?.map((recipe) => {
                   const recipeData = recipe.data;
                   const cardProps: TrendingCardProps = {
                     dishName: recipeData.dishName,
                     cost: Math.random() * 100, // TODO: get accurate cost estimate
                     difficulty: recipeData.difficulty ?? "Medium",
                     cuisine: recipeData.cuisine,
-                    prepTime: `${recipeData.cookingTime.includes("minutes") ? recipeData.cookingTime : `${recipeData.cookingTime} minutes`}`,
+                    prepTime: recipeData.cookingTime.includes("minutes")
+                      ? recipeData.cookingTime
+                      : `${recipeData.cookingTime} minutes`,
                     href: `/dish/${recipe.slug}`,
                   };
                   return (
