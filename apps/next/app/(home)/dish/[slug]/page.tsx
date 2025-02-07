@@ -16,7 +16,6 @@ export default async function RecipePage({ params }: { params: { slug: string } 
       await Promise.all([
         serverClient.recipe.getRecipeBySlug.query({ slug }),
         serverClient.recipe.reactions.getReactions.query({ slug }),
-        serverClient.recipe.favorites.isFavorited.query({ id: slug }),
       ]);
     } catch (error) {
       console.error("Failed to fetch recipe data:", error);
