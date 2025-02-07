@@ -24,7 +24,7 @@ export const OptionItem = React.memo(({ option, onPress, isSelected }: OptionIte
   <Button
     variant="none"
     key={option}
-    onClick={() => onPress(option)}
+    onPress={() => onPress(option)}
     className={cn(
       "w-full flex-1 flex-row justify-start gap-2 sm:gap-0 items-center group web:cursor-default transition-colors duration-100 ease-in-out web:select-none rounded-lg py-1.5 native:py-2 px-2 sm:px-4 web:hover:bg-sage-100 web:outline-none",
       isSelected && "bg-sage-100",
