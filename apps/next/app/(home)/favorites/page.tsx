@@ -4,7 +4,7 @@ import { serverClient } from "utils/trpc";
 export default async function FavoritesPage() {
   try {
     // Prefetch favorites
-    serverClient.recipe.favorites.getFavorites.query();
+    await serverClient.recipe.favorites.getFavorites.query();
   } catch (error) {
     console.error(error);
   }
