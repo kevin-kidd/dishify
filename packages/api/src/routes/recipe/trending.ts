@@ -1,5 +1,5 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
-import { z } from "zod";
+import { and, eq, gte } from "drizzle-orm";
+import type { z } from "zod";
 import { publicProcedure } from "../../trpc";
 import { EnglishRecipesTable, RecipeReactionsTable } from "../../db/schema/recipes";
 import { RecipeResponseSchema } from "../../../schemas/recipe-response";
@@ -8,6 +8,14 @@ const CACHE_KEY = "trending-recipes";
 const CACHE_TTL = 300; // 5 minutes in seconds
 const TRENDING_LIMIT = 10;
 const HOURS_24 = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+// Define the trending recipe type
+export type TrendingRecipe = {
+  id: string;
+  slug: string;
+  data: NonNullable<z.infer<typeof RecipeResponseSchema>>;
+  trendingScore: number;
+};
 
 /**
  * Calculates trending score based on reactions and their timestamps
@@ -35,11 +43,11 @@ const calculateTrendingScore = (reactions: { emoji: string; timestamp: string }[
   }, 0);
 };
 
-export const trending = publicProcedure.query(async ({ ctx }) => {
+export const trending = publicProcedure.query(async ({ ctx }): Promise<TrendingRecipe[]> => {
   // Try to get from KV cache first
   const cached = await ctx.recipeState.get(CACHE_KEY);
   if (cached) {
-    return JSON.parse(cached);
+    return JSON.parse(cached) as TrendingRecipe[];
   }
 
   // Get recipes with their reactions from the last 7 days
@@ -65,32 +73,42 @@ export const trending = publicProcedure.query(async ({ ctx }) => {
     .where(eq(EnglishRecipesTable.status, "completed"));
 
   // Group reactions by recipe
-  const recipeReactions = recipesWithReactions.reduce(
-    (acc, row) => {
-      if (!acc[row.id]) {
-        acc[row.id] = {
-          id: row.id,
-          name: row.name,
-          slug: row.slug,
-          data: row.data,
-          reactions: [],
-        };
+  const recipeReactions = recipesWithReactions.reduce<
+    Record<string, TrendingRecipe & { reactions: { emoji: string; timestamp: string }[] }>
+  >((acc, row) => {
+    if (!acc[row.id]) {
+      // Ensure data is not null before creating the recipe entry
+      if (!row.data) return acc;
+
+      const parsed = RecipeResponseSchema.safeParse(row.data);
+      if (!parsed.success) {
+        console.error(`Invalid recipe data for ${row.id}:`, parsed.error);
+        return acc;
       }
-      if (row.emoji) {
-        acc[row.id].reactions.push({
-          emoji: row.emoji,
-          timestamp: row.reactionTime,
-        });
-      }
-      return acc;
-    },
-    {} as Record<string, any>,
-  );
+
+      acc[row.id] = {
+        id: row.id,
+        slug: row.slug,
+        data: parsed.data,
+        trendingScore: 0,
+        reactions: [],
+      };
+    }
+    if (row.emoji && row.reactionTime) {
+      acc[row.id].reactions.push({
+        emoji: row.emoji,
+        timestamp: row.reactionTime,
+      });
+    }
+    return acc;
+  }, {});
 
   // Calculate trending scores and sort
   const trendingRecipes = Object.values(recipeReactions)
     .map((recipe) => ({
-      ...recipe,
+      id: recipe.id,
+      slug: recipe.slug,
+      data: recipe.data,
       trendingScore: calculateTrendingScore(recipe.reactions),
     }))
     .sort((a, b) => b.trendingScore - a.trendingScore)
