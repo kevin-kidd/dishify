@@ -26,7 +26,7 @@ export function FavoriteButton({
   const utils = trpc.useUtils();
   const { data: isFavorited } = trpc.recipe.favorites.isFavorited.useQuery(
     { id: recipe.id },
-    { meta: { skipErrorToast: true, enabled: isSignedIn } },
+    { meta: { skipErrorToast: true }, enabled: isSignedIn },
   );
 
   const mutation = trpc.recipe.favorites.toggleFavorite.useMutation({
@@ -89,7 +89,7 @@ export function FavoriteButton({
         <Button
           variant="none"
           className={cn(
-            "hidden md:flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all duration-200",
+            "flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all duration-200",
             !isSignedIn && "cursor-not-allowed opacity-50 hover:scale-100 active:scale-100",
             className,
           )}
