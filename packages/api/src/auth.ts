@@ -12,8 +12,8 @@ import type { Env } from "./types";
 
 export const auth = (d1: D1Database, env: Env) => {
   if (
-    !env.FACEBOOK_CLIENT_ID ||
-    !env.FACEBOOK_CLIENT_SECRET ||
+    !env.DISCORD_CLIENT_ID ||
+    !env.DISCORD_CLIENT_SECRET ||
     !env.GOOGLE_CLIENT_ID ||
     !env.GOOGLE_CLIENT_SECRET ||
     !env.MICROSOFT_CLIENT_ID ||
@@ -58,17 +58,14 @@ export const auth = (d1: D1Database, env: Env) => {
       microsoft: {
         clientId: env.MICROSOFT_CLIENT_ID,
         clientSecret: env.MICROSOFT_CLIENT_SECRET,
-        redirectURI: env.APP_URL,
       },
       google: {
         clientId: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
-        redirectURI: env.APP_URL,
       },
-      facebook: {
-        clientId: env.FACEBOOK_CLIENT_ID,
-        clientSecret: env.FACEBOOK_CLIENT_SECRET,
-        redirectURI: env.APP_URL,
+      discord: {
+        clientId: env.DISCORD_CLIENT_ID,
+        clientSecret: env.DISCORD_CLIENT_SECRET,
       },
     },
     advanced: {
