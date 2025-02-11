@@ -19,7 +19,7 @@
     "@trpc/client": "11.0.0-rc.490",
     "@trpc/next": "11.0.0-rc.490",
     "@trpc/react-query": "11.0.0-rc.490",
-    "better-auth": "^1.1.15",
+    "better-auth": "1.1.16",
     "embla-carousel-auto-scroll": "^8.5.2",
     "embla-carousel-react": "^8.5.2",
     "expo-constants": "16.0.2",
