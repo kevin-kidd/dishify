@@ -25,17 +25,13 @@ export default function ProfileButton() {
   const router = useRouter();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  if (isPending) {
-    return null;
-  }
-
   if (!session?.user) {
     return (
       <Pressable
         href="/account/sign-in"
         className={cn(
-          "relative group inline-flex flex-row items-center justify-center",
-          "px-6 py-3 text-sm font-medium tracking-wide",
+          "relative group flex gap-2  flex-row items-center justify-center",
+          "sm:px-6 sm:py-3 py-2 px-4 text-sm font-medium tracking-wide",
           "transition-all duration-300 ease-out",
           "rounded-full",
           "backdrop-blur-sm",
@@ -44,12 +40,11 @@ export default function ProfileButton() {
           "active:scale-95",
           "shadow-[0_0_10px_rgba(98,148,105,1)]",
           "hover:shadow-[0_0_15px_rgba(98,148,105,1)]",
+          isPending && "invisible",
         )}
       >
-        <Div className="relative flex items-center gap-2 flex-row">
-          <User className="w-4 h-4 text-background" />
-          <Span className="relative z-10 font-medium text-background">Sign in</Span>
-        </Div>
+        <User className="w-4 h-4 text-background" />
+        <Span className="relative z-10 font-medium text-background">Sign in</Span>
       </Pressable>
     );
   }
@@ -72,6 +67,7 @@ export default function ProfileButton() {
               "active:scale-95",
               "shadow-[0_0_10px_rgba(98,148,105,1)]",
               "hover:shadow-[0_0_15px_rgba(98,148,105,1)]",
+              isPending && "invisible",
             )}
           >
             <User
