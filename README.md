@@ -7,7 +7,7 @@
 ![Tailwind CSS version](https://img.shields.io/badge/Tailwind%20CSS-3.4.4-blue)
 ![tRPC version](https://img.shields.io/badge/tRPC-11.0.0-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.5.4-blue)
-![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-3.73.0-orange)
+![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-3.107.2-orange)
 
 Dishify is your AI-powered culinary companion. Enter any dish name for instant recipes, ingredient lists, and smart shopping links. Elevate your cooking with personalized instructions and effortless grocery planning.
 
