@@ -13,7 +13,7 @@ export const themes = {
       "--muted-foreground": "206.04 0% 50.77%",
       "--accent": "133 18% 59%",
       "--accent-foreground": "334 0% 100%",
-      "--destructive": "3.19 100% 59.41%",
+      "--destructive": "0 100% 47%",
       "--destructive-foreground": "18 0% 100%",
       "--border": "0 0% 80.78%",
       "--input": "0 0% 80.78%",
