@@ -19,6 +19,23 @@ export const sendVerificationEmail = async (
   }
 };
 
+export const sendChangeEmailVerification = async (
+  { url, user, newEmail }: { url: string; user: User; newEmail: string },
+  env: Env,
+) => {
+  const resend = new Resend(env.RESEND_API_KEY);
+  try {
+    await resend.emails.send({
+      from: "auth@dishify.app",
+      to: user.email,
+      subject: "Approve email change",
+      html: `<p>You are receiving this email because you have requested to change your email to ${newEmail}. Please approve the change by clicking <a href="${url}">here</a></p>.`,
+    });
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 export const sendResetPasswordEmail = async (
   { url, user }: { url: string; user: User },
   env: Env,
