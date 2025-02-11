@@ -20,7 +20,7 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
       }}
       className="bg-gradient-to-b from-sage-50 to-sage-100 min-h-screen w-full pb-16 px-4 sm:px-8"
     >
-      <Div className="flex flex-row items-center w-full justify-between pt-10 px-4 pb-0">
+      <Div className="flex flex-row items-center w-full justify-between pt-6 sm:pt-10 px-4 pb-0">
         <Div>
           {!isHome && (
             <Link href="/">
