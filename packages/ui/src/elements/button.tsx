@@ -63,7 +63,14 @@ type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> &
   VariantProps<typeof buttonVariants>;
 
 const Button = React.forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
+  ({ className, variant, size, onClick, onPress, ...props }, ref) => {
+    const handlePress = React.useCallback(
+      (e: any) => {
+        if (onClick) onClick(e);
+        if (onPress) onPress(e);
+      },
+      [onClick, onPress],
+    );
     return (
       <TextClassContext.Provider
         value={buttonTextVariants({ variant, size, className: "web:pointer-events-none" })}
@@ -73,6 +80,7 @@ const Button = React.forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>
             props.disabled && "opacity-50 web:pointer-events-none",
             buttonVariants({ variant, size, className }),
           )}
+          onPress={handlePress}
           ref={ref}
           role="button"
           {...props}
