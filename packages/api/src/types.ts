@@ -4,8 +4,8 @@ export interface Env {
   BETTER_AUTH_URL: string;
 
   // Social provider credentials
-  FACEBOOK_CLIENT_ID: string;
-  FACEBOOK_CLIENT_SECRET: string;
+  DISCORD_CLIENT_ID: string;
+  DISCORD_CLIENT_SECRET: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   MICROSOFT_CLIENT_ID: string;
