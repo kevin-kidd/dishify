@@ -2,7 +2,11 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createDb } from "./db/client";
 import { expo } from "@better-auth/expo";
-import { sendVerificationEmail, sendResetPasswordEmail } from "./email";
+import {
+  sendVerificationEmail,
+  sendResetPasswordEmail,
+  sendChangeEmailVerification,
+} from "./email";
 import { jwt } from "better-auth/plugins";
 import type { Env } from "./types";
 
@@ -38,22 +42,33 @@ export const auth = (d1: D1Database, env: Env) => {
       sendVerificationEmail: ({ url, user }) => sendVerificationEmail({ url, user }, env),
       sendOnSignUp: true,
     },
+    user: {
+      changeEmail: {
+        enabled: true,
+        sendChangeEmailVerification: async ({ user, newEmail, url }, request) => {
+          await sendChangeEmailVerification({ url, user, newEmail }, env);
+        },
+      },
+    },
     plugins: [expo(), jwt()],
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
     trustedOrigins: [env.APP_URL],
     socialProviders: {
-      apple: {
+      microsoft: {
         clientId: env.MICROSOFT_CLIENT_ID,
         clientSecret: env.MICROSOFT_CLIENT_SECRET,
+        redirectURI: env.APP_URL,
       },
       google: {
         clientId: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
+        redirectURI: env.APP_URL,
       },
       facebook: {
         clientId: env.FACEBOOK_CLIENT_ID,
         clientSecret: env.FACEBOOK_CLIENT_SECRET,
+        redirectURI: env.APP_URL,
       },
     },
     advanced: {
