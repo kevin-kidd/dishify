@@ -21,9 +21,13 @@ import AccountSettingsPopup from "./account-settings-popup";
 
 export default function ProfileButton() {
   const { useSession, signOut } = useAuth();
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
   const router = useRouter();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  if (isPending) {
+    return null;
+  }
 
   if (!session?.user) {
     return (
