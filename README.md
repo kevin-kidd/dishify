@@ -8,9 +8,6 @@
 ![tRPC version](https://img.shields.io/badge/tRPC-11.0.0-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.5.4-blue)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-3.73.0-orange)
-![Next.js Deployment](https://github.com/kevin-kidd/dishify/actions/workflows/next.yml/badge.svg)
-![Backend Deployment](https://github.com/kevin-kidd/dishify/actions/workflows/backend.yml/badge.svg)
-![Expo Deployment](https://github.com/kevin-kidd/dishify/actions/workflows/expo.yml/badge.svg)
 
 Dishify is your AI-powered culinary companion. Enter any dish name for instant recipes, ingredient lists, and smart shopping links. Elevate your cooking with personalized instructions and effortless grocery planning.
 
