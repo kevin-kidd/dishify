@@ -2,31 +2,45 @@
 
 import { Button, LI, Tooltip, TooltipContent, TooltipGroup, TooltipTrigger, UL } from "@dishify/ui";
 import { Facebook, Google, Microsoft } from "@dishify/ui/src/icons/social";
+import { authClient } from "app/utils/auth/client";
 import type React from "react";
-import { Platform } from "react-native";
 
 export function OAuthButtons() {
+  const signInWithGoogle = async () => {
+    await authClient.signIn.social({
+      provider: "google",
+    });
+  };
+
+  const signInWithMicrosoft = async () => {
+    await authClient.signIn.social({
+      provider: "microsoft",
+    });
+  };
+
+  const signInWithFacebook = async () => {
+    await authClient.signIn.social({
+      provider: "facebook",
+    });
+  };
+
   return (
     <TooltipGroup>
       <UL className="flex flex-row gap-4 justify-center">
         <LI className="z-30">
-          <OAuthButton
-            Icon={Google}
-            onAction={() => console.log("XD")}
-            label="Sign in with Google"
-          />
+          <OAuthButton Icon={Google} onAction={signInWithGoogle} label="Sign in with Google" />
         </LI>
         <LI className="z-20">
           <OAuthButton
             Icon={Microsoft}
-            onAction={() => console.log("XD")}
+            onAction={signInWithMicrosoft}
             label="Sign in with Microsoft"
           />
         </LI>
         <LI className="z-20">
           <OAuthButton
             Icon={Facebook}
-            onAction={() => console.log("XD")}
+            onAction={signInWithFacebook}
             label="Sign in with Facebook"
           />
         </LI>
