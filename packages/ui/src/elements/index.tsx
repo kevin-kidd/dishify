@@ -15,3 +15,5 @@ export * from "./dialog";
 export * from "./dropdown";
 export * from "./skeleton";
 export * from "./icon-button";
+export * from "./sheet";
+export * from "./drawer";
