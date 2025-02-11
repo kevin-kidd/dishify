@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, LI, Tooltip, TooltipContent, TooltipGroup, TooltipTrigger, UL } from "@dishify/ui";
-import { Facebook, Google, Microsoft } from "@dishify/ui/src/icons/social";
+import { Discord, Google, Microsoft } from "@dishify/ui/src/icons/social";
 import { authClient } from "app/utils/auth/client";
 import type React from "react";
 
@@ -9,18 +9,21 @@ export function OAuthButtons() {
   const signInWithGoogle = async () => {
     await authClient.signIn.social({
       provider: "google",
+      callbackURL: process.env.NEXT_PUBLIC_APP_URL,
     });
   };
 
   const signInWithMicrosoft = async () => {
     await authClient.signIn.social({
       provider: "microsoft",
+      callbackURL: process.env.NEXT_PUBLIC_APP_URL,
     });
   };
 
-  const signInWithFacebook = async () => {
+  const signInWithDiscord = async () => {
     await authClient.signIn.social({
-      provider: "facebook",
+      provider: "discord",
+      callbackURL: process.env.NEXT_PUBLIC_APP_URL,
     });
   };
 
@@ -38,11 +41,7 @@ export function OAuthButtons() {
           />
         </LI>
         <LI className="z-20">
-          <OAuthButton
-            Icon={Facebook}
-            onAction={signInWithFacebook}
-            label="Sign in with Facebook"
-          />
+          <OAuthButton Icon={Discord} onAction={signInWithDiscord} label="Sign in with Discord" />
         </LI>
       </UL>
     </TooltipGroup>
