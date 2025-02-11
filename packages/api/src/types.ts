@@ -12,4 +12,5 @@ export interface Env {
   MICROSOFT_CLIENT_SECRET: string;
 
   RESEND_API_KEY: string;
+  APP_URL: string;
 }
