@@ -1,3 +1,2 @@
 seed/*.sql
-migrations
 wrangler.toml
