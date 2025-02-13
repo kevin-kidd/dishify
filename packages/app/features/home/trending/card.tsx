@@ -11,7 +11,7 @@ import { View } from "react-native";
 
 export type TrendingCardProps = {
   dishName: string;
-  cost: number;
+  cost: number; // Cost in cents
   difficulty: "Easy" | "Medium" | "Hard";
   cuisine: RecipeResponse["cuisine"];
   prepTime: string;
@@ -42,7 +42,7 @@ export default function TrendingCard({
   }, []);
 
   const getCostDisplay = useCallback((cost: TrendingCardProps["cost"]) => {
-    const count = cost > 250 ? 4 : cost > 150 ? 3 : cost > 50 ? 2 : cost > 25 ? 1 : 1;
+    const count = cost > 10000 ? 4 : cost > 5000 ? 3 : cost > 2500 ? 2 : 1;
     return Array(count).fill(<DollarSign className="h-4 w-4 text-[#13a300]" strokeWidth={2.5} />);
   }, []);
 
@@ -79,7 +79,7 @@ export default function TrendingCard({
 
           <div className="flex items-center justify-end w-full">
             {getCostDisplay(cost).map((item) => (
-              <Fragment key={`dollar-${crypto.randomUUID()}`}>{item}</Fragment>
+              <Fragment key={`dollar-${dishName}-${crypto.randomUUID()}`}>{item}</Fragment>
             ))}
           </div>
         </div>
