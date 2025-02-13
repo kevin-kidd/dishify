@@ -1,8 +1,13 @@
 import { and, eq, gte } from "drizzle-orm";
 import type { z } from "zod";
 import { publicProcedure } from "../../trpc";
-import { EnglishRecipesTable, RecipeReactionsTable } from "../../db/schema/recipes";
+import {
+  EnglishRecipesTable,
+  type EstimatedCosts,
+  RecipeReactionsTable,
+} from "../../db/schema/recipes";
 import { RecipeResponseSchema } from "../../../schemas/recipe-response";
+import type { RegionSchema } from "../marketplace/marketplaces/types";
 
 const CACHE_KEY = "trending-recipes";
 const CACHE_TTL = 300; // 5 minutes in seconds
@@ -15,6 +20,7 @@ export type TrendingRecipe = {
   slug: string;
   data: NonNullable<z.infer<typeof RecipeResponseSchema>>;
   trendingScore: number;
+  estimatedCost: EstimatedCosts[keyof EstimatedCosts] | null;
 };
 
 /**
@@ -50,6 +56,9 @@ export const trending = publicProcedure.query(async ({ ctx }): Promise<TrendingR
     return JSON.parse(cached) as TrendingRecipe[];
   }
 
+  const detectedRegion = ctx.cf?.country;
+  const region = (detectedRegion ?? "US") as z.infer<typeof RegionSchema>;
+
   // Get recipes with their reactions from the last 7 days
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -59,6 +68,7 @@ export const trending = publicProcedure.query(async ({ ctx }): Promise<TrendingR
       name: EnglishRecipesTable.name,
       slug: EnglishRecipesTable.slug,
       data: EnglishRecipesTable.data,
+      estimatedCosts: EnglishRecipesTable.estimatedCosts,
       emoji: RecipeReactionsTable.emoji,
       reactionTime: RecipeReactionsTable.createdAt,
     })
@@ -90,6 +100,7 @@ export const trending = publicProcedure.query(async ({ ctx }): Promise<TrendingR
         id: row.id,
         slug: row.slug,
         data: parsed.data,
+        estimatedCost: row.estimatedCosts?.[region] ?? null,
         trendingScore: 0,
         reactions: [],
       };
@@ -104,12 +115,13 @@ export const trending = publicProcedure.query(async ({ ctx }): Promise<TrendingR
   }, {});
 
   // Calculate trending scores and sort
-  const trendingRecipes = Object.values(recipeReactions)
+  const trendingRecipes: TrendingRecipe[] = Object.values(recipeReactions)
     .map((recipe) => ({
       id: recipe.id,
       slug: recipe.slug,
       data: recipe.data,
       trendingScore: calculateTrendingScore(recipe.reactions),
+      estimatedCost: recipe.estimatedCost,
     }))
     .sort((a, b) => b.trendingScore - a.trendingScore)
     .slice(0, TRENDING_LIMIT);
