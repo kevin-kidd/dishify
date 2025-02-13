@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const RecipeResponseSchema = z.object({
-  dishName: z.string(),
+  dishName: z.string().or(z.literal("unknown")),
   shoppingList: z.array(
     z.object({
       item: z.string(),
