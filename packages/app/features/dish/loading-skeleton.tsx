@@ -25,8 +25,8 @@ export function LoadingSkeleton() {
               <Skeleton className="h-6 w-24 mt-2" />
               <View className="mt-6 flex flex-row items-center justify-between w-full">
                 <View className="flex flex-row items-center flex-wrap gap-4">
+                  <Skeleton className="h-5 w-20" />
                   <Skeleton className="h-5 w-24" />
-                  <Skeleton className="h-5 w-28" />
                   <Skeleton className="h-5 w-20" />
                 </View>
                 <Skeleton className="h-8 w-32" />
