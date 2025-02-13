@@ -6,7 +6,6 @@ import { SolitoImageProvider } from "./solito-image";
 import { ThemeProvider } from "./theme";
 import { PortalHost } from "@rn-primitives/portal";
 import { ToastProvider } from "./toasts";
-import { Div } from "@dishify/ui/src";
 
 export function Provider({
   children,
