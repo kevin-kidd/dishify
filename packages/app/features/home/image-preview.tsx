@@ -5,7 +5,6 @@ import {
   Image,
   Text,
   DialogContent,
-  Skeleton,
   DialogTitle,
   DialogHeader,
   DialogDescription,
@@ -48,7 +47,7 @@ export default function ImagePreview({
   }
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-full h-full sm:min-w-[425px] aspect-square relative">
+      <DialogContent className="flex-1 w-full h-auto aspect-square sm:max-w-[425px] relative">
         <DialogHeader>
           <DialogTitle>Image Preview</DialogTitle>
           <DialogDescription>
@@ -60,11 +59,11 @@ export default function ImagePreview({
             <Image
               src={imageSrc}
               alt="Image Preview"
-              fill={true}
-              className="w-full h-full"
-              style={{ borderRadius: 8 }}
+              width={250}
+              height={250}
+              className="flex-1 w-full h-full object-contain rounded-sm"
             />
-            <Button size="sm" className="absolute bottom-3 right-3" onClick={handleConfirm}>
+            <Button size="sm" className="flex self-end" onClick={handleConfirm}>
               <Text>Confirm</Text>
             </Button>
           </>
