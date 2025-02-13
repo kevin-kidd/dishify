@@ -54,7 +54,7 @@ export default function RecipeCard() {
     isLoading: isPricesLoading,
   } = trpc.marketplace.getMarketplacePrices.useQuery(
     {
-      ingredients: recipeData?.data?.shoppingList?.map((item) => item.item) ?? [],
+      ingredients: recipeData?.data?.shoppingList ?? [],
       recipeId: recipeData?.id,
     },
     {
