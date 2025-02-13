@@ -1,41 +1,34 @@
-import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { createDb } from "./db/client";
-import Groq from "groq-sdk";
 import { auth } from "./auth";
 import type { User } from "better-auth/types";
 import type { dbSchema } from "./db/client";
 import type { Bindings } from "./worker";
+import type { CfProperties } from "@cloudflare/workers-types";
+import { EnvSchema, type Env } from "./types";
+import { createGroq, type GroqProvider } from "@ai-sdk/groq";
 
 interface ApiContextProps {
   user: User | null;
   db: DrizzleD1Database<typeof dbSchema>;
-  ai: {
-    client: Ai;
-    gatewayId: string;
-  };
-  groq: Groq;
+  groq: GroqProvider;
   recipeState: KVNamespace;
-  env: {
-    RECIPE_QUEUE: Queue<{ recipeId: string; dishName?: string; image?: number[] }>;
-  };
+  recipeQueue: Queue<{ recipeId: string; dishName?: string; image?: number[] }>;
+  env: Env;
+  cf?: CfProperties<unknown>;
 }
 
 export const createContext = async (
-  d1: D1Database,
-  GROQ_API_KEY: string,
-  GROQ_BASE_URL: string,
-  ai: {
-    client: Ai;
-    gatewayId: string;
-  },
-  recipeState: KVNamespace,
-  recipeQueue: Queue,
-  env: Bindings,
+  env: Bindings & Env,
   headers: Headers,
+  cf?: CfProperties<unknown>,
 ): Promise<ApiContextProps> => {
-  const db = createDb(d1);
-  const betterAuth = auth(d1, env);
+  // Validate environment variables
+  // This will only validate the Env part of the object, ignoring additional Bindings properties
+  const validatedEnv = EnvSchema.parse(env);
+
+  const db = createDb(env.DB);
+  const betterAuth = auth(env.DB, validatedEnv);
 
   const session = await betterAuth.api
     .getSession({
@@ -51,17 +44,18 @@ export const createContext = async (
     user = session.user;
   }
 
-  const groq = new Groq({ apiKey: GROQ_API_KEY, baseURL: GROQ_BASE_URL });
+  const groq = createGroq({
+    apiKey: env.GROQ_API_KEY,
+  });
 
   return {
     user,
     db,
-    ai,
     groq,
-    recipeState,
-    env: {
-      RECIPE_QUEUE: recipeQueue as Queue<{ recipeId: string; dishName?: string; image?: number[] }>,
-    },
+    recipeState: env.RECIPE_STATE,
+    recipeQueue: env.RECIPE_QUEUE,
+    env: validatedEnv,
+    cf,
   };
 };
 
