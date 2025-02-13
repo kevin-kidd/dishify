@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// Schema for validating string-based environment variables
 export const EnvSchema = z
   .object({
     // Auth-related environment variables
@@ -24,4 +25,17 @@ export const EnvSchema = z
   })
   .passthrough();
 
-export type Env = z.infer<typeof EnvSchema>;
+// Type for validated environment variables
+export type ValidatedEnv = z.infer<typeof EnvSchema>;
+
+// Full environment type including bindings
+export interface Env extends ValidatedEnv {
+  RECIPE_STATE: KVNamespace;
+  RECIPE_QUEUE: Queue<RecipeQueueMessage>;
+}
+
+export interface RecipeQueueMessage {
+  recipeId: string;
+  dishName?: string;
+  hasImage: boolean;
+}
