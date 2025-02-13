@@ -44,23 +44,10 @@ app.use("*", async (c, next) => {
 
 // Setup TRPC server with context
 app.use("/trpc/*", async (c, next) => {
-  const GROQ_BASE_URL = `https://gateway.ai.cloudflare.com/v1/${c.env.ACCOUNT_ID}/${c.env.AI_GATEWAY_ID}/groq`;
   return await trpcServer({
     router: appRouter,
     createContext: async (): Promise<Record<string, unknown>> => {
-      const context = await createContext(
-        c.env.DB,
-        c.env.GROQ_API_KEY,
-        GROQ_BASE_URL,
-        {
-          client: c.env.AI,
-          gatewayId: c.env.AI_GATEWAY_ID,
-        },
-        c.env.RECIPE_STATE,
-        c.env.RECIPE_QUEUE,
-        c.env,
-        c.req.raw.headers,
-      );
+      const context = await createContext(c.env, c.req.raw.headers, c.req.raw.cf);
       return { ...context };
     },
   })(c, next);
