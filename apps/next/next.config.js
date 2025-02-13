@@ -1,5 +1,6 @@
 const { DefinePlugin } = require("webpack");
 const million = require("million/compiler");
+
 const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
 });
