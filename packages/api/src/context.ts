@@ -5,7 +5,7 @@ import type { User } from "better-auth/types";
 import type { dbSchema } from "./db/client";
 import type { Bindings } from "./worker";
 import type { CfProperties } from "@cloudflare/workers-types";
-import { EnvSchema, type Env } from "./types";
+import { EnvSchema, type Env, type ValidatedEnv } from "./types";
 import { createGroq, type GroqProvider } from "@ai-sdk/groq";
 
 interface ApiContextProps {
@@ -13,22 +13,21 @@ interface ApiContextProps {
   db: DrizzleD1Database<typeof dbSchema>;
   groq: GroqProvider;
   recipeState: KVNamespace;
-  recipeQueue: Queue<{ recipeId: string; dishName?: string; image?: number[] }>;
-  env: Env;
+  recipeQueue: Queue<{ recipeId: string; dishName?: string; hasImage: boolean }>;
+  env: ValidatedEnv;
   cf?: CfProperties<unknown>;
 }
 
 export const createContext = async (
-  env: Bindings & Env,
+  env: Bindings,
   headers: Headers,
   cf?: CfProperties<unknown>,
 ): Promise<ApiContextProps> => {
-  // Validate environment variables
-  // This will only validate the Env part of the object, ignoring additional Bindings properties
+  // Validate only the string-based environment variables
   const validatedEnv = EnvSchema.parse(env);
 
   const db = createDb(env.DB);
-  const betterAuth = auth(env.DB, validatedEnv);
+  const betterAuth = auth(env.DB, env);
 
   const session = await betterAuth.api
     .getSession({
