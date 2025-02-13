@@ -59,11 +59,11 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
       handleBlur,
     } = useAutocomplete({ onSelect, getOptions, autocompleteOptions, children, onTemporaryChange });
 
-    const sheetTriggerRef = React.useRef<HTMLButtonElement>(null);
+    const drawerTriggerRef = React.useRef<HTMLButtonElement>(null);
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const isMobileSize = width < 768;
-    const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
     const contentInsets = {
       top: insets.top,
@@ -74,14 +74,14 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
 
     // Effect to focus input when sheet opens
     React.useEffect(() => {
-      if (isSheetOpen && inputRef.current) {
+      if (isDrawerOpen && inputRef.current) {
         // Small delay to ensure the sheet animation has started
         const timer = setTimeout(() => {
           inputRef.current?.focus();
         }, 100);
         return () => clearTimeout(timer);
       }
-    }, [isSheetOpen, inputRef]);
+    }, [isDrawerOpen, inputRef]);
 
     // Find the TextInput within the Form and clone it with focus handling
     const enhancedChildren = React.useMemo(() => {
@@ -105,13 +105,17 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
                 handleFocus();
                 if (isMobileSize) {
                   setIsOpen(true);
-                  setIsSheetOpen(true);
+                  setIsDrawerOpen(true);
                 }
                 // Call the original onFocus if it exists
                 inputElement.props.onFocus?.(e);
               },
               onBlur: (e: any) => {
                 handleBlur();
+                if (isMobileSize) {
+                  setIsOpen(false);
+                  setIsDrawerOpen(false);
+                }
                 // Call the original onBlur if it exists
                 inputElement.props.onBlur?.(e);
               },
@@ -177,10 +181,10 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
       handleBlur,
     ]);
 
-    const handleSheetOpenChange = (open: boolean) => {
+    const handleDrawerOpenChange = (open: boolean) => {
       if (!isInteractive) return;
       setIsOpen(open);
-      setIsSheetOpen(open);
+      setIsDrawerOpen(open);
       if (!open) {
         // When closing the sheet, we want to blur the input to hide the keyboard
         inputRef.current?.blur();
@@ -238,8 +242,8 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
     return (
       <View ref={ref} className={cn(className, "w-full")}>
         {enhancedChildren}
-        <Drawer open={isOpen} onOpenChange={handleSheetOpenChange}>
-          <DrawerTrigger ref={sheetTriggerRef} className="hidden" />
+        <Drawer open={isOpen} onOpenChange={handleDrawerOpenChange}>
+          <DrawerTrigger ref={drawerTriggerRef} className="hidden" />
           <DrawerContent className="h-screen sm:max-w-none w-screen px-4">
             <DrawerHeader className="h-0 p-0 m-0">
               <DrawerTitle className="sr-only">Search</DrawerTitle>
@@ -256,7 +260,7 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
                   onSelect={(option) => {
                     handleSelectOption(option, true);
                     setIsOpen(false);
-                    setIsSheetOpen(false);
+                    setIsDrawerOpen(false);
                   }}
                 />
               )}
