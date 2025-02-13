@@ -78,7 +78,7 @@ export default function TrendingCard({
           </div>
 
           <div className="flex items-center justify-end w-full">
-            {cost &&
+            {cost > 0 &&
               getCostDisplay(cost).map((item) => (
                 <Fragment key={`dollar-${dishName}-${crypto.randomUUID()}`}>{item}</Fragment>
               ))}
