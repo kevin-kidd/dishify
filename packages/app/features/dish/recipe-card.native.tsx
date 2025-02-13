@@ -125,6 +125,10 @@ export default function RecipeCard() {
     // Under $25 = 1 dollar sign
     const count = cost > 10000 ? 4 : cost > 5000 ? 3 : cost > 2500 ? 2 : 1;
 
+    if (cost === 0) {
+      return null;
+    }
+
     return (
       <View className="flex flex-row items-center gap-1">
         {Array.from({ length: count }).map((_, i) => (
