@@ -265,7 +265,7 @@ export const generate = publicProcedure
       });
 
       // Add to queue
-      await ctx.env.RECIPE_QUEUE.send({
+      await ctx.recipeQueue.send({
         recipeId,
         dishName,
         image,
