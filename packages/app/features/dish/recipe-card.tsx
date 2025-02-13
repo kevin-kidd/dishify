@@ -181,7 +181,7 @@ export default function RecipeCard() {
     }
     return (
       <View className="flex flex-row items-center gap-1">
-        {Array.from({ length: count }).map((_, i) => (
+        {Array.from({ length: count }).map((_) => (
           <DollarSign
             key={`cost-indicator-${crypto.randomUUID()}`}
             className="h-4 w-4 text-[#13a300]"
