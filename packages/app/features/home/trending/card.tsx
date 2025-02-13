@@ -1,4 +1,4 @@
-import { Card, Text } from "@dishify/ui/src";
+import { Card } from "@dishify/ui/src";
 import { ChevronRight } from "@dishify/ui/src/icons/chevron-right";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
@@ -78,9 +78,10 @@ export default function TrendingCard({
           </div>
 
           <div className="flex items-center justify-end w-full">
-            {getCostDisplay(cost).map((item) => (
-              <Fragment key={`dollar-${dishName}-${crypto.randomUUID()}`}>{item}</Fragment>
-            ))}
+            {cost &&
+              getCostDisplay(cost).map((item) => (
+                <Fragment key={`dollar-${dishName}-${crypto.randomUUID()}`}>{item}</Fragment>
+              ))}
           </div>
         </div>
 
