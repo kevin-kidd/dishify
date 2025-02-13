@@ -7,7 +7,11 @@ import { defineConfig } from "drizzle-kit";
  */
 export default process.env.DB_LOCAL_PATH
   ? defineConfig({
-      schema: ["./src/db/schema/user.ts", "./src/db/schema/recipes.ts"],
+      schema: [
+        "./src/db/schema/user.ts",
+        "./src/db/schema/recipes.ts",
+        "./src/db/schema/marketplace.ts",
+      ],
       out: "./migrations",
       dialect: "sqlite",
       dbCredentials: {
@@ -15,7 +19,11 @@ export default process.env.DB_LOCAL_PATH
       },
     })
   : defineConfig({
-      schema: ["./src/db/schema/user.ts", "./src/db/schema/recipes.ts"],
+      schema: [
+        "./src/db/schema/user.ts",
+        "./src/db/schema/recipes.ts",
+        "./src/db/schema/marketplace.ts",
+      ],
       out: "./migrations",
       driver: "d1-http",
       dialect: "sqlite",
