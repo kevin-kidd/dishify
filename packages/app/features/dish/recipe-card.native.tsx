@@ -3,30 +3,23 @@
 import { Text, Card, CardHeader, CardTitle, CardContent, Skeleton, Button } from "@dishify/ui";
 import { View, RefreshControl, ScrollView } from "react-native";
 import { useParams, useRouter } from "solito/navigation";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { trpc } from "app/utils/trpc";
 import { TRPCClientError } from "@trpc/client";
 import * as Haptics from "expo-haptics";
 import { LoadingSkeleton } from "./loading-skeleton";
 import { ErrorView } from "./error-view";
 import { EmojiReactions } from "./emoji-reactions/index";
+import { MarketplaceLinks } from "./marketplace-links";
 import { FavoriteButton, ShareButton } from "./actions";
+import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
+import { formatPrice } from "app/utils/currency";
 
 export default function RecipeCard() {
   const router = useRouter();
   const params = useParams();
   const slug = typeof params.slug === "string" ? params.slug : undefined;
   const [refreshing, setRefreshing] = useState(false);
-  const [reactions, setReactions] = useState<
-    Array<{ emoji: string; count: number; hasReacted: boolean; timestamp?: number }>
-  >([
-    { emoji: "👍", count: 12, hasReacted: false, timestamp: Date.now() },
-    { emoji: "🔥", count: 8, hasReacted: true, timestamp: Date.now() - 1000 },
-    { emoji: "❤️", count: 5, hasReacted: false, timestamp: Date.now() - 2000 },
-    { emoji: "😋", count: 0, hasReacted: false, timestamp: Date.now() - 3000 },
-    { emoji: "🤤", count: 0, hasReacted: false, timestamp: Date.now() - 4000 },
-    { emoji: "👎", count: 0, hasReacted: false, timestamp: Date.now() - 5000 },
-  ]);
 
   const {
     data: recipe,
@@ -52,34 +45,91 @@ export default function RecipeCard() {
     },
   );
 
-  const handleToggleReaction = useCallback((emoji: string) => {
-    setReactions((prev) =>
-      prev.map((r) =>
-        r.emoji === emoji
-          ? { ...r, hasReacted: !r.hasReacted, count: r.count + (r.hasReacted ? -1 : 1) }
-          : r,
-      ),
-    );
-  }, []);
+  const recipeData = recipe;
 
-  const handleAddReaction = useCallback((emoji: string) => {
-    setReactions((prev) => {
-      const existing = prev.find((r) => r.emoji === emoji);
-      if (existing) {
-        // If it exists but was not reacted to, toggle it
-        if (!existing.hasReacted) {
-          return prev.map((r) =>
-            r.emoji === emoji
-              ? { ...r, hasReacted: true, count: r.count + 1, timestamp: Date.now() }
-              : r,
-          );
+  // Get cost estimate from marketplace API
+  const {
+    data: prices,
+    isError: isPricesError,
+    isLoading: isPricesLoading,
+  } = trpc.marketplace.getMarketplacePrices.useQuery(
+    {
+      ingredients: recipeData?.data?.shoppingList?.map((item) => item.item) ?? [],
+      recipeId: recipeData?.id,
+    },
+    {
+      enabled: !!recipeData?.data?.shoppingList?.length,
+      staleTime: Number.POSITIVE_INFINITY, // Never mark the data as stale
+      gcTime: Number.POSITIVE_INFINITY, // Keep the data cached indefinitely (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      refetchInterval: false,
+      retry: (failureCount, error) => {
+        // Only retry on TRPC errors that aren't NOT_FOUND, and max 2 times
+        if (error instanceof TRPCClientError) {
+          if (error.data?.code === "NOT_FOUND") {
+            // Log the error but don't retry for no marketplaces
+            console.warn(`No marketplaces found for region: ${error.message}`);
+            return false;
+          }
+          return failureCount < 2;
         }
-        return prev;
+        return false;
+      },
+      meta: {
+        skipErrorToast: true,
+      },
+    },
+  );
+
+  const costIndicators = useMemo(() => {
+    let cost = 0;
+    let currency = "USD";
+
+    // If we have an error or no prices, try to use estimated cost from recipe data
+    if (isPricesError || !prices?.prices) {
+      const estimatedCost = recipeData?.estimatedCosts?.[prices?.region ?? "US"];
+      if (estimatedCost?.cost) {
+        cost = estimatedCost.cost;
       }
-      // If it's a new emoji, add it
-      return [...prev, { emoji, count: 1, hasReacted: true, timestamp: Date.now() }];
-    });
-  }, []);
+    } else {
+      // Calculate total cost from lowest price for each ingredient
+      cost = Object.values(prices.prices).reduce((sum, marketplacePrices) => {
+        // Find the lowest price for this ingredient
+        const lowestPrice = marketplacePrices.reduce(
+          (min, price) => (price.price < min ? price.price : min),
+          marketplacePrices[0]?.price ?? 0,
+        );
+        return sum + lowestPrice;
+      }, 0);
+
+      // Get the currency from the first marketplace price (they should all be the same for a region)
+      currency = Object.values(prices.prices)[0]?.[0]?.currency ?? "USD";
+    }
+
+    // Calculate cost indicator based on total cost
+    // Over $100 = 4 dollar signs ($10000 cents)
+    // Over $50 = 3 dollar signs ($5000 cents)
+    // Over $25 = 2 dollar signs ($2500 cents)
+    // Under $25 = 1 dollar sign
+    const count = cost > 10000 ? 4 : cost > 5000 ? 3 : cost > 2500 ? 2 : 1;
+
+    return (
+      <View className="flex flex-row items-center gap-1">
+        {Array.from({ length: count }).map((_, i) => (
+          <DollarSign
+            key={`cost-indicator-${crypto.randomUUID()}`}
+            className="h-4 w-4 text-[#13a300]"
+            strokeWidth={2.5}
+          />
+        ))}
+        {cost > 0 && (
+          <Text className="text-sm text-sage-600 ml-1">({formatPrice(cost, currency)})</Text>
+        )}
+      </View>
+    );
+  }, [prices?.prices, isPricesError, recipeData?.estimatedCosts, prices?.region]);
 
   // Handle pull-to-refresh
   const onRefresh = useCallback(async () => {
@@ -198,15 +248,23 @@ export default function RecipeCard() {
         <Text className="mb-2 text-xl font-semibold">Shopping List</Text>
         <View className="mb-4">
           {recipe.data?.shoppingList.map((item) => (
-            <Text key={`${item.item}-${item.quantity}`} className="text-base">
-              • {item.quantity} {item.item}
-            </Text>
+            <View
+              key={`${item.item}-${item.quantity}`}
+              className="flex flex-row items-center justify-between border-b border-sage-50 py-3 last:border-0"
+            >
+              <View className="flex-1">
+                <Text className="text-base text-sage-900">{item.quantity}</Text>
+                <Text className="text-sm text-sage-600">{item.item}</Text>
+              </View>
+              <MarketplaceLinks prices={prices?.prices[item.item]} isLoading={isPricesLoading} />
+            </View>
           ))}
         </View>
 
         <Text className="mb-2 text-xl font-semibold">Recipe</Text>
         <Text className="mb-2">Cooking Time: {recipe.data?.cookingTime}</Text>
         <Text className="mb-2">Servings: {recipe.data?.servings}</Text>
+        <View className="mb-4 flex flex-row items-center gap-1">{costIndicators}</View>
 
         <Text className="mb-2 font-medium">Instructions:</Text>
         <View>
