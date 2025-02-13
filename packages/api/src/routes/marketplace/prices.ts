@@ -12,6 +12,7 @@ import { MarketplaceError, type MarketplacePrice } from "./marketplaces/types";
 import type { Env } from "../../types";
 import { generateObject } from "ai";
 import { EnglishRecipesTable } from "../../db/schema/recipes";
+import { RecipeResponseSchema } from "../../../schemas/recipe-response";
 
 // One week in milliseconds
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
@@ -21,7 +22,7 @@ export interface MarketplaceAPI {
   searchIngredient: (
     ingredient: string,
     region: string,
-    env: Env,
+    env: Env, // Need full Env type for API credentials
   ) => Promise<{
     price: number; // Price in cents
     url: string;
@@ -36,7 +37,7 @@ const PriceMatchResponseSchema = z.object({
 export const getMarketplacePrices = publicProcedure
   .input(
     z.object({
-      ingredients: z.array(z.string()),
+      ingredients: RecipeResponseSchema.shape.shoppingList,
       recipeId: z.string().optional(), // Optional recipe ID to update estimated costs
     }),
   )
@@ -121,7 +122,10 @@ export const getMarketplacePrices = publicProcedure
             MarketplacePricesTable.marketplaceSlug,
             marketplaces.map((m) => m.config.slug),
           ),
-          inArray(MarketplacePricesTable.ingredient, ingredients),
+          inArray(
+            MarketplacePricesTable.ingredient,
+            ingredients.map((i) => i.item),
+          ),
           eq(MarketplacePricesTable.region, region),
           gt(MarketplacePricesTable.lastUpdated, new Date(now.getTime() - CACHE_DURATION)), // Within last week
         ),
@@ -156,20 +160,25 @@ export const getMarketplacePrices = publicProcedure
     for (const ingredient of ingredients) {
       for (const marketplace of marketplaces) {
         // Skip if we already have a cached price
-        if (cachedPriceMap.get(ingredient)?.has(marketplace.config.slug)) {
+        if (cachedPriceMap.get(ingredient.item)?.has(marketplace.config.slug)) {
           continue;
         }
 
         try {
           console.log(
-            `[Marketplace] Fetching fresh price for "${ingredient}" from ${marketplace.config.name}`,
+            `[Marketplace] Fetching fresh price for "${ingredient.item}" from ${marketplace.config.name}`,
           );
-          const price = await marketplace.searchIngredient(ingredient, region, ctx.env);
+          // Pass the full environment object from context
+          const price = await marketplace.searchIngredient(ingredient.item, region, {
+            ...ctx.env,
+            RECIPE_STATE: ctx.recipeState,
+            RECIPE_QUEUE: ctx.recipeQueue,
+          });
 
           if (price.length > 1) {
             // Use AI to select the best matching price
             console.log(
-              `[Marketplace] Found ${price.length} prices for "${ingredient}" from ${marketplace.config.name}, using AI to select best match`,
+              `[Marketplace] Found ${price.length} prices for "${ingredient.item}" from ${marketplace.config.name}, using AI to select best match`,
             );
 
             const response = await generateObject({
@@ -178,11 +187,11 @@ export const getMarketplacePrices = publicProcedure
                 {
                   role: "system",
                   content:
-                    "You are a helpful assistant that selects the most relevant product from a list based on the ingredient name. Return the index of the best matching product or -1 if none match well.",
+                    "You are a helpful assistant that selects the most relevant product from a list based on the ingredient name. Return the index of the best matching product or -1 if none match well. These ingredients are intended for a shopping list for a recipe. If you can not find a good match, err on the side of caution and return -1.",
                 },
                 {
                   role: "user",
-                  content: `Select the index of the product that best matches the ingredient "${ingredient}" from these options:\n${price.map((p, i) => `${i}: ${p.title}`).join("\n")}\nIf none match well, return -1.`,
+                  content: `Select the index of the product that best matches the ingredient "${ingredient.item}" and quantity "${ingredient.quantity}" from these options:\n${price.map((p, i) => `${i}: ${p.title}`).join("\n")}\n`,
                 },
               ],
               schema: PriceMatchResponseSchema,
@@ -190,7 +199,7 @@ export const getMarketplacePrices = publicProcedure
 
             const selectedIndex = response.object.index;
             console.log(
-              `[Marketplace] AI selected index ${selectedIndex} for "${ingredient}" from ${marketplace.config.name}`,
+              `[Marketplace] AI selected index ${selectedIndex} for "${ingredient.item}" from ${marketplace.config.name}`,
             );
 
             if (selectedIndex >= 0 && selectedIndex < price.length) {
@@ -199,7 +208,7 @@ export const getMarketplacePrices = publicProcedure
               const newPrice = {
                 id: crypto.randomUUID(),
                 marketplaceSlug: marketplace.config.slug,
-                ingredient,
+                ingredient: ingredient.item,
                 region,
                 price: selectedPrice.price,
                 unit: selectedPrice.unit,
@@ -211,13 +220,13 @@ export const getMarketplacePrices = publicProcedure
 
               await ctx.db.insert(MarketplacePricesTable).values(newPrice);
               console.log(
-                `[Marketplace] Saved fresh price for "${ingredient}" from ${marketplace.config.name}: $${(selectedPrice.price / 100).toFixed(2)}`,
+                `[Marketplace] Saved fresh price for "${ingredient.item}" from ${marketplace.config.name}: $${(selectedPrice.price / 100).toFixed(2)}`,
               );
 
               freshPrices.push(newPrice);
             } else {
               console.log(
-                `[Marketplace] AI did not find a good match for "${ingredient}" from ${marketplace.config.name}`,
+                `[Marketplace] AI did not find a good match for "${ingredient.item}" from ${marketplace.config.name}`,
               );
             }
           } else if (price.length === 1) {
@@ -226,7 +235,7 @@ export const getMarketplacePrices = publicProcedure
             const newPrice = {
               id: crypto.randomUUID(),
               marketplaceSlug: marketplace.config.slug,
-              ingredient,
+              ingredient: ingredient.item,
               region,
               price: singlePrice.price,
               unit: singlePrice.unit,
@@ -238,7 +247,7 @@ export const getMarketplacePrices = publicProcedure
 
             await ctx.db.insert(MarketplacePricesTable).values(newPrice);
             console.log(
-              `[Marketplace] Saved fresh price for "${ingredient}" from ${marketplace.config.name}: $${(singlePrice.price / 100).toFixed(2)}`,
+              `[Marketplace] Saved fresh price for "${ingredient.item}" from ${marketplace.config.name}: $${(singlePrice.price / 100).toFixed(2)}`,
             );
 
             freshPrices.push(newPrice);
@@ -246,11 +255,11 @@ export const getMarketplacePrices = publicProcedure
         } catch (error: unknown) {
           if (error instanceof MarketplaceError) {
             console.warn(
-              `[Marketplace] Failed to fetch price for "${ingredient}" from ${marketplace.config.name}: ${error.message}`,
+              `[Marketplace] Failed to fetch price for "${ingredient.item}" from ${marketplace.config.name}: ${error.message}`,
             );
           } else {
             console.error(
-              `[Marketplace] Unexpected error fetching price for "${ingredient}" from ${
+              `[Marketplace] Unexpected error fetching price for "${ingredient.item}" from ${
                 marketplace.config.name
               }: ${error instanceof Error ? error.message : "Unknown error"}`,
             );
