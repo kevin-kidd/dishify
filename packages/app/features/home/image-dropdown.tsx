@@ -70,7 +70,6 @@ export default function ImageDropdown({ setImageData, watch, onSubmit }: ImageDr
 
   const processFile = (file: Blob) => {
     const promise = processImage(file, setImageData, setIsPreviewOpen);
-
     const id = toast.promise(promise, {
       loading: "Processing image...",
       success: () => toast.dismiss(id),
