@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { View, ScrollView } from "react-native";
+import { View } from "react-native";
 import { useParams, useRouter } from "solito/navigation";
 import { trpc } from "app/utils/trpc";
 import { TRPCClientError } from "@trpc/client";
@@ -18,6 +18,7 @@ import Animated, { FadeIn, FadeInDown, LinearTransition } from "react-native-rea
 import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
 import { useAtom } from "jotai";
 import { favoritedRecipesAtom } from "app/atoms/favorites";
+import { formatPrice } from "app/utils/currency";
 
 // Mock data for demo - replace with real data from API
 const MOCK_MARKETPLACES = [
@@ -106,10 +107,76 @@ export default function RecipeCard() {
     },
   });
 
+  const recipeData = localRecipe || recipe;
+
+  // Get cost estimate from marketplace API
+  const {
+    data: prices,
+    isError: isPricesError,
+    isLoading: isPricesLoading,
+  } = trpc.marketplace.getMarketplacePrices.useQuery(
+    {
+      ingredients: recipeData?.data?.shoppingList?.map((item) => item.item) ?? [],
+      recipeId: recipeData?.id,
+    },
+    {
+      enabled: !!recipeData?.data?.shoppingList?.length,
+      staleTime: Number.POSITIVE_INFINITY, // Never mark the data as stale
+      gcTime: Number.POSITIVE_INFINITY, // Keep the data cached indefinitely (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      refetchInterval: false,
+      retry: (failureCount, error) => {
+        // Only retry on TRPC errors that aren't NOT_FOUND, and max 2 times
+        if (error instanceof TRPCClientError) {
+          if (error.data?.code === "NOT_FOUND") {
+            // Log the error but don't retry for no marketplaces
+            console.warn(`No marketplaces found for region: ${error.message}`);
+            return false;
+          }
+          return failureCount < 2;
+        }
+        return false;
+      },
+      meta: {
+        skipErrorToast: true,
+      },
+    },
+  );
+
   const costIndicators = useMemo(() => {
-    // Default to 1 dollar sign if no cost is provided
-    const cost = 150; // TODO: Replace with actual cost calculation from API
-    const count = cost > 250 ? 4 : cost > 150 ? 3 : cost > 50 ? 2 : 1;
+    let cost = 0;
+    let currency = "USD";
+
+    // If we have an error or no prices, try to use estimated cost from recipe data
+    if (isPricesError || !prices?.prices) {
+      const estimatedCost = recipeData?.estimatedCosts?.[prices?.region ?? "US"];
+      if (estimatedCost?.cost) {
+        cost = estimatedCost.cost;
+      }
+    } else {
+      // Calculate total cost from lowest price for each ingredient
+      cost = Object.values(prices.prices).reduce((sum, marketplacePrices) => {
+        // Find the lowest price for this ingredient
+        const lowestPrice = marketplacePrices.reduce(
+          (min, price) => (price.price < min ? price.price : min),
+          marketplacePrices[0]?.price ?? 0,
+        );
+        return sum + lowestPrice;
+      }, 0);
+
+      // Get the currency from the first marketplace price (they should all be the same for a region)
+      currency = Object.values(prices.prices)[0]?.[0]?.currency ?? "USD";
+    }
+
+    // Calculate cost indicator based on total cost
+    // Over $100 = 4 dollar signs ($10000 cents)
+    // Over $50 = 3 dollar signs ($5000 cents)
+    // Over $25 = 2 dollar signs ($2500 cents)
+    // Under $25 = 1 dollar sign
+    const count = cost > 10000 ? 4 : cost > 5000 ? 3 : cost > 2500 ? 2 : 1;
+
     return (
       <View className="flex flex-row items-center gap-1">
         {Array.from({ length: count }).map((_, i) => (
@@ -119,10 +186,22 @@ export default function RecipeCard() {
             strokeWidth={2.5}
           />
         ))}
+        {cost > 0 && (
+          <Text className="text-sm text-sage-600 ml-1">({formatPrice(cost, currency)})</Text>
+        )}
       </View>
     );
-  }, []);
-  const recipeData = localRecipe || recipe;
+  }, [prices?.prices, isPricesError, recipeData?.estimatedCosts, prices?.region]);
+
+  function handleRetry() {
+    if (recipeData) {
+      generate.mutateAsync({
+        dishName: recipeData.searchQuery || undefined,
+        retryId: recipeData.id,
+      });
+    } else {
+    }
+  }
 
   // Show loading state while recipe is being generated
   if (
@@ -138,7 +217,7 @@ export default function RecipeCard() {
 
   // Show error state if query failed
   if (error) {
-    return <ErrorView error={error} onRetry={refetch} onHome={() => router.push("/")} />;
+    return <ErrorView error={error} onRetry={handleRetry} onHome={() => router.push("/")} />;
   }
 
   if (recipe?.status === "error") {
@@ -146,7 +225,7 @@ export default function RecipeCard() {
     return (
       <ErrorView
         error={new Error(recipe.errorMessage || "Failed to load dish")}
-        onRetry={refetch}
+        onRetry={handleRetry}
         onHome={() => router.push("/")}
       />
     );
@@ -160,41 +239,6 @@ export default function RecipeCard() {
         onRetry={refetch}
         onHome={() => router.push("/")}
       />
-    );
-  }
-
-  // Show error state if recipe generation failed
-  if (recipeData?.status === "error") {
-    const isImageRecipe = recipeData.imageQuery === "true";
-    return (
-      <View className="flex h-full items-center justify-center p-4 my-6">
-        <View className="flex items-center space-y-4">
-          <Text className="text-2xl font-semibold">Failed to generate recipe</Text>
-          <Text className="text-center text-gray-500 max-w-[350px]">
-            {recipeData.errorMessage || "Something went wrong while generating the recipe."}
-          </Text>
-          <View className="flex-row space-x-4">
-            {!isImageRecipe && (
-              <Button
-                onClick={() =>
-                  generate.mutateAsync({
-                    dishName: recipeData?.searchQuery || undefined,
-                    retryId: recipeData.id,
-                  })
-                }
-                disabled={generate.isPending}
-              >
-                <Text>{generate.isPending ? "Retrying..." : "Retry"}</Text>
-              </Button>
-            )}
-          </View>
-          {isImageRecipe && (
-            <Text className="text-center text-gray-400 text-sm">
-              Please upload the image again to retry.
-            </Text>
-          )}
-        </View>
-      </View>
     );
   }
 
@@ -307,7 +351,7 @@ export default function RecipeCard() {
               <View>
                 <Text className="mb-6 text-xl font-semibold text-sage-900">Ingredients</Text>
                 <View className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-sage-100">
-                  {recipeData.data.shoppingList.map((item, index) => (
+                  {recipeData.data.shoppingList.map((item) => (
                     <View
                       key={`${item.item}-${item.quantity}`}
                       className="flex flex-row items-center justify-between border-b border-sage-50 py-3 last:border-0"
@@ -317,8 +361,8 @@ export default function RecipeCard() {
                         <Text className="text-sm text-sage-600">{item.item}</Text>
                       </View>
                       <MarketplaceLinks
-                        ingredient={item.item}
-                        marketplaces={index === 0 ? MOCK_SINGLE_MARKETPLACE : MOCK_MARKETPLACES}
+                        prices={prices?.prices[item.item]}
+                        isLoading={isPricesLoading}
                       />
                     </View>
                   ))}
