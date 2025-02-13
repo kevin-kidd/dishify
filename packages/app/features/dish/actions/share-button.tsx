@@ -124,7 +124,7 @@ export function ShareButton({ title, url, className }: ShareButtonProps) {
           <PopoverTrigger>
             <Div
               className={cn(
-                "hidden md:flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-200",
+                "items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-200",
                 className,
               )}
             >
