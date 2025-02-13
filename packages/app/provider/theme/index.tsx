@@ -22,14 +22,14 @@ export const ThemeProvider = ({
   function toggleColorScheme() {
     setAppColorScheme((prev) => (prev === "dark" ? "light" : "dark"));
   }
-  useEffect(() => {
-    const systemThemeChangeListener = Appearance.addChangeListener(() => {
-      setAppColorScheme(Appearance.getColorScheme() as ColorSchemeVariant);
-    });
-    return () => {
-      systemThemeChangeListener.remove();
-    };
-  }, [setAppColorScheme]);
+  // useEffect(() => {
+  //   const systemThemeChangeListener = Appearance.addChangeListener(() => {
+  //     setAppColorScheme(Appearance.getColorScheme() as ColorSchemeVariant);
+  //   });
+  //   return () => {
+  //     systemThemeChangeListener.remove();
+  //   };
+  // }, [setAppColorScheme]);
   useEffect(() => {
     if (hasMounted && appColorScheme === "system") {
       setAppColorScheme(Appearance.getColorScheme() as ColorSchemeVariant);
