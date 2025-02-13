@@ -21,6 +21,7 @@ const LOADING_CARDS: TrendingRecipe[] = Array.from({ length: 4 }, (_, i) => ({
   },
   slug: "",
   trendingScore: 0,
+  estimatedCost: null,
 }));
 
 export function TrendingSection() {
@@ -67,7 +68,7 @@ export function TrendingSection() {
                   const recipeData = recipe.data;
                   const cardProps: TrendingCardProps = {
                     dishName: recipeData.dishName,
-                    cost: Math.random() * 100, // TODO: get accurate cost estimate
+                    cost: recipe.estimatedCost?.cost ?? 0,
                     difficulty: recipeData.difficulty ?? "Medium",
                     cuisine: recipeData.cuisine,
                     prepTime: recipeData.cookingTime.includes("minutes")
