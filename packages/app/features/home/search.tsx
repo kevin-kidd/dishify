@@ -8,7 +8,7 @@ import { SearchSchema, type SearchValues } from "@dishify/api/schemas/search";
 import { isWeb } from "@tamagui/constants";
 import ImageDropdown from "./image-dropdown";
 import { toast } from "app/utils/toast";
-import { Keyboard, View, type Pressable } from "react-native";
+import { Keyboard, View } from "react-native";
 import { Autocomplete, cn, Form, FormInput, TextInput, Skeleton } from "@dishify/ui";
 import { Search as SearchIcon } from "@dishify/ui/src/icons/search";
 import { useRouter, usePathname } from "solito/navigation";
