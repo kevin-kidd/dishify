@@ -1,9 +1,11 @@
-import { Button, Dialog, DialogContent, Text } from "@dishify/ui";
+import { Button, Dialog, DialogContent, DialogDescription, DialogTitle, Text } from "@dishify/ui";
 import { isWeb } from "@tamagui/constants";
 import { processImage } from "app/utils/image";
 import { toast } from "app/utils/toast";
 import { useRef } from "react";
 import { Camera, type CameraType } from "react-camera-pro";
+import { useMedia } from "app/utils/hooks/use-media";
+import { useWindowDimensions } from "react-native";
 
 interface CameraPopupProps {
   isOpen: boolean;
@@ -19,6 +21,17 @@ export default function CameraPopup({
   setImageData,
 }: CameraPopupProps) {
   const camera = useRef<CameraType>(null);
+  const media = useMedia();
+  const { width, height } = useWindowDimensions();
+
+  // Calculate aspect ratio based on screen size and viewport
+  const aspectRatio = isWeb
+    ? media.sm || media.xxs
+      ? 9 / 16 // Mobile viewport on web
+      : media.md
+        ? 4 / 3 // Tablet viewport
+        : 16 / 9 // Desktop viewport
+    : height / width; // Native mobile - use screen ratio
 
   // Convert ImageData or string to Uint8Array
   function convertImageDataToUint8Array(imageData: ImageData | string) {
@@ -44,6 +57,7 @@ export default function CameraPopup({
           error: "Error processing image",
         });
         onOpenChange(false);
+        setImageData(Array.from(convertImageDataToUint8Array(image)));
       } else {
         throw new Error("No camera accessible");
       }
@@ -54,10 +68,14 @@ export default function CameraPopup({
   }
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="flex-1 w-screen max-w-2xl p-0">
+      <DialogContent className="w-screen h-full max-w-2xl p-0 border-none">
+        <DialogTitle className="sr-only">Camera</DialogTitle>
+        <DialogDescription className="sr-only">
+          <Text>Take a photo of your dish</Text>
+        </DialogDescription>
         <Camera
           ref={camera}
-          aspectRatio={isWeb ? 16 / 9 : 9 / 16}
+          aspectRatio={aspectRatio}
           facingMode="environment"
           errorMessages={{
             noCameraAccessible:
