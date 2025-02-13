@@ -251,7 +251,7 @@ export function PrintButton({ recipe, className, onClick }: PrintButtonProps) {
       <TooltipTrigger>
         <Div
           className={cn(
-            "hidden hover:cursor-pointer md:flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all duration-200",
+            "hover:cursor-pointer flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all duration-200",
             className,
           )}
           onClick={handlePrint}
