@@ -39,7 +39,7 @@ export const getRecipe = publicProcedure
           });
 
           // Add back to queue
-          await ctx.env.RECIPE_QUEUE.send({
+          await ctx.recipeQueue.send({
             recipeId: input.id,
             dishName: recipe.searchQuery || undefined,
             image: undefined, // Don't retry image-based recipes automatically
@@ -87,7 +87,7 @@ export const getRecipeBySlug = publicProcedure
           });
 
           // Add back to queue
-          await ctx.env.RECIPE_QUEUE.send({
+          await ctx.recipeQueue.send({
             recipeId: recipe.id,
             dishName: recipe.searchQuery || undefined,
             image: undefined, // Don't retry image-based recipes automatically
