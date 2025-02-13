@@ -67,7 +67,7 @@ export default function TrendingCard({
         </div>
 
         <View className="flex flex-col gap-2 h-[60%]">
-          <h3 className="text-xl font-semibold tracking-tight select-none">{dishName}</h3>
+          <h3 className="text-xl font-semibold tracking-tight select-none truncate">{dishName}</h3>
           <CuisineLabel cuisine={cuisine} />
         </View>
 

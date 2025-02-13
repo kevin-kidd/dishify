@@ -144,12 +144,8 @@ export const EmojiReactions = ({ slug }: EmojiReactionsProps) => {
       }));
   }, [reactions]);
 
-  if (reactionsLoading) {
-    return null;
-  }
-
   return (
-    <View className="flex flex-row items-center gap-2">
+    <View className={cn("flex flex-row items-center gap-2", reactionsLoading && "invisible")}>
       <Popover>
         <PopoverTrigger asChild>
           <Pressable
