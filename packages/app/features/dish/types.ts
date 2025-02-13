@@ -31,3 +31,11 @@ export interface RecipeCardProps {
   isFetching: boolean;
   refetch: () => Promise<void>;
 }
+
+export interface MarketplacePrice {
+  price: number;
+  url: string;
+  marketplaceName: string;
+  marketplaceLogo: string;
+  currency: string;
+}
