@@ -8,6 +8,7 @@ import { createDb } from "./db/client";
 import { generateRecipe } from "./queue";
 import { auth } from "./auth";
 import type { Env } from "./types";
+import type { RecipeQueueMessage } from "./types";
 
 export type Bindings = Env & {
   DB: D1Database;
@@ -58,11 +59,10 @@ app.on(["POST", "GET"], "/api/auth/**", (c) => auth(c.env.DB, c.env).handler(c.r
 
 export default {
   fetch: app.fetch,
-  async queue(batch: MessageBatch<any>, env: Bindings): Promise<void> {
+  async queue(batch: MessageBatch<RecipeQueueMessage>, env: Bindings): Promise<void> {
     const db = createDb(env.DB);
     for (const message of batch.messages) {
-      const { recipeId, dishName, image } = message.body;
-      await generateRecipe(recipeId, dishName, image, db, env);
+      await generateRecipe(message.body, db, env);
     }
   },
 };
