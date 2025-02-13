@@ -1,5 +1,5 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import type { Ai } from "@cloudflare/workers-types";
+import type { Ai, BaseAiTextGenerationModels } from "@cloudflare/workers-types";
 import { EnglishRecipeNameTable, EnglishRecipesTable } from "./db/schema/recipes";
 import { eq, and, ne } from "drizzle-orm";
 import { type RecipeResponse, RecipeResponseSchema } from "../schemas/recipe-response";
@@ -39,34 +39,33 @@ export async function generateRecipe(
     });
 
     let recipeResponse: RecipeResponse | null | string = null;
-    const messages: CoreMessage[] = [];
-
-    if (image) {
-      messages.push({
+    const systemPrompt =
+      "You are a helpful assistant that generates recipes and shopping lists for ingredients If the provided dish name is not a valid dish, recipe name, dessert, drink, etc... respond with { dishName: 'unknown' }";
+    const userPrompt = `Generate a recipe and shopping list for the following dish: ${dishName}`;
+    const base64Image = image ? Buffer.from(image).toString("base64") : undefined;
+    const imageUri = base64Image ? `data:image/jpeg;base64,${base64Image}` : undefined;
+    const imageMessages: CoreMessage[] = [
+      {
+        role: "system",
+        content: systemPrompt,
+      },
+      {
         role: "user",
-        content: `
-          You are a helpful assistant that generates recipes and shopping lists. Provide the response in JSON format like this: { dishName: "", cuisine: "", shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}.
-          Identify whether this image is of food, drink, dessert, etc... If it is not, you must respond with { dishName: "unknown" }. It is best to err on the side of unknown, unless it is obvious this image is of a specific food, drink, etc...
-          If you incorrectly identify the dish and recipe, you will be fined 1 million dollars.
-        `,
-      });
-    } else {
-      messages.push(
-        {
-          role: "system",
-          content: `
-            You are a helpful assistant that generates recipes and shopping lists.
-            Provide the response in JSON format like this: { dishName: "", cuisine: "", shoppingList: [{ item: "", quantity: "" }], recipe: { cookingTime: "", instructions: [""], servings: "" }}.
-            Identify whether this dish name is of food, drink, dessert, etc... If it is not, you must respond with { dishName: "unknown" }. It is best to err on the side of unknown, unless it is obvious this image is of a specific food, drink, etc...
-            If you incorrectly identify the dish and recipe, you will be fined 1 million dollars.
-          `,
-        },
-        {
-          role: "user",
-          content: `Generate a recipe and shopping list for the following dish: ${dishName}`,
-        },
-      );
-    }
+        content: [
+          {
+            type: "image",
+            image: imageUri ?? "",
+          },
+        ],
+      },
+    ];
+    const messages: CoreMessage[] = [
+      {
+        role: "system",
+        content: systemPrompt,
+      },
+      { role: "user", content: userPrompt },
+    ];
 
     try {
       const groq = createGroq({
@@ -74,29 +73,17 @@ export async function generateRecipe(
       });
 
       if (image) {
-        const base64Image = Buffer.from(image).toString("base64");
-        const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-        messages.push({
-          role: "user",
-          content: [
-            {
-              type: "image",
-              image: new URL(imageUrl),
-            },
-          ],
-        });
-
         const response = await generateObject({
           model: groq("llama-3.2-90b-vision-preview"),
-          messages,
           schema: RecipeResponseSchema,
+          messages: imageMessages,
         });
         recipeResponse = response.object;
       } else {
         const response = await generateObject({
           model: groq("llama-3.3-70b-versatile"),
-          messages: messages, // Type assertion needed due to complex message types
           schema: RecipeResponseSchema,
+          messages,
         });
         recipeResponse = response.object;
       }
@@ -109,28 +96,21 @@ export async function generateRecipe(
       provider = "workers";
       console.log("Groq failed, attempting Workers AI...", { recipeId });
       try {
+        const workersAi = createWorkersAI({ binding: env.AI });
         if (image) {
-          const completion = await env.AI.run(
-            "@cf/meta/llama-3.2-11b-vision-instruct" as any, // Type assertion needed for model name
-            {
-              prompt: messages
-                .map((message) => (typeof message.content === "string" ? message.content : ""))
-                .join("\n"),
-              image,
-            },
-            {
-              gateway: {
-                id: env.AI_GATEWAY_ID,
-              },
-            },
-          );
-          recipeResponse = (completion as any).text ?? null;
+          const response = await generateObject({
+            model: workersAi(
+              "@cf/meta/llama-3.2-11b-vision-instruct" as unknown as BaseAiTextGenerationModels,
+            ),
+            schema: RecipeResponseSchema,
+            messages: imageMessages,
+          });
+          recipeResponse = response.object;
         } else {
-          const workersAi = createWorkersAI({ binding: env.AI });
           const response = await generateObject({
             model: workersAi("@cf/meta/llama-3.1-8b-instruct"),
-            messages,
             schema: RecipeResponseSchema,
+            messages,
           });
           recipeResponse = response.object;
         }
@@ -143,36 +123,13 @@ export async function generateRecipe(
       throw new Error("Both AI providers failed to generate a response");
     }
 
-    let jsonResponse: string | undefined = JSON.stringify(recipeResponse);
-
-    if (typeof recipeResponse === "string") {
-      // Extract the JSON from the response
-      const jsonRegex = /{[^{}]*(?:{[^{}]*}[^{}]*)*}/;
-      const jsonMatch = recipeResponse.match(jsonRegex);
-
-      if (!jsonMatch) {
-        throw new Error("No valid JSON found in the AI response");
-      }
-
-      jsonResponse = jsonMatch[0];
-    }
-
-    // Attempt to parse the JSON
-    let parsedResponse: unknown;
-    try {
-      parsedResponse = JSON.parse(jsonResponse);
-    } catch (parseError) {
-      jsonResponse = jsonResponse.replace(/(\w+):/g, '"$1":');
-      parsedResponse = JSON.parse(jsonResponse);
-    }
-
-    if (containsUnknown(parsedResponse)) {
+    if (containsUnknown(recipeResponse)) {
       // Check if the dish name is unknown
       throw new Error(`Unknown dish ${image ? "for image" : `for ${dishName}`}`);
     }
 
     // Validate the response
-    const validatedResponse = RecipeResponseSchema.safeParse(parsedResponse);
+    const validatedResponse = RecipeResponseSchema.safeParse(recipeResponse);
     if (!validatedResponse.success) {
       console.error("Recipe validation failed:", {
         recipeId,
@@ -308,18 +265,9 @@ export async function generateRecipe(
   }
 }
 
-function containsUnknown(obj: unknown): boolean {
-  if (obj === null || obj === undefined) {
+function containsUnknown(obj: RecipeResponse): boolean {
+  if (obj?.dishName?.includes("unknown")) {
     return true;
-  }
-  if (typeof obj === "string" && obj.trim().toLowerCase().includes("unknown")) {
-    return true;
-  }
-  if (Array.isArray(obj)) {
-    return obj.some(containsUnknown);
-  }
-  if (typeof obj === "object") {
-    return Object.values(obj).some(containsUnknown);
   }
   return false;
 }
