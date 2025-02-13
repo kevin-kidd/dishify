@@ -38,7 +38,7 @@ export const autocomplete = publicProcedure
     const results = await db
       .select({ name: table.name })
       .from(table)
-      .where(and(like(table.name, `${query}%`), sql`LOWER(${table.name}) != LOWER(${query})`))
+      .where(like(table.name, `${query}%`))
       .limit(5);
     return results.map((result) => result.name);
   });
