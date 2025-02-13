@@ -5,8 +5,10 @@ import { TRPCError } from "@trpc/server";
 import { createId } from "@paralleldrive/cuid2";
 import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
+import type { RecipeQueueMessage } from "../../types";
 
 const RECIPE_STATE_PREFIX = "recipe_state:";
+const IMAGE_DATA_PREFIX = "image_data:";
 const GENERATION_TIMEOUT = 60000; // 1 minute timeout
 const MAX_DISH_NAME_LENGTH = 100; // Maximum length for dish name
 const MAX_SLUG_LENGTH = 80; // Maximum length for slug
@@ -264,12 +266,20 @@ export const generate = publicProcedure
         expirationTtl: Math.ceil(GENERATION_TIMEOUT / 1000), // Convert ms to seconds
       });
 
-      // Add to queue
-      await ctx.recipeQueue.send({
+      // Store image data in KV if present
+      if (image) {
+        await ctx.recipeState.put(IMAGE_DATA_PREFIX + recipeId, JSON.stringify(image), {
+          expirationTtl: Math.ceil(GENERATION_TIMEOUT / 1000),
+        });
+      }
+
+      // Add to queue with just the reference
+      const queueMessage: RecipeQueueMessage = {
         recipeId,
         dishName,
-        image,
-      });
+        hasImage: !!image,
+      };
+      await ctx.recipeQueue.send(queueMessage);
 
       // Return immediately with the recipe ID, slug and generating status
       return {
