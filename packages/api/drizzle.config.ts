@@ -5,6 +5,8 @@ import { defineConfig } from "drizzle-kit";
  * https://kevinkipp.com/blog/going-full-stack-on-astro-with-cloudflare-d1-and-drizzle/
  * Github discussion: https://github.com/drizzle-team/drizzle-orm/discussions/1545#discussioncomment-8115423
  */
+
+console.log("test", process.env);
 export default process.env.DB_LOCAL_PATH
   ? defineConfig({
       schema: [
@@ -29,14 +31,14 @@ export default process.env.DB_LOCAL_PATH
       dialect: "sqlite",
       dbCredentials: {
         // biome-ignore lint/style/noNonNullAssertion: <explanation>
-        accountId: process.env.CLOUDFLARE_ACCOUNT_ID!,
+        accountId: process.env.ACCOUNT_ID!,
         // biome-ignore lint/style/noNonNullAssertion: <explanation>
-        token: process.env.CLOUDFLARE_USER_API_TOKEN!,
+        token: process.env.CF_API_TOKEN!,
         databaseId:
           process.env.NODE_ENV === "preview"
             ? // biome-ignore lint/style/noNonNullAssertion: <explanation>
-              process.env.DB_PREVIEW_DATABASE_ID!
+              process.env.PREVIEW_DATABASE_ID!
             : // biome-ignore lint/style/noNonNullAssertion: <explanation>
-              process.env.DB_PROD_DATABASE_ID!,
+              process.env.PROD_DATABASE_ID!,
       },
     });
