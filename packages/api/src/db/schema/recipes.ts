@@ -28,6 +28,16 @@ type Rating = {
   emoji: string;
 };
 
+// Type for estimated costs by region
+export type EstimatedCosts = {
+  [region: string]: {
+    cost: number; // Cost in cents
+    updatedAt: string; // ISO string
+    missingIngredientsCount: number;
+    totalIngredientsCount: number;
+  };
+};
+
 // Recipes table
 export const EnglishRecipesTable = sqliteTable(
   "english_recipe_details",
@@ -53,6 +63,7 @@ export const EnglishRecipesTable = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
     ratings: text("ratings", { mode: "json" }).$type<Rating[]>(),
+    estimatedCosts: text("estimated_costs", { mode: "json" }).$type<EstimatedCosts>(),
   },
   (table) => [
     uniqueIndex("english_recipe_name_idx").on(table.name),
