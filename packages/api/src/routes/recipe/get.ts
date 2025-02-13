@@ -42,7 +42,7 @@ export const getRecipe = publicProcedure
           await ctx.recipeQueue.send({
             recipeId: input.id,
             dishName: recipe.searchQuery || undefined,
-            image: undefined, // Don't retry image-based recipes automatically
+            hasImage: false, // Don't retry image-based recipes automatically
           });
         }
       }
@@ -90,7 +90,7 @@ export const getRecipeBySlug = publicProcedure
           await ctx.recipeQueue.send({
             recipeId: recipe.id,
             dishName: recipe.searchQuery || undefined,
-            image: undefined, // Don't retry image-based recipes automatically
+            hasImage: false, // Don't retry image-based recipes automatically
           });
         }
       }
