@@ -116,7 +116,7 @@ export default function RecipeCard() {
     isLoading: isPricesLoading,
   } = trpc.marketplace.getMarketplacePrices.useQuery(
     {
-      ingredients: recipeData?.data?.shoppingList?.map((item) => item.item) ?? [],
+      ingredients: recipeData?.data?.shoppingList ?? [],
       recipeId: recipeData?.id,
     },
     {
@@ -276,23 +276,34 @@ export default function RecipeCard() {
         layout={LinearTransition.springify().mass(0.8).damping(15).stiffness(100)}
       >
         <Card className="overflow-visible border-0 shadow-lg">
-          <CardHeader className="pt-8 pb-5 px-10 border-b border-sage-100">
+          <CardHeader className="pt-5 pb-3 px-6 sm:pt-8 sm:pb-5 sm:px-10 border-b border-sage-100">
             <View className="flex flex-col">
               <View className="flex flex-row items-center justify-between w-full mb-3">
-                <View className="flex-1 min-w-0">
-                  <CardTitle>
-                    <Text className="text-4xl font-bold tracking-tight text-sage-900 truncate">
-                      {toTitleCase(recipeData.data.dishName)}
-                    </Text>
-                  </CardTitle>
-                </View>
-                <View className="flex flex-row items-center gap-1.5">
+                <CardTitle className="flex-1 min-w-0">
+                  <Text
+                    className="text-2xl sm:text-4xl font-bold text-sage-900 truncate block w-full"
+                    numberOfLines={1}
+                  >
+                    {toTitleCase(recipeData.data.dishName)}
+                  </Text>
+                </CardTitle>
+
+                <View className="flex-row items-center gap-1.5 hidden sm:flex">
                   <PrintButton recipe={recipeData} />
                   <ShareButton title={recipeData.name} url={window.location.href} />
                   <FavoriteButton recipe={recipeData} />
                 </View>
               </View>
-              <CuisineLabel cuisine={recipeData.data.cuisine} />
+              <View className="sm:hidden flex-1 flex-row items-center justify-between w-full">
+                <CuisineLabel cuisine={recipeData.data.cuisine} />
+
+                <View className="flex-row items-center gap-1.5">
+                  <PrintButton recipe={recipeData} />
+                  <ShareButton title={recipeData.name} url={window.location.href} />
+                  <FavoriteButton recipe={recipeData} />
+                </View>
+              </View>
+
               <View className="mt-6 flex sm:flex-row gap-y-4 sm:items-center sm:justify-between flex-col w-full">
                 <View className="flex flex-row items-center flex-wrap gap-4">
                   <View className="flex flex-row items-center gap-2">
