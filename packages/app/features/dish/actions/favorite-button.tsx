@@ -85,7 +85,7 @@ export function FavoriteButton({
 
   return (
     <Tooltip>
-      <TooltipTrigger>
+      <TooltipTrigger asChild>
         <Button
           variant="none"
           className={cn(
