@@ -81,7 +81,6 @@ module.exports = () => {
       "sonner-native",
       "@rn-primitives/slot",
       "@rn-primitives/separator",
-      "@rn-primitives/select",
       "@rn-primitives/portal",
       "@rn-primitives/popover",
       "@dishify/ui",
