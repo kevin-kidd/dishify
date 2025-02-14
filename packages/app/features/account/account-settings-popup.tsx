@@ -12,10 +12,7 @@ import {
   FormInput,
   TextInput,
   Div,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Text,
 } from "@dishify/ui/src";
 import * as React from "react";
 import { useAuth } from "app/utils/hooks/use-auth";
@@ -63,7 +60,6 @@ const formSchema = z
   );
 
 export default function AccountSettingsPopup({ isOpen, setIsOpen }: AccountSettingsPopupProps) {
-  console.log("isOpen", isOpen);
   const { useSession } = useAuth();
   const { data: session } = useSession();
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -72,7 +68,6 @@ export default function AccountSettingsPopup({ isOpen, setIsOpen }: AccountSetti
     control,
     handleSubmit,
     formState: { errors },
-    reset,
   } = useForm<AccountSettingsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -168,7 +163,7 @@ export default function AccountSettingsPopup({ isOpen, setIsOpen }: AccountSetti
               variant="outline"
               onPress={() => setIsChangingPassword(!isChangingPassword)}
             >
-              {isChangingPassword ? "Cancel Password Change" : "Change Password"}
+              <Text>{isChangingPassword ? "Cancel Password Change" : "Change Password"}</Text>
             </Button>
 
             {isChangingPassword && (
@@ -237,11 +232,11 @@ export default function AccountSettingsPopup({ isOpen, setIsOpen }: AccountSetti
           </Div>
 
           <Div className="flex flex-row justify-end space-x-4">
-            <Button role="button" variant="outline" onClick={() => setIsOpen(false)}>
-              Cancel
+            <Button role="button" variant="outline" onPress={() => setIsOpen(false)}>
+              <Text>Cancel</Text>
             </Button>
             <Button role="button" onPress={onSubmit}>
-              Save Changes
+              <Text>Save Changes</Text>
             </Button>
           </Div>
         </Form>
