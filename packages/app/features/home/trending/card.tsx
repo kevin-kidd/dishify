@@ -1,4 +1,4 @@
-import { Card } from "@dishify/ui/src";
+import { Card, cn } from "@dishify/ui/src";
 import { ChevronRight } from "@dishify/ui/src/icons/chevron-right";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
@@ -43,7 +43,9 @@ export default function TrendingCard({
 
   const getCostDisplay = useCallback((cost: TrendingCardProps["cost"]) => {
     const count = cost > 10000 ? 4 : cost > 5000 ? 3 : cost > 2500 ? 2 : 1;
-    return Array(count).fill(<DollarSign className="h-4 w-4 text-[#13a300]" strokeWidth={2.5} />);
+    return Array(count).fill(
+      <DollarSign className="sm:h-4 sm:w-4 h-[14px] w-[14px] text-[#13a300]" strokeWidth={2.5} />,
+    );
   }, []);
 
   if (isLoading) {
@@ -58,7 +60,7 @@ export default function TrendingCard({
     <Link href={href}>
       <Card
         key={`trending-card-${dishName}`}
-        className="w-full h-52 group items-start relative overflow-visible rounded-xl border-0 bg-gradient-to-br from-white to-slate-50 p-6 shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_16px_rgba(0,0,0,0.08)] cursor-pointer"
+        className="w-full h-48 sm:h-52 group items-start relative overflow-visible rounded-xl border-0 bg-gradient-to-br from-white to-slate-50 p-5 sm:p-6 shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_16px_rgba(0,0,0,0.08)] cursor-pointer"
         role="button"
         aria-label={`View recipe for ${dishName}`}
       >
@@ -66,15 +68,19 @@ export default function TrendingCard({
           <ChevronRight className="h-5 w-5 text-primary/80 transition-transform duration-300 group-hover:translate-x-1" />
         </div>
 
-        <View className="flex flex-col gap-2 h-[60%]">
-          <h3 className="text-xl font-semibold tracking-tight select-none truncate">{dishName}</h3>
+        <div className="flex flex-col gap-2 h-[60%] w-full">
+          <div className="w-full overflow-hidden">
+            <h3 className="text-lg sm:text-xl font-semibold tracking-tight select-none truncate text-left">
+              {dishName}
+            </h3>
+          </div>
           <CuisineLabel cuisine={cuisine} />
-        </View>
+        </div>
 
         <div className="grid grid-cols-2 w-full h-[40%]">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary/80" />
-            <span className="text-sm text-gray-600 select-none">{prepTime}</span>
+            <span className="text-xs sm:text-sm text-gray-600 select-none">{prepTime}</span>
           </div>
 
           <div className="flex items-center justify-end w-full">
@@ -85,8 +91,13 @@ export default function TrendingCard({
           </div>
         </div>
 
-        <div className="mt-2 flex items-center justify-between border-t border-border pt-3 w-full">
-          <span className={`text-sm font-medium ${getDifficultyColor(difficulty)} select-none`}>
+        <div className="mt-2 flex-1 flex items-center justify-between border-t border-border w-full pt-3">
+          <span
+            className={cn(
+              "text-xs sm:text-sm font-medium select-none",
+              getDifficultyColor(difficulty),
+            )}
+          >
             {difficulty}
           </span>
           <span className="text-xs text-primary/80 select-none">Tap to view recipe</span>
