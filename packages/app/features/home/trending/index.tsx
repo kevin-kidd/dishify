@@ -53,7 +53,7 @@ export function TrendingSection() {
         </div>
 
         <div className="relative overflow-hidden">
-          <div className="px-6">
+          <div className="px-0 sm:px-6">
             <Carousel
               opts={{
                 loop: true,
@@ -79,7 +79,7 @@ export function TrendingSection() {
                   return (
                     <CarouselItem
                       key={recipe.id}
-                      className="pl-4 md:pl-6 basis-full sm:basis-1/2 lg:basis-1/3"
+                      className="pl-4 md:pl-6 basis-4/5 sm:basis-1/2 lg:basis-[40%]"
                     >
                       <div className="p-4">
                         <TrendingCard {...cardProps} isLoading={isLoading} />
