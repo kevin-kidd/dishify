@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { debounce } from "lodash";
 import { isWeb } from "@tamagui/constants";
 import { findNodeHandle } from "react-native";
-import type { PopoverTriggerRef } from "@rn-primitives/popover";
+import type { TriggerRef } from "@rn-primitives/popover";
 import type { TextInput } from "../../elements/input";
 import type { KeyboardEvent } from "react";
 import type { NativeSyntheticEvent, TextInputKeyPressEventData } from "react-native";
@@ -17,7 +17,7 @@ export function useAutocomplete({
   onTemporaryChange,
 }) {
   const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const triggerRef = useRef<PopoverTriggerRef>(null);
+  const triggerRef = useRef<TriggerRef>(null);
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
   const [inputValue, setInputValue] = useState("");
