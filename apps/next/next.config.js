@@ -84,7 +84,6 @@ module.exports = () => {
       "@rn-primitives/select",
       "@rn-primitives/portal",
       "@rn-primitives/popover",
-      "@rn-primitives/dropdown-menu",
       "@dishify/ui",
       "react-native-reanimated",
       "react-native-safe-area-context",
