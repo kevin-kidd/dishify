@@ -21,7 +21,7 @@ const TextInput = React.forwardRef<
         $$css: true,
         className: cn(
           !headless &&
-            "web:flex h-10 native:h-12 web:w-full rounded-md border border-input bg-background px-3 web:py-2 text-base lg:text-sm native:text-lg native:leading-[1.25] text-foreground placeholder:text-muted-foreground web:ring-offset-background file:border-0 file:bg-transparent file:font-medium web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2",
+            "transition-all ease-in-out web:flex h-10 native:h-12 web:w-full rounded-md border border-input bg-background px-2.5 py-1.5 sm:px-3 sm:web:py-2 text-sm native:text-lg native:leading-[1.25] text-foreground placeholder:text-muted-foreground web:ring-offset-background file:border-0 file:bg-transparent file:font-medium web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2",
           props.editable === false && "opacity-50 web:cursor-not-allowed",
           className,
         ),
