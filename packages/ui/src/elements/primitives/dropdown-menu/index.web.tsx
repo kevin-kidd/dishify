@@ -34,9 +34,14 @@ const DropdownMenuContext = React.createContext<{
 
 const Root = React.forwardRef<
   ViewRef,
-  SlottableViewProps & { onOpenChange?: (open: boolean) => void }
->(({ asChild, onOpenChange: onOpenChangeProp, ...viewProps }, ref) => {
-  const [open, setOpen] = React.useState(false);
+  SlottableViewProps & { onOpenChange?: (open: boolean) => void; open?: boolean }
+>(({ asChild, onOpenChange: onOpenChangeProp, open: openProp, ...viewProps }, ref) => {
+  const [open, setOpen] = React.useState(openProp ?? false);
+  React.useEffect(() => {
+    if (openProp !== undefined) {
+      setOpen(openProp);
+    }
+  }, [openProp]);
 
   function onOpenChange(open: boolean) {
     setOpen(open);
