@@ -10,7 +10,7 @@ interface ErrorViewProps {
 
 export function ErrorView({ error, onRetry, onHome }: ErrorViewProps) {
   const isNotFound = error instanceof TRPCClientError && error.data?.code === "NOT_FOUND";
-  const isUnknownDish = error instanceof TRPCClientError && error.data?.message.includes("Unknown");
+  const isUnknownDish = error instanceof Error && error.message.includes("Unknown");
 
   return (
     <View className="flex h-full items-center justify-center p-4 my-6">
