@@ -43,7 +43,7 @@ export default function CuisineLabel({ cuisine }: { cuisine: RecipeResponse["cui
   return (
     <span
       className={cn(
-        "rounded-full px-3 py-1.5 w-fit text-xs font-medium text-foreground",
+        "rounded-full sm:px-3 sm:py-1.5 py-1 px-2 w-fit text-xs font-medium text-foreground",
         backgroundColor,
       )}
     >
