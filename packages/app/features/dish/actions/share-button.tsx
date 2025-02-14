@@ -120,7 +120,7 @@ export function ShareButton({ title, url, className }: ShareButtonProps) {
   return (
     <Popover>
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <PopoverTrigger>
             <Div
               className={cn(
