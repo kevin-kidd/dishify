@@ -59,7 +59,7 @@ function OAuthButton({
 }) {
   return (
     <Tooltip>
-      <TooltipTrigger delayDuration={300}>
+      <TooltipTrigger delayDuration={300} asChild>
         <Button
           variant="none"
           aria-label={label}
