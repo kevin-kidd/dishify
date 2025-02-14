@@ -11,6 +11,8 @@ import {
   SelectTrigger,
   SelectContent,
   Skeleton,
+  Button,
+  SelectValue,
 } from "@dishify/ui/src";
 import { Search } from "@dishify/ui/src/icons/search";
 import { FavoriteCard } from "./card";
@@ -18,22 +20,34 @@ import { EmptyState } from "./empty-state";
 import type { RecipeResponse } from "@dishify/api/schemas/recipe-response";
 import type { Option } from "@dishify/ui/src/elements/select";
 import type { NativeSyntheticEvent, TextInputChangeEventData } from "react-native";
-import { useRouter } from "solito/navigation";
 import { AnimatePresence, MotiView } from "moti";
+import { useRouter } from "solito/navigation";
+import { useAuth } from "app/utils/hooks/use-auth";
+import { skipToken } from "@tanstack/react-query";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const createOption = (value: string, label: string): Option => ({ value, label });
-
-const DEFAULT_SORT = createOption("recent", "Most Recent");
-const DEFAULT_CUISINE = createOption("all", "All Cuisines");
-const DEFAULT_DIFFICULTY = createOption("all", "All Difficulties");
+const DEFAULT_SORT = { value: "recent", label: "Most Recent" };
+const DEFAULT_CUISINE = { value: "all", label: "All Cuisines" };
+const DEFAULT_DIFFICULTY = { value: "all", label: "All Difficulties" };
 
 export function FavoritesScreen() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<Option>(DEFAULT_SORT);
   const [cuisineFilter, setCuisineFilter] = useState<Option>(DEFAULT_CUISINE);
   const [difficultyFilter, setDifficultyFilter] = useState<Option>(DEFAULT_DIFFICULTY);
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const contentInsets = {
+    top: insets.top,
+    bottom: insets.bottom,
+    left: 12,
+    right: 12,
+  };
 
-  const { data: favorites = [], isLoading } = trpc.recipe.favorites.getFavorites.useQuery();
+  const { data: favorites = [], isLoading } = trpc.recipe.favorites.getFavorites.useQuery(
+    !isSignedIn ? skipToken : undefined,
+  );
 
   const filteredFavorites = useMemo(() => {
     if (!sortBy || !cuisineFilter || !difficultyFilter) return [];
@@ -80,66 +94,79 @@ export function FavoritesScreen() {
     [],
   );
 
+  if (isSignedIn === "signed-out") {
+    router.push("/account/sign-in");
+    return null;
+  }
+
   if (favorites.length === 0 && !isLoading) {
     return <EmptyState />;
   }
 
   return (
-    <View className="w-full space-y-6">
-      <View className="flex flex-row items-center justify-between gap-4 flex-wrap">
-        <View className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+    <View className="w-full space-y-6 py-12 sm:container mx-auto">
+      <Text className="text-3xl font-bold tracking-tight">Your Favorites</Text>
+      <View className="flex flex-col items-start gap-3 justify-center">
+        <View className="relative flex w-full">
+          <Search className="absolute left-3 top-3 transform h-4 w-4 text-muted-foreground" />
           <TextInput
             placeholder="Search favorites..."
             value={search}
             onChange={handleSearchChange}
-            className="pl-9"
+            className="sm:pl-9 pl-9"
           />
         </View>
-
-        <Select value={sortBy} onValueChange={setSortBy} className="w-[150px]">
-          <SelectTrigger>Sort by</SelectTrigger>
-          <SelectContent>
-            <SelectItem value="recent" label="Most Recent">
-              Most Recent
-            </SelectItem>
-            <SelectItem value="popular" label="Most Popular">
-              Most Popular
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={cuisineFilter} onValueChange={setCuisineFilter} className="w-[150px]">
-          <SelectTrigger>Cuisine</SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" label="All Cuisines">
-              All Cuisines
-            </SelectItem>
-            {uniqueCuisines.map((cuisine) => (
-              <SelectItem key={cuisine} value={cuisine} label={cuisine}>
-                {cuisine}
+        <View className="grid grid-cols-3 gap-3 max-w-[425px] w-full">
+          <Select value={sortBy} onValueChange={setSortBy} className="w-full">
+            <SelectTrigger>
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent insets={contentInsets}>
+              <SelectItem value="recent" label="Most Recent">
+                Most Recent
               </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              <SelectItem value="popular" label="Most Popular">
+                Most Popular
+              </SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Select value={difficultyFilter} onValueChange={setDifficultyFilter} className="w-[150px]">
-          <SelectTrigger>Difficulty</SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" label="All Difficulties">
-              All Difficulties
-            </SelectItem>
-            <SelectItem value="Easy" label="Easy">
-              Easy
-            </SelectItem>
-            <SelectItem value="Medium" label="Medium">
-              Medium
-            </SelectItem>
-            <SelectItem value="Hard" label="Hard">
-              Hard
-            </SelectItem>
-          </SelectContent>
-        </Select>
+          <Select value={cuisineFilter} onValueChange={setCuisineFilter} className="w-full">
+            <SelectTrigger>
+              <SelectValue placeholder="Cuisine" />
+            </SelectTrigger>
+            <SelectContent insets={contentInsets}>
+              <SelectItem value="all" label="All Cuisines">
+                All Cuisines
+              </SelectItem>
+              {uniqueCuisines.map((cuisine) => (
+                <SelectItem key={cuisine} value={cuisine} label={cuisine}>
+                  {cuisine}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={difficultyFilter} onValueChange={setDifficultyFilter} className="w-full">
+            <SelectTrigger>
+              <SelectValue placeholder="Difficulty" />
+            </SelectTrigger>
+            <SelectContent insets={contentInsets}>
+              <SelectItem value="all" label="All Difficulties">
+                All Difficulties
+              </SelectItem>
+              <SelectItem value="Easy" label="Easy">
+                Easy
+              </SelectItem>
+              <SelectItem value="Medium" label="Medium">
+                Medium
+              </SelectItem>
+              <SelectItem value="Hard" label="Hard">
+                Hard
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </View>
       </View>
 
       <AnimatePresence>
@@ -152,10 +179,13 @@ export function FavoritesScreen() {
         ) : filteredFavorites.length === 0 ? (
           <MotiView
             from={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: "timing", duration: 250 }}
-            className="flex items-center justify-center py-12"
+            style={{
+              $$css: true,
+              className: "flex items-center justify-center py-12",
+            }}
           >
             <Text className="text-muted-foreground">No favorites match your filters</Text>
           </MotiView>
@@ -183,7 +213,6 @@ export function FavoritesScreen() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ type: "timing", duration: 250 }}
-                    className="w-full"
                   >
                     <FavoriteCard
                       recipe={{
