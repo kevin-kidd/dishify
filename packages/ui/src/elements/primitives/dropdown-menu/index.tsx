@@ -53,13 +53,12 @@ const RootContext = React.createContext<IRootContext | null>(null);
 
 const Root = React.forwardRef<
   ViewRef,
-  SlottableViewProps & { onOpenChange?: (open: boolean) => void }
->(({ asChild, onOpenChange: onOpenChangeProp, ...viewProps }, ref) => {
+  SlottableViewProps & { onOpenChange?: (open: boolean) => void; open?: boolean }
+>(({ asChild, onOpenChange: onOpenChangeProp, open: openProp, ...viewProps }, ref) => {
   const nativeID = React.useId();
   const [triggerPosition, setTriggerPosition] = React.useState<LayoutPosition | null>(null);
   const [contentLayout, setContentLayout] = React.useState<LayoutRectangle | null>(null);
-  const [open, setOpen] = React.useState(false);
-
+  const [open, setOpen] = React.useState(openProp ?? false);
   function onOpenChange(open: boolean) {
     setOpen(open);
     onOpenChangeProp?.(open);
