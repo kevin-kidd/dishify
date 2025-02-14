@@ -24,7 +24,7 @@ export default function ProfileButton() {
   const { data: session, isPending } = useSession();
   const router = useRouter();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   if (!session?.user) {
     return (
       <Pressable
@@ -51,7 +51,7 @@ export default function ProfileButton() {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu onOpenChange={setIsDropdownOpen} open={isDropdownOpen}>
         <DropdownMenuTrigger
           className="flex items-center focus:outline-none"
           aria-label="Open profile menu"
@@ -92,7 +92,10 @@ export default function ProfileButton() {
 
           <Button
             variant="none"
-            onPress={() => setIsSettingsOpen(true)}
+            onPress={() => {
+              setIsSettingsOpen(true);
+              setIsDropdownOpen(false);
+            }}
             className="w-full px-4 py-2.5 text-left items-center text-sm text-gray-700 
                            hover:bg-sage-100 flex justify-start space-x-3 
                            transition-all duration-200 hover:text-gray-900 flex-row rounded-lg"
@@ -129,7 +132,12 @@ export default function ProfileButton() {
         </DropdownMenuContent>
       </DropdownMenu>
       {isSettingsOpen && (
-        <AccountSettingsPopup isOpen={isSettingsOpen} setIsOpen={setIsSettingsOpen} />
+        <AccountSettingsPopup
+          isOpen={isSettingsOpen}
+          setIsOpen={(open: boolean) => {
+            setIsSettingsOpen(open);
+          }}
+        />
       )}
     </>
   );
