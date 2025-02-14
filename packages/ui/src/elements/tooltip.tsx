@@ -4,6 +4,7 @@ import { type ReactNode, createContext, useContext, useRef, useState } from "rea
 import { View } from "react-native";
 import { cn } from "../utils";
 import { isWeb } from "@tamagui/constants";
+import React from "react";
 
 const TooltipGroupContext = createContext<{
   activeTooltip: string | undefined;
@@ -74,7 +75,8 @@ export const Tooltip = ({ children }) => {
 export const TooltipTrigger = ({
   children,
   delayDuration = 500,
-}: { children: ReactNode; delayDuration?: number }) => {
+  asChild = false,
+}: { children: ReactNode; delayDuration?: number; asChild?: boolean }) => {
   const { activeTooltip, setActiveTooltip, switchDelay, clearTooltipTimeout, isInGroup } =
     useTooltipGroup();
   const { setShow } = useTooltip();
@@ -112,8 +114,21 @@ export const TooltipTrigger = ({
     }
   };
   if (!isWeb) return children;
+
+  const eventHandlers = {
+    onMouseEnter: handleMouseEnter,
+    onMouseLeave: handleMouseLeave,
+  };
+
+  if (asChild) {
+    return React.cloneElement(React.Children.only(children as React.ReactElement), {
+      ...eventHandlers,
+      className: cn("z-10", (children as React.ReactElement).props?.className),
+    });
+  }
+
   return (
-    <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="z-10">
+    <div {...eventHandlers} className="z-10">
       {children}
     </div>
   );
