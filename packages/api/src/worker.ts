@@ -12,10 +12,6 @@ import type { RecipeQueueMessage } from "./types";
 
 export type Bindings = Env & {
   DB: D1Database;
-  GROQ_API_KEY: string;
-  ACCOUNT_ID: string;
-  AI_GATEWAY_ID: string;
-  APP_URL: string;
   AI: Ai;
   RECIPE_STATE: KVNamespace;
   RECIPE_QUEUE: Queue;
