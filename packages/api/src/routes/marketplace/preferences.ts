@@ -3,11 +3,8 @@ import { protectedProcedure, router } from "../../trpc";
 import { UserMarketplacePreferencesTable } from "../../db/schema/marketplace";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { RegionSchema } from "./marketplaces/types";
-import { getMarketplacesByRegion } from "./marketplaces/registry";
-
-// Create a Zod schema for marketplace slugs
-const MarketplaceSlugSchema = z.enum(["walmart", "amazon"]);
+import { RegionSchema, MarketplaceSlugSchema } from "../../../schemas/marketplace";
+import { getMarketplacesByRegion } from "./registry";
 
 export const marketplacePreferencesRouter = router({
   // Get all available marketplaces and user's preferences
