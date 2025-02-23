@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { Env } from "../../../types";
 
 // Supported regions
 export const RegionSchema = z.enum([
@@ -33,31 +32,10 @@ export interface MarketplacePrice {
   url: string;
   currency: string; // ISO 4217 currency code
   unit: string; // Unit of measurement (e.g., oz, lb, unit)
-  marketplaceName: string; // Name of the marketplace (e.g., "Walmart")
+  marketplaceName: string; // Name of the marketplace (e.g., "Walmart", "Amazon")
   marketplaceLogo: string; // URL to the marketplace logo
   marketplaceSlug: string; // Unique identifier for the marketplace
   title: string; // Product title for AI matching
-}
-
-// Configuration for marketplace availability
-export interface MarketplaceConfig<
-  TSupportedRegions extends readonly Region[] = readonly Region[],
-> {
-  name: string;
-  slug: string;
-  logo: string;
-  supportedRegions: TSupportedRegions;
-  defaultCurrency: { [K in TSupportedRegions[number]]: string };
-  baseUrl: { [K in TSupportedRegions[number]]: string };
-}
-
-// Base marketplace integration interface
-export interface MarketplaceIntegration<
-  TSupportedRegions extends readonly Region[] = readonly Region[],
-> {
-  config: Readonly<MarketplaceConfig<TSupportedRegions>>;
-  searchIngredient: (ingredient: string, region: Region, env: Env) => Promise<MarketplacePrice[]>;
-  getCurrencyForRegion: (region: Region) => string | undefined;
 }
 
 // Error types specific to marketplace integrations
@@ -71,3 +49,19 @@ export class MarketplaceError extends Error {
     this.name = "MarketplaceError";
   }
 }
+
+// Schema for Serper API response
+export const SerperShoppingResponseSchema = z.object({
+  prices: z.array(
+    z.object({
+      price: z.number(), // Price in cents
+      url: z.string(),
+      currency: z.string(),
+      unit: z.string(),
+      marketplaceName: z.string(),
+      marketplaceLogo: z.string(),
+      marketplaceSlug: z.string(),
+      title: z.string(),
+    }),
+  ),
+});
