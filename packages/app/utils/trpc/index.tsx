@@ -3,7 +3,7 @@
 import type { AppRouter } from "@dishify/api/src/router";
 import superjson from "superjson";
 import { useState } from "react";
-import { createTRPCReact, httpBatchLink, loggerLink } from "@trpc/react-query";
+import { createTRPCReact, httpBatchLink, loggerLink, httpLink, splitLink } from "@trpc/react-query";
 import {
   QueryCache,
   QueryClient,
@@ -67,15 +67,31 @@ export function TRPCProvider(props: { children: React.ReactNode }) {
             process.env.NODE_ENV === "development" ||
             (opts.direction === "down" && opts.result instanceof Error),
         }),
-        httpBatchLink({
-          transformer: superjson,
-          url: `${process.env.NEXT_PUBLIC_API_URL}/trpc`,
-          fetch(url, options) {
-            return fetch(url, {
-              ...options,
-              credentials: "include",
-            });
+        splitLink({
+          condition: (op) => {
+            // Disable batching for marketplace price queries
+            return op.path === "marketplace.getIngredientPrice";
           },
+          true: httpLink({
+            url: `${process.env.NEXT_PUBLIC_API_URL}/trpc`,
+            transformer: superjson,
+            fetch(url, options) {
+              return fetch(url, {
+                ...options,
+                credentials: "include",
+              });
+            },
+          }),
+          false: httpBatchLink({
+            transformer: superjson,
+            url: `${process.env.NEXT_PUBLIC_API_URL}/trpc`,
+            fetch(url, options) {
+              return fetch(url, {
+                ...options,
+                credentials: "include",
+              });
+            },
+          }),
         }),
       ],
     }),
