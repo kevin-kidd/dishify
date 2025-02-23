@@ -27,8 +27,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: `${appUrl}/pwa/icons/apple-touch-icon.png`,
-        width: 180,
-        height: 180,
+        width: 192,
+        height: 192,
         alt: title,
       },
     ],
@@ -59,12 +59,12 @@ export const metadata: Metadata = {
     },
     {
       url: "/pwa/icons/touch-icon-iphone-retina.png",
-      sizes: "180x180",
+      sizes: "192x192",
       rel: "apple-touch-icon",
     },
     {
       url: "/pwa/icons/touch-icon-ipad-retina.png",
-      sizes: "167x167",
+      sizes: "192x192",
       rel: "apple-touch-icon",
     },
     /* PWA Splash Screens for iOS */
