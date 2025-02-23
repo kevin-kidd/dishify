@@ -68,7 +68,7 @@ export function MarketplaceLinks({ prices, isLoading = false }: MarketplaceLinks
           className="group flex flex-row items-center gap-2.5 rounded-xl transition-colors duration-200 animate-fade-in"
         >
           <View className="flex flex-row items-center">
-            {sortedMarketplaces.map((marketplace, index) => (
+            {sortedMarketplaces.slice(0, 3).map((marketplace, index) => (
               <View
                 key={marketplace.marketplaceName}
                 className="relative first:ml-0 -ml-2.5"
