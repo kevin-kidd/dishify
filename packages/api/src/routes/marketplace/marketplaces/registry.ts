@@ -2,6 +2,72 @@ import type { Region } from "./types";
 
 // Registry of marketplace metadata
 export const marketplaceRegistry = {
+  // Delivery Services
+  ubereats: {
+    name: "Uber Eats",
+    slug: "ubereats",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/b/b3/Uber_Eats_2020_logo.svg",
+    supportedRegions: [
+      "US",
+      "CA",
+      "UK",
+      "FR",
+      "DE",
+      "IT",
+      "ES",
+      "JP",
+      "AU",
+      "BR",
+      "MX",
+      "IN",
+    ] as const,
+    defaultCurrency: {
+      US: "USD",
+      CA: "CAD",
+      UK: "GBP",
+      FR: "EUR",
+      DE: "EUR",
+      IT: "EUR",
+      ES: "EUR",
+      JP: "JPY",
+      AU: "AUD",
+      BR: "BRL",
+      MX: "MXN",
+      IN: "INR",
+    },
+  },
+  instacart: {
+    name: "Instacart",
+    slug: "instacart",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/3/39/Instacart_carrot.svg",
+    supportedRegions: ["US", "CA"] as const,
+    defaultCurrency: {
+      US: "USD",
+      CA: "CAD",
+    },
+  },
+  skipthedishes: {
+    name: "SkipTheDishes",
+    slug: "skipthedishes",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/9/92/SkipTheDishes_logo.svg",
+    supportedRegions: ["CA"] as const,
+    defaultCurrency: {
+      CA: "CAD",
+    },
+  },
+  doordash: {
+    name: "DoorDash",
+    slug: "doordash",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/6/6a/DoorDash_Logo.svg",
+    supportedRegions: ["US", "CA", "AU", "DE", "JP"] as const,
+    defaultCurrency: {
+      US: "USD",
+      CA: "CAD",
+      AU: "AUD",
+      DE: "EUR",
+      JP: "JPY",
+    },
+  },
   // United States & Canada
   walmart: {
     name: "Walmart",
