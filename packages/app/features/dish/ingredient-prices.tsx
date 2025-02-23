@@ -32,6 +32,7 @@ const queryOptions = {
   },
   meta: {
     skipErrorToast: true,
+    noBatch: true,
   },
 } as const;
 
@@ -48,7 +49,10 @@ export function IngredientPrices({
       recipeId,
       shoppingList,
     },
-    queryOptions,
+    {
+      ...queryOptions,
+      suspense: false,
+    },
   );
 
   return <MarketplaceLinks prices={priceData?.prices} isLoading={isLoading} />;
@@ -88,7 +92,7 @@ export function useTotalCost(
       : skipToken,
     {
       ...queryOptions,
-      enabled: items.length > 0,
+      suspense: false,
     },
   );
 
