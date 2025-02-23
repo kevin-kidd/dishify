@@ -7,12 +7,10 @@ import { trpc } from "app/utils/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { Card, CardHeader, CardTitle, CardContent, Button, Text, Section } from "@dishify/ui";
 import { Clock } from "@dishify/ui/src/icons/clock";
-import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
 import { Utensils } from "@dishify/ui/src/icons/utensils";
 import { LoadingSkeleton } from "./loading-skeleton";
 import { ErrorView } from "./error-view";
 import { EmojiReactions } from "./emoji-reactions/index";
-import { MarketplaceLinks } from "./marketplace-links";
 import { FavoriteButton, ShareButton, PrintButton } from "./actions";
 import Animated, { FadeIn, FadeInDown, LinearTransition } from "react-native-reanimated";
 import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
@@ -259,9 +257,9 @@ export default function RecipeCard() {
                   {recipeData.data.shoppingList.map((item) => (
                     <View
                       key={`${item.item}-${item.quantity}`}
-                      className="flex flex-row items-center justify-between border-b border-sage-50 py-3 last:border-0"
+                      className="flex sm:flex-row flex-col gap-y-4 sm:items-center sm:justify-between border-b border-sage-50 py-3 last:border-0"
                     >
-                      <View className="flex-1">
+                      <View className="flex-1 w-full">
                         <Text className="text-base text-sage-900">{item.quantity}</Text>
                         <Text className="text-sm text-sage-600">{item.item}</Text>
                       </View>
