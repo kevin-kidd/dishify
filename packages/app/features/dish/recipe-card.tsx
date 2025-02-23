@@ -20,38 +20,6 @@ import { useAtom } from "jotai";
 import { favoritedRecipesAtom } from "app/atoms/favorites";
 import { formatPrice } from "app/utils/currency";
 
-// Mock data for demo - replace with real data from API
-const MOCK_MARKETPLACES = [
-  {
-    name: "Walmart",
-    logo: "/marketplaces/walmart.svg",
-    price: 3.99,
-    url: "https://walmart.com",
-  },
-  {
-    name: "Amazon",
-    logo: "/marketplaces/amazon.png",
-    price: 4.99,
-    url: "https://amazon.com",
-  },
-  {
-    name: "Target",
-    logo: "/marketplaces/target.png",
-    price: 4.49,
-    url: "https://target.com",
-  },
-];
-
-// Example of single marketplace
-const MOCK_SINGLE_MARKETPLACE = [
-  {
-    name: "Walmart",
-    logo: "https://corporate.walmart.com/content/dam/corporate/site-images/WMT-Spark-New-SparkYellow-RGB.svg",
-    price: 3.99,
-    url: "https://walmart.com",
-  },
-];
-
 function toTitleCase(str: string) {
   return str
     .toLowerCase()
@@ -296,6 +264,9 @@ export default function RecipeCard() {
                   <FavoriteButton recipe={recipeData} />
                 </View>
               </View>
+              <View className="hidden sm:flex">
+                <CuisineLabel cuisine={recipeData.data.cuisine} />
+              </View>
               <View className="sm:hidden flex-1 flex-row items-center justify-between w-full">
                 <CuisineLabel cuisine={recipeData.data.cuisine} />
 
@@ -374,7 +345,7 @@ export default function RecipeCard() {
                         <Text className="text-sm text-sage-600">{item.item}</Text>
                       </View>
                       <MarketplaceLinks
-                        prices={prices?.prices[item.item]}
+                        prices={prices?.prices?.[item.item]}
                         isLoading={isPricesLoading}
                       />
                     </View>
