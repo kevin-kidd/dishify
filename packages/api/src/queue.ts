@@ -119,7 +119,18 @@ export async function generateRecipe(
         recipeResponse = response.object;
       }
     } catch (error) {
-      console.error("Groq API error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Groq API error:", {
+        error: errorMessage,
+        recipeId,
+        dishName,
+        hasImage,
+      });
+      // Store the error for later analysis
+      await env.RECIPE_STATE.put(
+        `${RECIPE_STATE_PREFIX}error:groq:${recipeId}`,
+        JSON.stringify({ error: errorMessage, timestamp: new Date().toISOString() }),
+      );
     }
 
     if (!recipeResponse) {
@@ -153,12 +164,25 @@ export async function generateRecipe(
           recipeResponse = response.object;
         }
       } catch (error) {
-        console.error("CloudFlare AI Worker error:", error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        console.error("CloudFlare AI Worker error:", {
+          error: errorMessage,
+          recipeId,
+          dishName,
+          hasImage,
+        });
+        // Store the error for later analysis
+        await env.RECIPE_STATE.put(
+          `${RECIPE_STATE_PREFIX}error:workers:${recipeId}`,
+          JSON.stringify({ error: errorMessage, timestamp: new Date().toISOString() }),
+        );
       }
     }
 
     if (!recipeResponse) {
-      throw new Error("Both AI providers failed to generate a response");
+      throw new Error(
+        `Both AI providers failed to generate a response. Check ${RECIPE_STATE_PREFIX}error:* for details.`,
+      );
     }
 
     let parsedResponse: unknown = recipeResponse;
