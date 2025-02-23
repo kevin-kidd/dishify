@@ -1,11 +1,10 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../../trpc";
 import { UserMarketplacePreferencesTable } from "../../db/schema/marketplace";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { RegionSchema } from "./marketplaces/types";
 import { getMarketplacesByRegion } from "./marketplaces/registry";
-import type { MarketplaceSlug } from "./marketplaces/registry";
 
 // Create a Zod schema for marketplace slugs
 const MarketplaceSlugSchema = z.enum(["walmart", "amazon"]);
@@ -41,10 +40,9 @@ export const marketplacePreferencesRouter = router({
 
       return {
         marketplaces: marketplaces.map((m) => ({
-          ...m.config,
-          isPreferred: preferences.some((p) => p.marketplaceSlug === m.config.slug),
-          preferenceOrder:
-            preferences.find((p) => p.marketplaceSlug === m.config.slug)?.order ?? null,
+          ...m,
+          isPreferred: preferences.some((p) => p.marketplaceSlug === m.slug),
+          preferenceOrder: preferences.find((p) => p.marketplaceSlug === m.slug)?.order ?? null,
         })),
         region,
       };
@@ -71,7 +69,7 @@ export const marketplacePreferencesRouter = router({
 
       // Verify all marketplaces exist and are active in the specified region
       const availableMarketplaces = getMarketplacesByRegion(input.region);
-      const validSlugs = new Set(availableMarketplaces.map((m) => m.config.slug));
+      const validSlugs = new Set(availableMarketplaces.map((m) => m.slug));
 
       if (!input.preferences.every((p) => validSlugs.has(p.marketplaceSlug))) {
         throw new TRPCError({
@@ -92,6 +90,7 @@ export const marketplacePreferencesRouter = router({
             userId: user.id,
             marketplaceSlug: p.marketplaceSlug,
             order: p.order,
+            region: input.region, // Store the region with the preference
           })),
         );
       }
