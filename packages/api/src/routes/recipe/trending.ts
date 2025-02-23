@@ -7,7 +7,7 @@ import {
   RecipeReactionsTable,
 } from "../../db/schema/recipes";
 import { RecipeResponseSchema } from "../../../schemas/recipe-response";
-import type { RegionSchema } from "../marketplace/marketplaces/types";
+import type { RegionSchema } from "../marketplace/types";
 
 const CACHE_KEY = "trending-recipes";
 const CACHE_TTL = 300; // 5 minutes in seconds
