@@ -10,12 +10,9 @@ import * as Haptics from "expo-haptics";
 import { LoadingSkeleton } from "./loading-skeleton";
 import { ErrorView } from "./error-view";
 import { EmojiReactions } from "./emoji-reactions/index";
-import { MarketplaceLinks } from "./marketplace-links";
 import { FavoriteButton, ShareButton } from "./actions";
-import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import { Utensils } from "@dishify/ui/src/icons/utensils";
-import { formatPrice } from "app/utils/currency";
 import { IngredientPrices, useTotalCost } from "./ingredient-prices";
 
 function toTitleCase(str: string) {
@@ -165,7 +162,7 @@ export default function RecipeCard() {
                 {data.shoppingList.map((item) => (
                   <View
                     key={`${item.item}-${item.quantity}`}
-                    className="flex flex-row items-center justify-between border-b border-sage-50 py-3 last:border-0"
+                    className="flex flex-col items-center justify-between border-b border-sage-50 py-3 last:border-0"
                   >
                     <View className="flex-1">
                       <Text className="text-base text-sage-900">{item.quantity}</Text>
