@@ -9,6 +9,7 @@ export const RecipeResponseSchema = z.object({
     }),
   ),
   cuisine: z.enum([
+    "British",
     "Mexican",
     "Italian",
     "Japanese",
