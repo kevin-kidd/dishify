@@ -6,7 +6,11 @@ export const EnvSchema = z
     // Auth-related environment variables
     BETTER_AUTH_SECRET: z.string(),
     BETTER_AUTH_URL: z.string().url(),
-
+    GROQ_API_KEY: z.string(),
+    SERPER_API_KEY: z.string(),
+    ACCOUNT_ID: z.string(),
+    AI_GATEWAY_ID: z.string(),
+    APP_URL: z.string().url(),
     // Social provider credentials
     DISCORD_CLIENT_ID: z.string(),
     DISCORD_CLIENT_SECRET: z.string(),
@@ -16,12 +20,6 @@ export const EnvSchema = z
     MICROSOFT_CLIENT_SECRET: z.string(),
 
     RESEND_API_KEY: z.string(),
-    APP_URL: z.string().url(),
-
-    // Marketplace credentials
-    WALMART_CONSUMER_ID: z.string(),
-    WALMART_PRIVATE_KEY: z.string(),
-    RAPID_API_KEY: z.string(),
   })
   .passthrough();
 
