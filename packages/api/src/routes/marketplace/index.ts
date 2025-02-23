@@ -1,9 +1,9 @@
 import { router } from "../../trpc";
-import { getMarketplacePrices } from "./prices";
+import { getIngredientPrice } from "./prices";
 import { marketplacePreferencesRouter } from "./preferences";
 
 export const marketplaceRouter = router({
-  getMarketplacePrices,
+  getIngredientPrice,
   preferences: marketplacePreferencesRouter,
 });
 
