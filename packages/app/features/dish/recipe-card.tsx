@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import { View } from "react-native";
 import { useParams, useRouter } from "solito/navigation";
 import { trpc } from "app/utils/trpc";
@@ -18,7 +18,7 @@ import Animated, { FadeIn, FadeInDown, LinearTransition } from "react-native-rea
 import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
 import { useAtom } from "jotai";
 import { favoritedRecipesAtom } from "app/atoms/favorites";
-import { formatPrice } from "app/utils/currency";
+import { IngredientPrices, useTotalCost } from "./ingredient-prices";
 
 function toTitleCase(str: string) {
   return str
@@ -36,7 +36,10 @@ export default function RecipeCard() {
 
   // Get recipe from local storage if needed
   const [favoritedRecipes] = useAtom(favoritedRecipesAtom);
-  const localRecipe = isLocalStorage && slug ? favoritedRecipes[slug.replace("local-", "")] : null;
+  const localRecipe = useMemo(
+    () => (isLocalStorage && slug ? favoritedRecipes[slug.replace("local-", "")] : null),
+    [favoritedRecipes, isLocalStorage, slug],
+  );
 
   const {
     data: recipe,
@@ -47,24 +50,19 @@ export default function RecipeCard() {
     { slug: slug as string },
     {
       enabled: !!slug && !isLocalStorage,
-      // Poll every second while recipe is generating
       refetchInterval: (query) => {
         if (!query?.state?.data?.status) return false;
         return query.state.data.status === "generating" ? 1000 : false;
       },
-      // Keep polling even if the window is in the background
       refetchIntervalInBackground: true,
-      // Don't stop polling on error
       retry: (failureCount, error) => {
-        // Don't retry on NOT_FOUND errors
         if (error instanceof TRPCClientError && error.data?.code === "NOT_FOUND") {
           return false;
         }
-        // Retry up to 3 times for other errors
         return failureCount < 3;
       },
       meta: {
-        skipErrorToast: true, // We'll handle errors ourselves
+        skipErrorToast: true,
       },
     },
   );
@@ -75,119 +73,37 @@ export default function RecipeCard() {
     },
   });
 
-  const recipeData = localRecipe || recipe;
+  const recipeData = useMemo(() => localRecipe || recipe, [localRecipe, recipe]);
 
-  // Get cost estimate from marketplace API
-  const {
-    data: prices,
-    isError: isPricesError,
-    isLoading: isPricesLoading,
-  } = trpc.marketplace.getMarketplacePrices.useQuery(
-    {
-      ingredients: recipeData?.data?.shoppingList ?? [],
-      recipeId: recipeData?.id,
-    },
-    {
-      enabled: !!recipeData?.data?.shoppingList?.length,
-      staleTime: Number.POSITIVE_INFINITY, // Never mark the data as stale
-      gcTime: Number.POSITIVE_INFINITY, // Keep the data cached indefinitely (formerly cacheTime)
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      refetchOnReconnect: false,
-      refetchInterval: false,
-      retry: (failureCount, error) => {
-        // Only retry on TRPC errors that aren't NOT_FOUND, and max 2 times
-        if (error instanceof TRPCClientError) {
-          if (error.data?.code === "NOT_FOUND") {
-            // Log the error but don't retry for no marketplaces
-            console.warn(`No marketplaces found for region: ${error.message}`);
-            return false;
-          }
-          return failureCount < 2;
-        }
-        return false;
-      },
-      meta: {
-        skipErrorToast: true,
-      },
-    },
-  );
+  // Calculate total cost from individual ingredient prices
+  const costData = useTotalCost(recipeData?.data?.shoppingList ?? []);
 
-  const costIndicators = useMemo(() => {
-    let cost = 0;
-    let currency = "USD";
-
-    // If we have an error or no prices, try to use estimated cost from recipe data
-    if (isPricesError || !prices?.prices) {
-      const estimatedCost = recipeData?.estimatedCosts?.[prices?.region ?? "US"];
-      if (estimatedCost?.cost) {
-        cost = estimatedCost.cost;
-      }
-    } else {
-      // Calculate total cost from lowest price for each ingredient
-      cost = Object.values(prices.prices).reduce((sum, marketplacePrices) => {
-        // Find the lowest price for this ingredient
-        const lowestPrice = marketplacePrices.reduce(
-          (min, price) => (price.price < min ? price.price : min),
-          marketplacePrices[0]?.price ?? 0,
-        );
-        return sum + lowestPrice;
-      }, 0);
-
-      // Get the currency from the first marketplace price (they should all be the same for a region)
-      currency = Object.values(prices.prices)[0]?.[0]?.currency ?? "USD";
-    }
-
-    // Calculate cost indicator based on total cost
-    // Over $100 = 4 dollar signs ($10000 cents)
-    // Over $50 = 3 dollar signs ($5000 cents)
-    // Over $25 = 2 dollar signs ($2500 cents)
-    // Under $25 = 1 dollar sign
-    const count = cost > 10000 ? 4 : cost > 5000 ? 3 : cost > 2500 ? 2 : 1;
-    if (cost === 0) {
-      return null;
-    }
-    return (
-      <View className="flex flex-row items-center gap-1">
-        {Array.from({ length: count }).map((_) => (
-          <DollarSign
-            key={`cost-indicator-${crypto.randomUUID()}`}
-            className="h-4 w-4 text-[#13a300]"
-            strokeWidth={2.5}
-          />
-        ))}
-        {cost > 0 && (
-          <Text className="text-sm text-sage-600 ml-1">({formatPrice(cost, currency)})</Text>
-        )}
-      </View>
-    );
-  }, [prices?.prices, isPricesError, recipeData?.estimatedCosts, prices?.region]);
-
-  function handleRetry() {
-    if (recipeData) {
-      generate.mutateAsync({
-        dishName: recipeData.searchQuery || undefined,
-        retryId: recipeData.id,
-      });
-    } else {
-    }
-  }
-
-  // Show loading state while recipe is being generated
-  if (
-    recipeData?.status === "generating" ||
-    (recipe?.status === "moved" && recipe?.movedToSlug) ||
-    isLoading
-  ) {
+  // Handle recipe status changes
+  useEffect(() => {
     if (recipe?.status === "moved" && recipe?.movedToSlug) {
       router.replace(`/dish/${recipe.movedToSlug}`);
     }
+  }, [recipe?.status, recipe?.movedToSlug, router]);
+
+  // Show loading state while recipe is being generated
+  if (recipeData?.status === "generating" || isLoading) {
     return <LoadingSkeleton />;
   }
 
   // Show error state if query failed
   if (error) {
-    return <ErrorView error={error} onRetry={handleRetry} onHome={() => router.push("/")} />;
+    return (
+      <ErrorView
+        error={error}
+        onRetry={() =>
+          generate.mutateAsync({
+            dishName: recipeData?.searchQuery || undefined,
+            retryId: recipeData?.id,
+          })
+        }
+        onHome={() => router.push("/")}
+      />
+    );
   }
 
   if (recipe?.status === "error") {
@@ -195,7 +111,12 @@ export default function RecipeCard() {
     return (
       <ErrorView
         error={new Error(recipe.errorMessage || "Failed to load dish")}
-        onRetry={handleRetry}
+        onRetry={() =>
+          generate.mutateAsync({
+            dishName: recipeData?.searchQuery || undefined,
+            retryId: recipeData?.id,
+          })
+        }
         onHome={() => router.push("/")}
       />
     );
@@ -287,7 +208,7 @@ export default function RecipeCard() {
                     <Utensils className="h-4 w-4 text-sage-500" />
                     <Text className="text-sm">{recipeData.data.servings} servings</Text>
                   </View>
-                  <View className="flex flex-row items-center gap-1">{costIndicators}</View>
+                  <View className="flex flex-row items-center gap-1">{costData?.indicators}</View>
                 </View>
                 <View className="flex-shrink-0">
                   <EmojiReactions slug={recipeData.slug} />
@@ -344,10 +265,7 @@ export default function RecipeCard() {
                         <Text className="text-base text-sage-900">{item.quantity}</Text>
                         <Text className="text-sm text-sage-600">{item.item}</Text>
                       </View>
-                      <MarketplaceLinks
-                        prices={prices?.prices?.[item.item]}
-                        isLoading={isPricesLoading}
-                      />
+                      <IngredientPrices ingredient={item.item} quantity={item.quantity} />
                     </View>
                   ))}
                 </View>
