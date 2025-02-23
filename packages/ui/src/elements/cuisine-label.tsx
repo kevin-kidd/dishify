@@ -36,6 +36,7 @@ export default function CuisineLabel({ cuisine }: { cuisine: RecipeResponse["cui
         .with("Hungarian", () => "bg-blue-100")
         .with("Other", () => "bg-gray-100")
         .with("Unknown", () => "bg-gray-100")
+        .with("British", () => "bg-red-100")
         .exhaustive(),
     [cuisine],
   );
