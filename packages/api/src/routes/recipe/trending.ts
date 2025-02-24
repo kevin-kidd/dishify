@@ -7,7 +7,10 @@ import {
   RecipeReactionsTable,
 } from "../../db/schema/recipes";
 import { RecipeResponseSchema } from "../../../schemas/recipe-response";
-import type { RegionSchema } from "../marketplace/types";
+import type { Region } from "../marketplace/types";
+import type { RegionSchema } from "../../../schemas/marketplace";
+import { TRPCError } from "@trpc/server";
+import { tryCatch } from "@dishify/app/utils/helpers";
 
 const CACHE_KEY = "trending-recipes";
 const CACHE_TTL = 300; // 5 minutes in seconds
@@ -51,9 +54,22 @@ const calculateTrendingScore = (reactions: { emoji: string; timestamp: string }[
 
 export const trending = publicProcedure.query(async ({ ctx }): Promise<TrendingRecipe[]> => {
   // Try to get from KV cache first
-  const cached = await ctx.recipeState.get(CACHE_KEY);
-  if (cached) {
-    return JSON.parse(cached) as TrendingRecipe[];
+  const { data: cached, error: cacheError } = await tryCatch(ctx.recipeState.get(CACHE_KEY));
+
+  if (cacheError) {
+    console.error("Failed to fetch trending recipes from cache:", {
+      error: cacheError.message,
+    });
+    // Continue execution, we'll fetch fresh data
+  } else if (cached) {
+    try {
+      return JSON.parse(cached) as TrendingRecipe[];
+    } catch (parseError) {
+      console.error("Failed to parse cached trending recipes:", {
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+      });
+      // Continue execution, we'll fetch fresh data
+    }
   }
 
   const detectedRegion = ctx.cf?.country;
@@ -62,28 +78,40 @@ export const trending = publicProcedure.query(async ({ ctx }): Promise<TrendingR
   // Get recipes with their reactions from the last 7 days
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const recipesWithReactions = await ctx.db
-    .select({
-      id: EnglishRecipesTable.id,
-      name: EnglishRecipesTable.name,
-      slug: EnglishRecipesTable.slug,
-      data: EnglishRecipesTable.data,
-      estimatedCosts: EnglishRecipesTable.estimatedCosts,
-      emoji: RecipeReactionsTable.emoji,
-      reactionTime: RecipeReactionsTable.createdAt,
-    })
-    .from(EnglishRecipesTable)
-    .leftJoin(
-      RecipeReactionsTable,
-      and(
-        eq(EnglishRecipesTable.id, RecipeReactionsTable.recipeId),
-        gte(RecipeReactionsTable.createdAt, sevenDaysAgo),
-      ),
-    )
-    .where(eq(EnglishRecipesTable.status, "completed"));
+  const { data: recipesWithReactions, error: fetchError } = await tryCatch(
+    ctx.db
+      .select({
+        id: EnglishRecipesTable.id,
+        name: EnglishRecipesTable.name,
+        slug: EnglishRecipesTable.slug,
+        data: EnglishRecipesTable.data,
+        estimatedCosts: EnglishRecipesTable.estimatedCosts,
+        emoji: RecipeReactionsTable.emoji,
+        reactionTime: RecipeReactionsTable.createdAt,
+      })
+      .from(EnglishRecipesTable)
+      .leftJoin(
+        RecipeReactionsTable,
+        and(
+          eq(EnglishRecipesTable.id, RecipeReactionsTable.recipeId),
+          gte(RecipeReactionsTable.createdAt, sevenDaysAgo),
+        ),
+      )
+      .where(eq(EnglishRecipesTable.status, "completed")),
+  );
+
+  if (fetchError) {
+    console.error("Failed to fetch trending recipes:", {
+      error: fetchError.message,
+    });
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Failed to fetch trending recipes",
+    });
+  }
 
   // Group reactions by recipe
-  const recipeReactions = recipesWithReactions.reduce<
+  const recipeReactions = (recipesWithReactions || []).reduce<
     Record<string, TrendingRecipe & { reactions: { emoji: string; timestamp: string }[] }>
   >((acc, row) => {
     if (!acc[row.id]) {
@@ -127,9 +155,18 @@ export const trending = publicProcedure.query(async ({ ctx }): Promise<TrendingR
     .slice(0, TRENDING_LIMIT);
 
   // Cache the results in KV with expiration
-  await ctx.recipeState.put(CACHE_KEY, JSON.stringify(trendingRecipes), {
-    expirationTtl: CACHE_TTL,
-  });
+  const { error: cacheWriteError } = await tryCatch(
+    ctx.recipeState.put(CACHE_KEY, JSON.stringify(trendingRecipes), {
+      expirationTtl: CACHE_TTL,
+    }),
+  );
+
+  if (cacheWriteError) {
+    console.error("Failed to cache trending recipes:", {
+      error: cacheWriteError.message,
+    });
+    // Continue execution, caching failure is not critical
+  }
 
   return trendingRecipes;
 });
