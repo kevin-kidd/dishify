@@ -3,6 +3,7 @@ import { z } from "zod";
 import { publicProcedure } from "../../trpc";
 import { EnglishRecipesTable } from "../../db/schema/recipes";
 import { eq } from "drizzle-orm";
+import { tryCatch } from "@dishify/app/utils/helpers";
 
 const RECIPE_STATE_PREFIX = "recipe_state:";
 const STALE_TIMEOUT = 15000; // 15 seconds
@@ -10,11 +11,20 @@ const STALE_TIMEOUT = 15000; // 15 seconds
 export const getRecipe = publicProcedure
   .input(z.object({ id: z.string() }))
   .query(async ({ ctx, input }) => {
-    const recipe = await ctx.db
-      .select()
-      .from(EnglishRecipesTable)
-      .where(eq(EnglishRecipesTable.id, input.id))
-      .get();
+    const { data: recipe, error: recipeError } = await tryCatch(
+      ctx.db.select().from(EnglishRecipesTable).where(eq(EnglishRecipesTable.id, input.id)).get(),
+    );
+
+    if (recipeError) {
+      console.error("Failed to fetch recipe:", {
+        error: recipeError.message,
+        recipeId: input.id,
+      });
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch recipe",
+      });
+    }
 
     if (!recipe) {
       throw new TRPCError({
@@ -25,7 +35,9 @@ export const getRecipe = publicProcedure
 
     // If recipe is in generating state, check if it's actually being generated
     if (recipe.status === "generating") {
-      const isGenerating = await ctx.recipeState.get(RECIPE_STATE_PREFIX + input.id);
+      const { data: isGenerating } = await tryCatch(
+        ctx.recipeState.get(RECIPE_STATE_PREFIX + input.id),
+      );
 
       // If not in KV state and it's been more than 15 seconds, add back to queue
       if (!isGenerating) {
@@ -39,11 +51,20 @@ export const getRecipe = publicProcedure
           });
 
           // Add back to queue
-          await ctx.recipeQueue.send({
-            recipeId: input.id,
-            dishName: recipe.searchQuery || undefined,
-            hasImage: false, // Don't retry image-based recipes automatically
-          });
+          const { error: queueError } = await tryCatch(
+            ctx.recipeQueue.send({
+              recipeId: input.id,
+              dishName: recipe.searchQuery || undefined,
+              hasImage: false, // Don't retry image-based recipes automatically
+            }),
+          );
+
+          if (queueError) {
+            console.error("Failed to re-queue stale recipe:", {
+              error: queueError.message,
+              recipeId: input.id,
+            });
+          }
         }
       }
     }
@@ -58,11 +79,24 @@ export const getRecipeBySlug = publicProcedure
     }),
   )
   .query(async ({ ctx, input }) => {
-    const recipe = await ctx.db
-      .select()
-      .from(EnglishRecipesTable)
-      .where(eq(EnglishRecipesTable.slug, input.slug))
-      .get();
+    const { data: recipe, error: recipeError } = await tryCatch(
+      ctx.db
+        .select()
+        .from(EnglishRecipesTable)
+        .where(eq(EnglishRecipesTable.slug, input.slug))
+        .get(),
+    );
+
+    if (recipeError) {
+      console.error("Failed to fetch recipe by slug:", {
+        error: recipeError.message,
+        slug: input.slug,
+      });
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch recipe",
+      });
+    }
 
     if (!recipe) {
       throw new TRPCError({
@@ -73,7 +107,9 @@ export const getRecipeBySlug = publicProcedure
 
     // If recipe is in generating state, check if it's actually being generated
     if (recipe.status === "generating") {
-      const isGenerating = await ctx.recipeState.get(RECIPE_STATE_PREFIX + recipe.id);
+      const { data: isGenerating } = await tryCatch(
+        ctx.recipeState.get(RECIPE_STATE_PREFIX + recipe.id),
+      );
 
       // If not in KV state and it's been more than 15 seconds, add back to queue
       if (!isGenerating) {
@@ -87,11 +123,20 @@ export const getRecipeBySlug = publicProcedure
           });
 
           // Add back to queue
-          await ctx.recipeQueue.send({
-            recipeId: recipe.id,
-            dishName: recipe.searchQuery || undefined,
-            hasImage: false, // Don't retry image-based recipes automatically
-          });
+          const { error: queueError } = await tryCatch(
+            ctx.recipeQueue.send({
+              recipeId: recipe.id,
+              dishName: recipe.searchQuery || undefined,
+              hasImage: false, // Don't retry image-based recipes automatically
+            }),
+          );
+
+          if (queueError) {
+            console.error("Failed to re-queue stale recipe:", {
+              error: queueError.message,
+              recipeId: recipe.id,
+            });
+          }
         }
       }
     }
