@@ -9,20 +9,28 @@ import {
 } from "./email";
 import { jwt } from "better-auth/plugins";
 import type { Env } from "./types";
+import { tryCatch } from "@dishify/app/utils/helpers";
 
 export const auth = (d1: D1Database, env: Env) => {
-  if (
-    !env.DISCORD_CLIENT_ID ||
-    !env.DISCORD_CLIENT_SECRET ||
-    !env.GOOGLE_CLIENT_ID ||
-    !env.GOOGLE_CLIENT_SECRET ||
-    !env.MICROSOFT_CLIENT_ID ||
-    !env.MICROSOFT_CLIENT_SECRET ||
-    !env.BETTER_AUTH_SECRET ||
-    !env.BETTER_AUTH_URL ||
-    !env.RESEND_API_KEY
-  ) {
-    throw new Error("Missing required environment variables for authentication");
+  // Validate required environment variables
+  const requiredEnvVars = [
+    "DISCORD_CLIENT_ID",
+    "DISCORD_CLIENT_SECRET",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "MICROSOFT_CLIENT_ID",
+    "MICROSOFT_CLIENT_SECRET",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "RESEND_API_KEY",
+  ];
+
+  const missingVars = requiredEnvVars.filter((varName) => !env[varName as keyof Env]);
+
+  if (missingVars.length > 0) {
+    throw new Error(
+      `Missing required environment variables for authentication: ${missingVars.join(", ")}`,
+    );
   }
 
   const db = createDb(d1);
@@ -35,18 +43,33 @@ export const auth = (d1: D1Database, env: Env) => {
     emailAndPassword: {
       enabled: true,
       autoSignIn: true,
-      sendResetPassword: ({ url, user }) => sendResetPasswordEmail({ url, user }, env),
+      sendResetPassword: async ({ url, user }) => {
+        const { error } = await tryCatch(sendResetPasswordEmail({ url, user }, env));
+        if (error) {
+          console.error("Failed to send reset password email:", error);
+        }
+      },
     },
     emailVerification: {
       autoSignInAfterVerification: true,
-      sendVerificationEmail: ({ url, user }) => sendVerificationEmail({ url, user }, env),
+      sendVerificationEmail: async ({ url, user }) => {
+        const { error } = await tryCatch(sendVerificationEmail({ url, user }, env));
+        if (error) {
+          console.error("Failed to send verification email:", error);
+        }
+      },
       sendOnSignUp: true,
     },
     user: {
       changeEmail: {
         enabled: true,
         sendChangeEmailVerification: async ({ user, newEmail, url }, request) => {
-          await sendChangeEmailVerification({ url, user, newEmail }, env);
+          const { error } = await tryCatch(
+            sendChangeEmailVerification({ url, user, newEmail }, env),
+          );
+          if (error) {
+            console.error("Failed to send change email verification:", error);
+          }
         },
       },
     },
