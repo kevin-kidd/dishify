@@ -9,6 +9,7 @@ import { generateRecipe } from "./queue";
 import { auth } from "./auth";
 import type { Env } from "./types";
 import type { RecipeQueueMessage } from "./types";
+import { tryCatch } from "@dishify/app/utils/helpers";
 
 export type Bindings = Env & {
   DB: D1Database;
@@ -58,7 +59,14 @@ export default {
   async queue(batch: MessageBatch<RecipeQueueMessage>, env: Bindings): Promise<void> {
     const db = createDb(env.DB);
     for (const message of batch.messages) {
-      await generateRecipe(message.body, db, env);
+      const { error } = await tryCatch(generateRecipe(message.body, db, env));
+      if (error) {
+        console.error("Failed to process queue message:", {
+          error: error.message,
+          recipeId: message.body.recipeId,
+          dishName: message.body.dishName,
+        });
+      }
     }
   },
 };
