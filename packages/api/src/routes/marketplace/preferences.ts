@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { RegionSchema, MarketplaceSlugSchema } from "../../../schemas/marketplace";
 import { getMarketplacesByRegion } from "./registry";
+import { tryCatch } from "@dishify/app/utils/helpers";
 
 export const marketplacePreferencesRouter = router({
   // Get all available marketplaces and user's preferences
@@ -29,17 +30,30 @@ export const marketplacePreferencesRouter = router({
       const marketplaces = getMarketplacesByRegion(region);
 
       // Get user's preferences
-      const preferences = await db
-        .select()
-        .from(UserMarketplacePreferencesTable)
-        .where(eq(UserMarketplacePreferencesTable.userId, user.id))
-        .all();
+      const { data: preferences, error: preferencesError } = await tryCatch(
+        db
+          .select()
+          .from(UserMarketplacePreferencesTable)
+          .where(eq(UserMarketplacePreferencesTable.userId, user.id))
+          .all(),
+      );
+
+      if (preferencesError) {
+        console.error("Failed to fetch user marketplace preferences:", {
+          error: preferencesError.message,
+          userId: user.id,
+        });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch marketplace preferences",
+        });
+      }
 
       return {
         marketplaces: marketplaces.map((m) => ({
           ...m,
-          isPreferred: preferences.some((p) => p.marketplaceSlug === m.slug),
-          preferenceOrder: preferences.find((p) => p.marketplaceSlug === m.slug)?.order ?? null,
+          isPreferred: preferences?.some((p) => p.marketplaceSlug === m.slug) || false,
+          preferenceOrder: preferences?.find((p) => p.marketplaceSlug === m.slug)?.order ?? null,
         })),
         region,
       };
@@ -76,20 +90,46 @@ export const marketplacePreferencesRouter = router({
       }
 
       // Delete existing preferences
-      await db
-        .delete(UserMarketplacePreferencesTable)
-        .where(eq(UserMarketplacePreferencesTable.userId, user.id));
+      const { error: deleteError } = await tryCatch(
+        db
+          .delete(UserMarketplacePreferencesTable)
+          .where(eq(UserMarketplacePreferencesTable.userId, user.id)),
+      );
+
+      if (deleteError) {
+        console.error("Failed to delete existing marketplace preferences:", {
+          error: deleteError.message,
+          userId: user.id,
+        });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update marketplace preferences",
+        });
+      }
 
       // Insert new preferences
       if (input.preferences.length > 0) {
-        await db.insert(UserMarketplacePreferencesTable).values(
-          input.preferences.map((p) => ({
-            userId: user.id,
-            marketplaceSlug: p.marketplaceSlug,
-            order: p.order,
-            region: input.region, // Store the region with the preference
-          })),
+        const { error: insertError } = await tryCatch(
+          db.insert(UserMarketplacePreferencesTable).values(
+            input.preferences.map((p) => ({
+              userId: user.id,
+              marketplaceSlug: p.marketplaceSlug,
+              order: p.order,
+              region: input.region, // Store the region with the preference
+            })),
+          ),
         );
+
+        if (insertError) {
+          console.error("Failed to insert new marketplace preferences:", {
+            error: insertError.message,
+            userId: user.id,
+          });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update marketplace preferences",
+          });
+        }
       }
 
       return {
