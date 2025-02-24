@@ -12,6 +12,7 @@ import { getMarketplacesByRegion, marketplaceRegistry, type MarketplaceSlug } fr
 import { MarketplaceError, type MarketplacePrice, type GetIngredientPriceResponse } from "./types";
 import { fetchSerperPrice } from "./serper";
 import { generateObject } from "ai";
+import { tryCatch } from "@dishify/app/utils/helpers";
 
 // One week in milliseconds
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
@@ -29,30 +30,42 @@ async function updateEstimatedCosts(
   shoppingList: { item: string; quantity: string }[],
 ) {
   // Get all prices for this recipe's ingredients in this region
-  const prices = await ctx.db
-    .select()
-    .from(MarketplacePricesTable)
-    .where(
-      and(
-        eq(MarketplacePricesTable.region, region),
-        inArray(
-          MarketplacePricesTable.ingredient,
-          shoppingList.map((item) => item.item),
+  const { data: prices, error: pricesError } = await tryCatch(
+    ctx.db
+      .select()
+      .from(MarketplacePricesTable)
+      .where(
+        and(
+          eq(MarketplacePricesTable.region, region),
+          inArray(
+            MarketplacePricesTable.ingredient,
+            shoppingList.map((item) => item.item),
+          ),
         ),
-      ),
-    )
-    .all();
+      )
+      .all(),
+  );
+
+  if (pricesError) {
+    console.error("Failed to fetch ingredient prices for cost estimation:", {
+      error: pricesError.message,
+      recipeId,
+      region,
+    });
+    return;
+  }
 
   // Calculate total cost and missing ingredients
   let totalCost = 0;
-  const missingIngredientsCount = shoppingList.length - prices.length;
+  const pricesArray = (prices as any[]) || [];
+  const missingIngredientsCount = shoppingList.length - pricesArray.length;
   const totalIngredientsCount = shoppingList.length;
 
   // Only update if we have prices for at least 70% of ingredients
-  if (prices.length >= totalIngredientsCount * 0.7) {
+  if (pricesArray.length >= totalIngredientsCount * 0.7) {
     // Sum up the lowest price for each ingredient
     const lowestPrices = new Map<string, number>();
-    for (const price of prices) {
+    for (const price of pricesArray) {
       const currentLowest = lowestPrices.get(price.ingredient);
       if (!currentLowest || price.price < currentLowest) {
         lowestPrices.set(price.ingredient, price.price);
@@ -61,29 +74,46 @@ async function updateEstimatedCosts(
     totalCost = Array.from(lowestPrices.values()).reduce((sum, price) => sum + price, 0);
 
     // Get current estimated costs
-    const recipe = await ctx.db
-      .select()
-      .from(EnglishRecipesTable)
-      .where(eq(EnglishRecipesTable.id, recipeId))
-      .get();
+    const { data: recipe, error: recipeError } = await tryCatch(
+      ctx.db.select().from(EnglishRecipesTable).where(eq(EnglishRecipesTable.id, recipeId)).get(),
+    );
 
-    const currentEstimatedCosts = recipe?.estimatedCosts || {};
+    if (recipeError) {
+      console.error("Failed to fetch recipe for cost estimation:", {
+        error: recipeError.message,
+        recipeId,
+      });
+      return;
+    }
+
+    const recipeData = (recipe as any) || {};
+    const currentEstimatedCosts = recipeData.estimatedCosts || {};
 
     // Update estimated costs for this region
-    await ctx.db
-      .update(EnglishRecipesTable)
-      .set({
-        estimatedCosts: {
-          ...currentEstimatedCosts,
-          [region]: {
-            cost: totalCost,
-            updatedAt: new Date().toISOString(),
-            missingIngredientsCount,
-            totalIngredientsCount,
+    const { error: updateError } = await tryCatch(
+      ctx.db
+        .update(EnglishRecipesTable)
+        .set({
+          estimatedCosts: {
+            ...currentEstimatedCosts,
+            [region]: {
+              cost: totalCost,
+              updatedAt: new Date().toISOString(),
+              missingIngredientsCount,
+              totalIngredientsCount,
+            },
           },
-        },
-      })
-      .where(eq(EnglishRecipesTable.id, recipeId));
+        })
+        .where(eq(EnglishRecipesTable.id, recipeId)),
+    );
+
+    if (updateError) {
+      console.error("Failed to update recipe estimated costs:", {
+        error: updateError.message,
+        recipeId,
+        region,
+      });
+    }
   }
 }
 
@@ -105,27 +135,44 @@ export const getIngredientPrice = publicProcedure
     let regionSource = "default";
 
     if (ctx.user) {
-      const preferences = await ctx.db
-        .select()
-        .from(UserMarketplacePreferencesTable)
-        .where(eq(UserMarketplacePreferencesTable.userId, ctx.user.id))
-        .orderBy(desc(UserMarketplacePreferencesTable.updatedAt))
-        .limit(1)
-        .all();
+      const { data: preferences, error: preferencesError } = await tryCatch(
+        ctx.db
+          .select()
+          .from(UserMarketplacePreferencesTable)
+          .where(eq(UserMarketplacePreferencesTable.userId, ctx.user.id))
+          .orderBy(desc(UserMarketplacePreferencesTable.updatedAt))
+          .limit(1)
+          .all(),
+      );
 
-      if (preferences.length > 0 && preferences[0].region) {
+      if (preferencesError) {
+        console.error("Failed to fetch user marketplace preferences:", {
+          error: preferencesError.message,
+          userId: ctx.user.id,
+        });
+      } else if (preferences && preferences.length > 0 && preferences[0].region) {
         region = preferences[0].region as z.infer<typeof RegionSchema>;
         regionSource = "user_preference";
       } else if (ctx.cf?.country && RegionSchema.safeParse(ctx.cf.country).success) {
         region = ctx.cf.country as z.infer<typeof RegionSchema>;
         regionSource = "cloudflare_detected";
 
-        await ctx.db.insert(UserMarketplacePreferencesTable).values({
-          userId: ctx.user.id,
-          marketplaceSlug: "default",
-          region,
-          order: 0,
-        });
+        const { error: insertError } = await tryCatch(
+          ctx.db.insert(UserMarketplacePreferencesTable).values({
+            userId: ctx.user.id,
+            marketplaceSlug: "default",
+            region,
+            order: 0,
+          }),
+        );
+
+        if (insertError) {
+          console.error("Failed to insert user marketplace preferences:", {
+            error: insertError.message,
+            userId: ctx.user.id,
+            region,
+          });
+        }
       }
     } else if (ctx.cf?.country && RegionSchema.safeParse(ctx.cf.country).success) {
       region = ctx.cf.country as z.infer<typeof RegionSchema>;
@@ -143,24 +190,38 @@ export const getIngredientPrice = publicProcedure
 
     // Check cache for this ingredient
     const cacheExpiration = roundToStartOfDay(new Date(now.getTime() - CACHE_DURATION));
-    const cachedPrices = await ctx.db
-      .select()
-      .from(MarketplacePricesTable)
-      .where(
-        and(
-          inArray(
-            MarketplacePricesTable.marketplaceSlug,
-            marketplaces.map((m) => m.slug),
+    const { data: cachedPrices, error: cachedPricesError } = await tryCatch(
+      ctx.db
+        .select()
+        .from(MarketplacePricesTable)
+        .where(
+          and(
+            inArray(
+              MarketplacePricesTable.marketplaceSlug,
+              marketplaces.map((m) => m.slug),
+            ),
+            eq(MarketplacePricesTable.ingredient, ingredient),
+            eq(MarketplacePricesTable.region, region),
+            gte(MarketplacePricesTable.lastUpdated, cacheExpiration),
           ),
-          eq(MarketplacePricesTable.ingredient, ingredient),
-          eq(MarketplacePricesTable.region, region),
-          gte(MarketplacePricesTable.lastUpdated, cacheExpiration),
-        ),
-      )
-      .all();
+        )
+        .all(),
+    );
+
+    if (cachedPricesError) {
+      console.error("Failed to fetch cached prices:", {
+        error: cachedPricesError.message,
+        ingredient,
+        region,
+      });
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch cached prices",
+      });
+    }
 
     // If we have valid cached prices for all marketplaces, return them
-    if (cachedPrices.length === marketplaces.length) {
+    if (cachedPrices && cachedPrices.length === marketplaces.length) {
       const prices: MarketplacePrice[] = cachedPrices.map((price) => {
         const marketplace = marketplaces.find((m) => m.slug === price.marketplaceSlug);
         if (!marketplace) {
@@ -186,26 +247,34 @@ export const getIngredientPrice = publicProcedure
 
     // Fetch fresh prices from Serper API
     try {
-      const serperResponse = await fetchSerperPrice(
-        { item: ingredient, quantity },
-        region,
-        ctx.env.SERPER_API_KEY,
+      const { data: serperResponse, error: serperError } = await tryCatch(
+        fetchSerperPrice({ item: ingredient, quantity }, region, ctx.env.SERPER_API_KEY),
       );
+
+      if (serperError) {
+        console.error("Failed to fetch prices from Serper API:", {
+          error: serperError.message,
+          ingredient,
+          region,
+        });
+        throw new MarketplaceError("Failed to fetch prices from search API", "API_ERROR", "serper");
+      }
 
       // Prepare shopping results for AI
       const shoppingResultsData = {
         ingredient,
         quantity,
-        results: serperResponse.shopping.slice(0, 5), // Only take first 5 results
+        results: serperResponse?.shopping.slice(0, 5) || [], // Only take first 5 results
       };
 
       // Use AI to structure prices
-      const response = await generateObject({
-        model: ctx.groq("llama-3.3-70b-versatile"),
-        messages: [
-          {
-            role: "system",
-            content: `You are a helpful assistant that structures product prices from shopping search results. You will:
+      const { data: response, error: aiError } = await tryCatch(
+        generateObject({
+          model: ctx.groq("llama-3.3-70b-versatile"),
+          messages: [
+            {
+              role: "system",
+              content: `You are a helpful assistant that structures product prices from shopping search results. You will:
 1. Extract prices and convert them to cents (smallest currency unit)
    - Remove currency symbols and convert string prices like "$1.99" to cents (199)
    - Handle various price formats (e.g., "$1.99", "$1,99", "1.99 USD")
@@ -217,10 +286,10 @@ export const getIngredientPrice = publicProcedure
 4. Structure the data according to our schema
 
 Skip any results where you cannot confidently extract a valid price.`,
-          },
-          {
-            role: "user",
-            content: `Valid marketplaces for region ${region}:
+            },
+            {
+              role: "user",
+              content: `Valid marketplaces for region ${region}:
 ${marketplaces.map((m) => `- ${m.name} (slug: ${m.slug})`).join("\n")}
 
 Structure these shopping results:
@@ -229,10 +298,20 @@ Ingredient: ${shoppingResultsData.ingredient}
 Quantity Needed: ${shoppingResultsData.quantity}
 Search Results:
 ${JSON.stringify(shoppingResultsData.results, null, 2)}`,
-          },
-        ],
-        schema: IngredientPriceResponseSchema,
-      });
+            },
+          ],
+          schema: IngredientPriceResponseSchema,
+        }),
+      );
+
+      if (aiError) {
+        console.error("Failed to structure prices with AI:", {
+          error: aiError.message,
+          ingredient,
+          region,
+        });
+        throw new MarketplaceError("Failed to structure prices", "API_ERROR", "ai");
+      }
 
       // Filter and store prices
       const validMarketplaceSlugs = new Set(marketplaces.map((m) => m.slug));
@@ -241,19 +320,21 @@ ${JSON.stringify(shoppingResultsData.results, null, 2)}`,
         z.infer<typeof IngredientPriceResponseSchema>["prices"][number]
       >();
 
-      for (const price of response.object.prices) {
-        if (!Object.keys(marketplaceRegistry).includes(price.marketplaceSlug)) {
-          continue;
-        }
+      if (response?.object?.prices) {
+        for (const price of response.object.prices) {
+          if (!Object.keys(marketplaceRegistry).includes(price.marketplaceSlug)) {
+            continue;
+          }
 
-        const marketplaceSlug = price.marketplaceSlug as MarketplaceSlug;
-        if (!validMarketplaceSlugs.has(marketplaceSlug)) {
-          continue;
-        }
+          const marketplaceSlug = price.marketplaceSlug as MarketplaceSlug;
+          if (!validMarketplaceSlugs.has(marketplaceSlug)) {
+            continue;
+          }
 
-        const currentLowest = lowestPriceByMarketplace.get(marketplaceSlug);
-        if (!currentLowest || price.price < currentLowest.price) {
-          lowestPriceByMarketplace.set(marketplaceSlug, price);
+          const currentLowest = lowestPriceByMarketplace.get(marketplaceSlug);
+          if (!currentLowest || price.price < currentLowest.price) {
+            lowestPriceByMarketplace.set(marketplaceSlug, price);
+          }
         }
       }
 
@@ -274,11 +355,90 @@ ${JSON.stringify(shoppingResultsData.results, null, 2)}`,
         };
 
         try {
-          await ctx.db.insert(MarketplacePricesTable).values(newPrice);
+          const { error: insertError } = await tryCatch(
+            ctx.db.insert(MarketplacePricesTable).values(newPrice),
+          );
+
+          if (insertError) {
+            // Check if it's a unique constraint error
+            if (
+              typeof insertError === "object" &&
+              insertError &&
+              "message" in insertError &&
+              typeof insertError.message === "string" &&
+              insertError.message.includes("UNIQUE constraint failed")
+            ) {
+              const { data: existingPrice, error: existingPriceError } = await tryCatch(
+                ctx.db
+                  .select()
+                  .from(MarketplacePricesTable)
+                  .where(
+                    and(
+                      eq(MarketplacePricesTable.marketplaceSlug, marketplaceSlug),
+                      eq(MarketplacePricesTable.ingredient, ingredient),
+                      eq(MarketplacePricesTable.region, region),
+                    ),
+                  )
+                  .get(),
+              );
+
+              if (existingPriceError) {
+                console.error("Failed to fetch existing price after constraint error:", {
+                  error: existingPriceError.message,
+                  marketplaceSlug,
+                  ingredient,
+                  region,
+                });
+                continue;
+              }
+
+              if (existingPrice && existingPrice.lastUpdated < cacheExpiration) {
+                const { error: updateError } = await tryCatch(
+                  ctx.db
+                    .update(MarketplacePricesTable)
+                    .set({
+                      price: price.price,
+                      unit: price.unit,
+                      url: price.url,
+                      title: price.title,
+                      lastUpdated: now,
+                    })
+                    .where(
+                      and(
+                        eq(MarketplacePricesTable.marketplaceSlug, marketplaceSlug),
+                        eq(MarketplacePricesTable.ingredient, ingredient),
+                        eq(MarketplacePricesTable.region, region),
+                      ),
+                    ),
+                );
+
+                if (updateError) {
+                  console.error("Failed to update existing price:", {
+                    error: updateError.message,
+                    marketplaceSlug,
+                    ingredient,
+                    region,
+                  });
+                  continue;
+                }
+              }
+            } else {
+              console.error("Failed to insert new price:", {
+                error: insertError.message,
+                marketplaceSlug,
+                ingredient,
+                region,
+              });
+              continue;
+            }
+          }
+
           const marketplace = marketplaces.find((m) => m.slug === marketplaceSlug);
           if (!marketplace) {
-            throw new Error(`Marketplace ${marketplaceSlug} not found in registry`);
+            console.error(`Marketplace ${marketplaceSlug} not found in registry`);
+            continue;
           }
+
           freshPrices.push({
             ...price,
             marketplaceName: marketplace.name,
@@ -288,65 +448,19 @@ ${JSON.stringify(shoppingResultsData.results, null, 2)}`,
               marketplace.defaultCurrency[region as keyof typeof marketplace.defaultCurrency],
           });
         } catch (error: unknown) {
-          if (
-            error &&
-            typeof error === "object" &&
-            "message" in error &&
-            typeof error.message === "string" &&
-            error.message.includes("UNIQUE constraint failed")
-          ) {
-            const existingPrice = await ctx.db
-              .select()
-              .from(MarketplacePricesTable)
-              .where(
-                and(
-                  eq(MarketplacePricesTable.marketplaceSlug, marketplaceSlug),
-                  eq(MarketplacePricesTable.ingredient, ingredient),
-                  eq(MarketplacePricesTable.region, region),
-                ),
-              )
-              .get();
-
-            if (existingPrice && existingPrice.lastUpdated < cacheExpiration) {
-              await ctx.db
-                .update(MarketplacePricesTable)
-                .set({
-                  price: price.price,
-                  unit: price.unit,
-                  url: price.url,
-                  title: price.title,
-                  lastUpdated: now,
-                })
-                .where(
-                  and(
-                    eq(MarketplacePricesTable.marketplaceSlug, marketplaceSlug),
-                    eq(MarketplacePricesTable.ingredient, ingredient),
-                    eq(MarketplacePricesTable.region, region),
-                  ),
-                );
-
-              const marketplace = marketplaces.find((m) => m.slug === marketplaceSlug);
-              if (!marketplace) {
-                throw new Error(`Marketplace ${marketplaceSlug} not found in registry`);
-              }
-              freshPrices.push({
-                ...price,
-                marketplaceName: marketplace.name,
-                marketplaceLogo: marketplace.logo,
-                marketplaceSlug: marketplace.slug,
-                currency:
-                  marketplace.defaultCurrency[region as keyof typeof marketplace.defaultCurrency],
-              });
-            }
-          } else {
-            throw error;
-          }
+          console.error("Unexpected error handling price insertion:", {
+            error: error instanceof Error ? error.message : "Unknown error",
+            marketplaceSlug,
+            ingredient,
+            region,
+          });
         }
       }
 
       // Combine cached and fresh prices
+      const cachedPricesArray = cachedPrices ?? [];
       const allPrices = [
-        ...cachedPrices.map((price) => {
+        ...cachedPricesArray.map((price) => {
           const marketplace = marketplaces.find((m) => m.slug === price.marketplaceSlug);
           if (!marketplace) {
             throw new Error(`Marketplace ${price.marketplaceSlug} not found in registry`);
