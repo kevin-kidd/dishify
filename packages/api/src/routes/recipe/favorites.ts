@@ -3,6 +3,7 @@ import { protectedProcedure, router } from "../../trpc";
 import { EnglishRecipesTable, FavoritesTable } from "../../db/schema/recipes";
 import { and, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { tryCatch } from "@dishify/app/utils/helpers";
 
 export const toggleFavorite = protectedProcedure
   .input(
@@ -16,9 +17,23 @@ export const toggleFavorite = protectedProcedure
     const { recipeId, recipe } = input;
 
     // Check if recipe exists
-    const existingRecipe = await db.query.EnglishRecipesTable.findFirst({
-      where: eq(EnglishRecipesTable.id, recipeId),
-    });
+    const { data: existingRecipe, error: recipeError } = await tryCatch(
+      db.query.EnglishRecipesTable.findFirst({
+        where: eq(EnglishRecipesTable.id, recipeId),
+      }),
+    );
+
+    if (recipeError) {
+      console.error("Failed to check if recipe exists:", {
+        error: recipeError.message,
+        recipeId,
+        userId: user.id,
+      });
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to toggle favorite status",
+      });
+    }
 
     if (!existingRecipe) {
       throw new TRPCError({
@@ -28,15 +43,43 @@ export const toggleFavorite = protectedProcedure
     }
 
     // Check if already favorited
-    const existingFavorite = await db.query.FavoritesTable.findFirst({
-      where: and(eq(FavoritesTable.userId, user.id), eq(FavoritesTable.recipeId, recipeId)),
-    });
+    const { data: existingFavorite, error: favoriteError } = await tryCatch(
+      db.query.FavoritesTable.findFirst({
+        where: and(eq(FavoritesTable.userId, user.id), eq(FavoritesTable.recipeId, recipeId)),
+      }),
+    );
+
+    if (favoriteError) {
+      console.error("Failed to check if recipe is already favorited:", {
+        error: favoriteError.message,
+        recipeId,
+        userId: user.id,
+      });
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to toggle favorite status",
+      });
+    }
 
     if (existingFavorite) {
       // Remove favorite
-      await db
-        .delete(FavoritesTable)
-        .where(and(eq(FavoritesTable.userId, user.id), eq(FavoritesTable.recipeId, recipeId)));
+      const { error: deleteError } = await tryCatch(
+        db
+          .delete(FavoritesTable)
+          .where(and(eq(FavoritesTable.userId, user.id), eq(FavoritesTable.recipeId, recipeId))),
+      );
+
+      if (deleteError) {
+        console.error("Failed to remove favorite:", {
+          error: deleteError.message,
+          recipeId,
+          userId: user.id,
+        });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to remove from favorites",
+        });
+      }
 
       return {
         favorited: false,
@@ -44,11 +87,25 @@ export const toggleFavorite = protectedProcedure
     }
 
     // Add favorite
-    await db.insert(FavoritesTable).values({
-      userId: user.id,
-      recipeId,
-      recipeData: recipe,
-    });
+    const { error: insertError } = await tryCatch(
+      db.insert(FavoritesTable).values({
+        userId: user.id,
+        recipeId,
+        recipeData: recipe,
+      }),
+    );
+
+    if (insertError) {
+      console.error("Failed to add favorite:", {
+        error: insertError.message,
+        recipeId,
+        userId: user.id,
+      });
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to add to favorites",
+      });
+    }
 
     return {
       favorited: true,
@@ -58,11 +115,24 @@ export const toggleFavorite = protectedProcedure
 export const getFavorites = protectedProcedure.query(async ({ ctx }) => {
   const { db, user } = ctx;
 
-  const favorites = await db.query.FavoritesTable.findMany({
-    where: eq(FavoritesTable.userId, user.id),
-  });
+  const { data: favorites, error } = await tryCatch(
+    db.query.FavoritesTable.findMany({
+      where: eq(FavoritesTable.userId, user.id),
+    }),
+  );
 
-  return favorites;
+  if (error) {
+    console.error("Failed to fetch favorites:", {
+      error: error.message,
+      userId: user.id,
+    });
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Failed to fetch favorites",
+    });
+  }
+
+  return favorites || [];
 });
 
 export const isFavorited = protectedProcedure
@@ -75,9 +145,23 @@ export const isFavorited = protectedProcedure
     const { db, user } = ctx;
     const { id } = input;
 
-    const favorite = await db.query.FavoritesTable.findFirst({
-      where: and(eq(FavoritesTable.userId, user.id), eq(FavoritesTable.recipeId, id)),
-    });
+    const { data: favorite, error } = await tryCatch(
+      db.query.FavoritesTable.findFirst({
+        where: and(eq(FavoritesTable.userId, user.id), eq(FavoritesTable.recipeId, id)),
+      }),
+    );
+
+    if (error) {
+      console.error("Failed to check if recipe is favorited:", {
+        error: error.message,
+        recipeId: id,
+        userId: user.id,
+      });
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to check favorite status",
+      });
+    }
 
     return !!favorite;
   });
