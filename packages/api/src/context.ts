@@ -7,6 +7,7 @@ import type { Bindings } from "./worker";
 import type { CfProperties } from "@cloudflare/workers-types";
 import { EnvSchema, type Env, type ValidatedEnv } from "./types";
 import { createGroq, type GroqProvider } from "@ai-sdk/groq";
+import { tryCatch } from "@dishify/app/utils/helpers";
 
 interface ApiContextProps {
   user: User | null;
@@ -29,14 +30,15 @@ export const createContext = async (
   const db = createDb(env.DB);
   const betterAuth = auth(env.DB, env);
 
-  const session = await betterAuth.api
-    .getSession({
+  const { data: session, error: sessionError } = await tryCatch(
+    betterAuth.api.getSession({
       headers: headers,
-    })
-    .catch((error) => {
-      console.error("Session retrieval error:", error);
-      return null;
-    });
+    }),
+  );
+
+  if (sessionError) {
+    console.error("Session retrieval error:", sessionError);
+  }
 
   let user = null;
   if (session?.user) {
