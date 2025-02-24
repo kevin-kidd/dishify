@@ -6,8 +6,10 @@ import {
   SpanishRecipeNameTable,
 } from "../../db/schema/recipes";
 import { publicProcedure } from "../../trpc";
-import { and, like, sql } from "drizzle-orm";
+import { like } from "drizzle-orm";
 import { AutoCompleteRequestSchema } from "../../../schemas/autocomplete";
+import { TRPCError } from "@trpc/server";
+import { tryCatch } from "@dishify/app/utils/helpers";
 
 export const autocomplete = publicProcedure
   .input(AutoCompleteRequestSchema)
@@ -32,15 +34,32 @@ export const autocomplete = publicProcedure
       default:
         table = EnglishRecipeNameTable;
     }
+
     if (!table) {
       throw new Error("Unsupported language");
     }
-    const results = await db
-      .select({ name: table.name })
-      .from(table)
-      .where(like(table.name, `${query}%`))
-      .limit(5);
-    return results.map((result) => result.name);
+
+    const { data: results, error } = await tryCatch(
+      db
+        .select({ name: table.name })
+        .from(table)
+        .where(like(table.name, `${query}%`))
+        .limit(5),
+    );
+
+    if (error) {
+      console.error("Failed to fetch autocomplete results:", {
+        error: error.message,
+        query,
+        language,
+      });
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch autocomplete suggestions",
+      });
+    }
+
+    return (results || []).map((result) => result.name);
   });
 
 type RecipeNameTable =
