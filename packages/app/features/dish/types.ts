@@ -38,4 +38,7 @@ export interface MarketplacePrice {
   marketplaceName: string;
   marketplaceLogo: string;
   currency: string;
+  marketplaceSlug: string;
+  title?: string;
+  unit?: string;
 }
