@@ -3,6 +3,7 @@ import { z } from "zod";
 import { protectedProcedure, publicProcedure, router } from "../../trpc";
 import { RecipeReactionsTable, EnglishRecipesTable } from "../../db/schema/recipes";
 import { TRPCError } from "@trpc/server";
+import { tryCatch } from "@dishify/app/utils/helpers";
 
 export const recipeReactionsRouter = router({
   getReactions: publicProcedure
@@ -13,11 +14,24 @@ export const recipeReactionsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       // First get the recipe ID from the slug
-      const recipe = await ctx.db
-        .select({ id: EnglishRecipesTable.id })
-        .from(EnglishRecipesTable)
-        .where(eq(EnglishRecipesTable.slug, input.slug))
-        .get();
+      const { data: recipe, error: recipeError } = await tryCatch(
+        ctx.db
+          .select({ id: EnglishRecipesTable.id })
+          .from(EnglishRecipesTable)
+          .where(eq(EnglishRecipesTable.slug, input.slug))
+          .get(),
+      );
+
+      if (recipeError) {
+        console.error("Failed to fetch recipe for reactions:", {
+          error: recipeError.message,
+          slug: input.slug,
+        });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch recipe reactions",
+        });
+      }
 
       if (!recipe) {
         throw new TRPCError({
@@ -26,23 +40,37 @@ export const recipeReactionsRouter = router({
         });
       }
 
-      const reactions = await ctx.db
-        .select()
-        .from(RecipeReactionsTable)
-        .where(eq(RecipeReactionsTable.recipeId, recipe.id))
-        .all();
+      const { data: reactions, error: reactionsError } = await tryCatch(
+        ctx.db
+          .select()
+          .from(RecipeReactionsTable)
+          .where(eq(RecipeReactionsTable.recipeId, recipe.id))
+          .all(),
+      );
+
+      if (reactionsError) {
+        console.error("Failed to fetch reactions:", {
+          error: reactionsError.message,
+          recipeId: recipe.id,
+          slug: input.slug,
+        });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch recipe reactions",
+        });
+      }
 
       // Get current user's reactions if they're authenticated
       const userReactions = ctx.user
         ? new Set(
-            reactions
+            (reactions || [])
               .filter((reaction) => reaction.userId === ctx.user?.id)
               .map((reaction) => reaction.emoji),
           )
         : new Set<string>();
 
       // Return count and hasReacted for each emoji
-      return reactions.reduce(
+      return (reactions || []).reduce(
         (acc, reaction) => {
           if (!acc[reaction.emoji]) {
             acc[reaction.emoji] = {
@@ -74,11 +102,25 @@ export const recipeReactionsRouter = router({
       }
 
       // First get the recipe ID from the slug
-      const recipe = await ctx.db
-        .select({ id: EnglishRecipesTable.id })
-        .from(EnglishRecipesTable)
-        .where(eq(EnglishRecipesTable.slug, input.slug))
-        .get();
+      const { data: recipe, error: recipeError } = await tryCatch(
+        ctx.db
+          .select({ id: EnglishRecipesTable.id })
+          .from(EnglishRecipesTable)
+          .where(eq(EnglishRecipesTable.slug, input.slug))
+          .get(),
+      );
+
+      if (recipeError) {
+        console.error("Failed to fetch recipe for reaction toggle:", {
+          error: recipeError.message,
+          slug: input.slug,
+          userId: user.id,
+        });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to toggle reaction",
+        });
+      }
 
       if (!recipe) {
         throw new TRPCError({
@@ -88,30 +130,74 @@ export const recipeReactionsRouter = router({
       }
 
       // Check if reaction already exists
-      const existingReaction = await ctx.db
-        .select()
-        .from(RecipeReactionsTable)
-        .where(
-          and(
-            eq(RecipeReactionsTable.recipeId, recipe.id),
-            eq(RecipeReactionsTable.userId, user.id),
-            eq(RecipeReactionsTable.emoji, input.emoji),
-          ),
-        )
-        .get();
+      const { data: existingReaction, error: existingReactionError } = await tryCatch(
+        ctx.db
+          .select()
+          .from(RecipeReactionsTable)
+          .where(
+            and(
+              eq(RecipeReactionsTable.recipeId, recipe.id),
+              eq(RecipeReactionsTable.userId, user.id),
+              eq(RecipeReactionsTable.emoji, input.emoji),
+            ),
+          )
+          .get(),
+      );
 
-      if (existingReaction) {
-        // Remove reaction
-        await ctx.db
-          .delete(RecipeReactionsTable)
-          .where(eq(RecipeReactionsTable.id, existingReaction.id));
-      } else {
-        // Add reaction
-        await ctx.db.insert(RecipeReactionsTable).values({
+      if (existingReactionError) {
+        console.error("Failed to check existing reaction:", {
+          error: existingReactionError.message,
           recipeId: recipe.id,
           userId: user.id,
           emoji: input.emoji,
         });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to toggle reaction",
+        });
+      }
+
+      if (existingReaction) {
+        // Remove reaction
+        const { error: deleteError } = await tryCatch(
+          ctx.db
+            .delete(RecipeReactionsTable)
+            .where(eq(RecipeReactionsTable.id, existingReaction.id)),
+        );
+
+        if (deleteError) {
+          console.error("Failed to delete reaction:", {
+            error: deleteError.message,
+            reactionId: existingReaction.id,
+            userId: user.id,
+          });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to remove reaction",
+          });
+        }
+      } else {
+        // Add reaction
+        const { error: insertError } = await tryCatch(
+          ctx.db.insert(RecipeReactionsTable).values({
+            recipeId: recipe.id,
+            userId: user.id,
+            emoji: input.emoji,
+          }),
+        );
+
+        if (insertError) {
+          console.error("Failed to add reaction:", {
+            error: insertError.message,
+            recipeId: recipe.id,
+            userId: user.id,
+            emoji: input.emoji,
+          });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to add reaction",
+          });
+        }
       }
     }),
 });
