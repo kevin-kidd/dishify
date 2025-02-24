@@ -6,6 +6,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import type { RecipeQueueMessage } from "../../types";
+import { tryCatch } from "@dishify/app/utils/helpers";
 
 const RECIPE_STATE_PREFIX = "recipe_state:";
 const IMAGE_DATA_PREFIX = "image_data:";
@@ -63,43 +64,45 @@ export const generate = publicProcedure
 
     // If we have a retryId, check that recipe first
     if (retryId) {
-      const retryingRecipe = await ctx.db
-        .select()
-        .from(EnglishRecipesTable)
-        .where(eq(EnglishRecipesTable.id, retryId))
-        .get();
+      const { data: retryingRecipe } = await tryCatch(
+        ctx.db.select().from(EnglishRecipesTable).where(eq(EnglishRecipesTable.id, retryId)).get(),
+      );
 
       if (retryingRecipe && retryingRecipe.status === "error") {
         existingRecipeId = retryingRecipe.id;
       }
     } else if (!image && dishName) {
       // First check if we're retrying a specific recipe
-      const retryingRecipe = await ctx.db
-        .select()
-        .from(EnglishRecipesTable)
-        .where(
-          and(
-            eq(EnglishRecipesTable.searchQuery, dishName),
-            eq(EnglishRecipesTable.status, "error"),
-          ),
-        )
-        .get();
+      const { data: retryingRecipe } = await tryCatch(
+        ctx.db
+          .select()
+          .from(EnglishRecipesTable)
+          .where(
+            and(
+              eq(EnglishRecipesTable.searchQuery, dishName),
+              eq(EnglishRecipesTable.status, "error"),
+            ),
+          )
+          .get(),
+      );
 
       if (retryingRecipe) {
         // We found the specific recipe we're retrying
         existingRecipeId = retryingRecipe.id;
       } else {
         // Check for existing recipes with this name
-        const existingRecipe = await ctx.db
-          .select()
-          .from(EnglishRecipesTable)
-          .where(
-            and(
-              eq(EnglishRecipesTable.name, dishName.toLowerCase()),
-              ne(EnglishRecipesTable.status, "moved"),
-            ),
-          )
-          .get();
+        const { data: existingRecipe } = await tryCatch(
+          ctx.db
+            .select()
+            .from(EnglishRecipesTable)
+            .where(
+              and(
+                eq(EnglishRecipesTable.name, dishName.toLowerCase()),
+                ne(EnglishRecipesTable.status, "moved"),
+              ),
+            )
+            .get(),
+        );
 
         if (existingRecipe) {
           if (existingRecipe.status === "completed") {
@@ -111,19 +114,30 @@ export const generate = publicProcedure
           }
 
           // Check if recipe is stuck in generating state
-          const isGenerating = await ctx.recipeState.get(RECIPE_STATE_PREFIX + existingRecipe.id);
+          const { data: isGenerating } = await tryCatch(
+            ctx.recipeState.get(RECIPE_STATE_PREFIX + existingRecipe.id),
+          );
 
           // If recipe exists but is stuck in generating state, allow retrying
           if (existingRecipe.status === "generating" && !isGenerating) {
             // Recipe is stuck, update status to error and allow retry
-            await ctx.db
-              .update(EnglishRecipesTable)
-              .set({
-                status: "error",
-                errorMessage: "Recipe generation was interrupted. Please try again.",
-                updatedAt: new Date().toISOString(),
-              })
-              .where(eq(EnglishRecipesTable.id, existingRecipe.id));
+            const { error: updateError } = await tryCatch(
+              ctx.db
+                .update(EnglishRecipesTable)
+                .set({
+                  status: "error",
+                  errorMessage: "Recipe generation was interrupted. Please try again.",
+                  updatedAt: new Date().toISOString(),
+                })
+                .where(eq(EnglishRecipesTable.id, existingRecipe.id)),
+            );
+
+            if (updateError) {
+              console.error("Failed to update stuck recipe status:", {
+                error: updateError.message,
+                recipeId: existingRecipe.id,
+              });
+            }
 
             existingRecipeId = existingRecipe.id;
           } else if (existingRecipe.status === "generating" && isGenerating) {
@@ -153,16 +167,18 @@ export const generate = publicProcedure
         }
 
         // Also check if there's a completed recipe with this name that was moved
-        const movedRecipe = await ctx.db
-          .select()
-          .from(EnglishRecipesTable)
-          .where(
-            and(
-              eq(EnglishRecipesTable.name, dishName.toLowerCase()),
-              eq(EnglishRecipesTable.status, "moved"),
-            ),
-          )
-          .get();
+        const { data: movedRecipe } = await tryCatch(
+          ctx.db
+            .select()
+            .from(EnglishRecipesTable)
+            .where(
+              and(
+                eq(EnglishRecipesTable.name, dishName.toLowerCase()),
+                eq(EnglishRecipesTable.status, "moved"),
+              ),
+            )
+            .get(),
+        );
 
         if (movedRecipe?.movedToRecipeId && movedRecipe?.movedToSlug) {
           // If we find a moved recipe, return the target recipe details
@@ -181,19 +197,22 @@ export const generate = publicProcedure
     const searchQuery =
       typeof dishName === "string" ? dishName.toLowerCase() : `recipe-${recipeId}`;
 
-    try {
-      // Check if this recipe is already being generated
-      const isGenerating = await ctx.recipeState.get(RECIPE_STATE_PREFIX + recipeId);
-      if (isGenerating) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Recipe is already being generated. Please wait.",
-        });
-      }
+    // Check if this recipe is already being generated
+    const { data: isGenerating } = await tryCatch(
+      ctx.recipeState.get(RECIPE_STATE_PREFIX + recipeId),
+    );
 
-      // For image queries, if we don't have the image data, set error status
-      if (image === undefined && dishName === undefined) {
-        await ctx.db
+    if (isGenerating) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Recipe is already being generated. Please wait.",
+      });
+    }
+
+    // For image queries, if we don't have the image data, set error status
+    if (image === undefined && dishName === undefined) {
+      const { error: insertError } = await tryCatch(
+        ctx.db
           .insert(EnglishRecipesTable)
           .values({
             id: recipeId,
@@ -221,18 +240,31 @@ export const generate = publicProcedure
               status: "error",
               errorMessage: "Image data was lost. Please try uploading the image again.",
             },
-          });
+          }),
+      );
 
-        return {
-          id: recipeId,
-          slug: initialSlug,
-          status: "error" as const,
-          errorMessage: "Image data was lost. Please try uploading the image again.",
-        } satisfies GenerateResponse;
+      if (insertError) {
+        console.error("Failed to insert recipe with error status:", {
+          error: insertError.message,
+          recipeId,
+        });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to start recipe generation. Please try again.",
+        });
       }
 
-      // Save initial recipe entry with generating status
-      await ctx.db
+      return {
+        id: recipeId,
+        slug: initialSlug,
+        status: "error" as const,
+        errorMessage: "Image data was lost. Please try uploading the image again.",
+      } satisfies GenerateResponse;
+    }
+
+    // Save initial recipe entry with generating status
+    const { error: insertError } = await tryCatch(
+      ctx.db
         .insert(EnglishRecipesTable)
         .values({
           id: recipeId,
@@ -259,40 +291,12 @@ export const generate = publicProcedure
             status: "generating",
             updatedAt: new Date().toISOString(),
           },
-        });
+        }),
+    );
 
-      // Add to KV with expiration
-      await ctx.recipeState.put(RECIPE_STATE_PREFIX + recipeId, "true", {
-        expirationTtl: Math.ceil(GENERATION_TIMEOUT / 1000), // Convert ms to seconds
-      });
-
-      // Store image data in KV if present
-      if (image) {
-        await ctx.recipeState.put(IMAGE_DATA_PREFIX + recipeId, JSON.stringify(image), {
-          expirationTtl: Math.ceil(GENERATION_TIMEOUT / 1000),
-        });
-      }
-
-      // Add to queue with just the reference
-      const queueMessage: RecipeQueueMessage = {
-        recipeId,
-        dishName,
-        hasImage: !!image,
-      };
-      await ctx.recipeQueue.send(queueMessage);
-
-      // Return immediately with the recipe ID, slug and generating status
-      return {
-        id: recipeId,
-        slug: initialSlug,
-        status: "generating",
-      } satisfies GenerateResponse;
-    } catch (error) {
-      // Clean up if initial save fails
-      await ctx.recipeState.delete(RECIPE_STATE_PREFIX + recipeId);
-      console.error("Failed to create initial recipe entry", {
-        error,
-        query: dishName || "image",
+    if (insertError) {
+      console.error("Failed to insert initial recipe entry:", {
+        error: insertError.message,
         recipeId,
       });
       throw new TRPCError({
@@ -300,4 +304,76 @@ export const generate = publicProcedure
         message: "Failed to start recipe generation. Please try again.",
       });
     }
+
+    // Add to KV with expiration
+    const { error: kvError } = await tryCatch(
+      ctx.recipeState.put(RECIPE_STATE_PREFIX + recipeId, "true", {
+        expirationTtl: Math.ceil(GENERATION_TIMEOUT / 1000), // Convert ms to seconds
+      }),
+    );
+
+    if (kvError) {
+      console.error("Failed to add recipe to KV state:", {
+        error: kvError.message,
+        recipeId,
+      });
+      // Continue despite KV error, as the recipe is already in the database
+    }
+
+    // Store image data in KV if present
+    if (image) {
+      const { error: imageKvError } = await tryCatch(
+        ctx.recipeState.put(IMAGE_DATA_PREFIX + recipeId, JSON.stringify(image), {
+          expirationTtl: Math.ceil(GENERATION_TIMEOUT / 1000),
+        }),
+      );
+
+      if (imageKvError) {
+        console.error("Failed to store image data in KV:", {
+          error: imageKvError.message,
+          recipeId,
+        });
+        // Continue despite KV error, but the image processing might fail
+      }
+    }
+
+    // Add to queue with just the reference
+    const queueMessage: RecipeQueueMessage = {
+      recipeId,
+      dishName,
+      hasImage: !!image,
+    };
+
+    const { error: queueError } = await tryCatch(ctx.recipeQueue.send(queueMessage));
+
+    if (queueError) {
+      console.error("Failed to add recipe to queue:", {
+        error: queueError.message,
+        recipeId,
+      });
+
+      // Clean up if queue send fails
+      const { error: cleanupError } = await tryCatch(
+        ctx.recipeState.delete(RECIPE_STATE_PREFIX + recipeId),
+      );
+
+      if (cleanupError) {
+        console.error("Failed to clean up KV state after queue error:", {
+          error: cleanupError.message,
+          recipeId,
+        });
+      }
+
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to start recipe generation. Please try again.",
+      });
+    }
+
+    // Return immediately with the recipe ID, slug and generating status
+    return {
+      id: recipeId,
+      slug: initialSlug,
+      status: "generating",
+    } satisfies GenerateResponse;
   });
