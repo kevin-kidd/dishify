@@ -1,4 +1,4 @@
-import { TrendingSection } from "app/features/home/trending";
+import { HomeScreen } from "app/features/home/screen";
 import { serverClient } from "utils/trpc";
 
 export default async function HomePage() {
@@ -11,7 +11,7 @@ export default async function HomePage() {
 
   return (
     <main>
-      <TrendingSection />
+      <HomeScreen />
     </main>
   );
 }
