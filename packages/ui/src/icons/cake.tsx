@@ -2,7 +2,7 @@ import React from "react";
 import { Path, Svg } from "react-native-svg";
 import type { IconProps } from "../types";
 
-export const Clock = ({ className, ...props }: IconProps) => {
+export const Cake = ({ className, ...props }: IconProps) => {
   return (
     <Svg
       className={className}
@@ -16,8 +16,15 @@ export const Clock = ({ className, ...props }: IconProps) => {
       strokeLinejoin="round"
       {...props}
     >
-      <Path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-      <Path d="M12 6v6l4 2" />
+      <Path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
+      <Path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" />
+      <Path d="M2 21h20" />
+      <Path d="M7 8v2" />
+      <Path d="M12 8v2" />
+      <Path d="M17 8v2" />
+      <Path d="M7 4h.01" />
+      <Path d="M12 4h.01" />
+      <Path d="M17 4h.01" />
     </Svg>
   );
 };
