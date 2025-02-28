@@ -41,15 +41,13 @@ export function TrendingSection() {
   const recipesToRender: TrendingRecipe[] = isLoading ? LOADING_CARDS : trendingRecipes ?? [];
 
   return (
-    <section className="w-full py-20">
+    <section className="w-full py-12 max-w-7xl mx-auto">
       <div className="mx-auto w-full">
-        <div className="mb-8 flex items-center justify-between px-2 sm:px-6">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-semibold">Trending Recipes</h2>
-            <p className="mt-2 text-sage-500 text-sm sm:text-base">
-              Discover what others are cooking
-            </p>
-          </div>
+        <div className="mb-8 px-4 sm:px-6">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-sage-900">Trending Recipes</h2>
+          <p className="mt-2 text-sage-500 text-sm sm:text-base">
+            Discover what others are cooking
+          </p>
         </div>
 
         <div className="relative overflow-hidden">
