@@ -174,9 +174,11 @@ export function SeasonalSection() {
   const seasonName = season.charAt(0).toUpperCase() + season.slice(1);
 
   return (
-    <Section className="py-12 px-4 sm:px-6 w-full max-w-7xl mx-auto">
-      <Div className="mb-8 px-4 sm:px-6">
-        <H2 className="text-2xl sm:text-3xl font-semibold text-sage-900">{seasonName} Favorites</H2>
+    <Section className="pt-12 pb-8 w-full max-w-7xl mx-auto">
+      <Div className="mb-4 px-4 sm:px-6">
+        <H2 className="text-2xl sm:text-3xl font-semibold text-sage-900 mb-0">
+          {seasonName} Favorites
+        </H2>
         <P className="mt-2 text-sage-500 text-sm sm:text-base">Seasonal dishes to try now</P>
       </Div>
 
