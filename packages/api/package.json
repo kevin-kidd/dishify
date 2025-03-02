@@ -38,13 +38,13 @@
     "resend": "^4.1.2",
     "superjson": "2.2.1",
     "valibot": "^1.0.0-beta.14",
-    "workers-ai-provider": "^0.0.13"
+    "workers-ai-provider": "^0.1.1"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "4.20240925.0",
+    "@cloudflare/workers-types": "4.20250224.0",
     "bun-types": "^1.2.1",
     "drizzle-kit": "^0.30.4",
     "typescript": "5.5.4",
-    "wrangler": "3.108.1"
+    "wrangler": "3.111.0"
   }
 }
