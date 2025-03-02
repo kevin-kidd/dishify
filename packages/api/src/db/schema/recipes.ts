@@ -177,9 +177,7 @@ export const FavoritesTable = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
   },
-  (table) => ({
-    userRecipeIdx: uniqueIndex("user_recipe_idx").on(table.userId, table.recipeId),
-  }),
+  (table) => [uniqueIndex("user_recipe_idx").on(table.userId, table.recipeId)],
 );
 
 export const FavoritesTableRelations = relations(FavoritesTable, ({ one }) => ({
@@ -216,13 +214,7 @@ export const RecipeReactionsTable = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
   },
-  (table) => ({
-    userRecipeEmojiIdx: uniqueIndex("user_recipe_emoji_idx").on(
-      table.userId,
-      table.recipeId,
-      table.emoji,
-    ),
-  }),
+  (table) => [uniqueIndex("user_recipe_emoji_idx").on(table.userId, table.recipeId, table.emoji)],
 );
 
 export const RecipeReactionsTableRelations = relations(RecipeReactionsTable, ({ one }) => ({
@@ -240,3 +232,73 @@ export type RecipeReaction = InferSelectModel<typeof RecipeReactionsTable>;
 export type InsertRecipeReaction = InferInsertModel<typeof RecipeReactionsTable>;
 export const insertRecipeReactionSchema = createInsertSchema(RecipeReactionsTable);
 export const selectRecipeReactionSchema = createSelectSchema(RecipeReactionsTable);
+
+// Featured Recipe table
+export const FeaturedRecipeTable = sqliteTable("featured_recipes", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  recipeId: text("recipe_id")
+    .notNull()
+    .references(() => EnglishRecipesTable.id),
+  slug: text("slug").notNull(),
+  dishName: text("dish_name").notNull(),
+  description: text("description").notNull(),
+  imageUrl: text("image_url").notNull(),
+  cuisine: text("cuisine", {
+    enum: [
+      "British",
+      "Mexican",
+      "Italian",
+      "Japanese",
+      "Chinese",
+      "Indian",
+      "French",
+      "Spanish",
+      "German",
+      "American",
+      "Thai",
+      "Vietnamese",
+      "Brazilian",
+      "Moroccan",
+      "Turkish",
+      "Korean",
+      "Russian",
+      "Greek",
+      "Dutch",
+      "Portuguese",
+      "Belgian",
+      "Swedish",
+      "Norwegian",
+      "Danish",
+      "Finnish",
+      "Czech",
+      "Polish",
+      "Hungarian",
+      "Other",
+      "Unknown",
+    ],
+  }).notNull(),
+  difficulty: text("difficulty").notNull(),
+  cookingTime: text("cooking_time").notNull(),
+  servings: text("servings").notNull(),
+  keyIngredients: text("key_ingredients", { mode: "json" }).$type<string[]>(),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+export const FeaturedRecipeTableRelations = relations(FeaturedRecipeTable, ({ one }) => ({
+  recipe: one(EnglishRecipesTable, {
+    fields: [FeaturedRecipeTable.recipeId],
+    references: [EnglishRecipesTable.id],
+  }),
+}));
+
+export type FeaturedRecipe = InferSelectModel<typeof FeaturedRecipeTable>;
+export type InsertFeaturedRecipe = InferInsertModel<typeof FeaturedRecipeTable>;
+export const insertFeaturedRecipeSchema = createInsertSchema(FeaturedRecipeTable);
+export const selectFeaturedRecipeSchema = createSelectSchema(FeaturedRecipeTable);
