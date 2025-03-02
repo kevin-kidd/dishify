@@ -82,9 +82,9 @@ export function CategoriesSection() {
   const cardSize = width < 640 ? (width - 48) / 2 : 160; // Slightly smaller cards to fit better
 
   return (
-    <Div className="py-12 px-4 sm:px-6 w-full max-w-7xl mx-auto">
+    <Div className="pt-12 pb-8 w-full max-w-7xl mx-auto">
       <Div className="mb-8 px-4 sm:px-6">
-        <H2 className="text-2xl sm:text-3xl font-semibold text-sage-900">Categories</H2>
+        <H2 className="text-2xl sm:text-3xl font-semibold text-sage-900 mb-0">Categories</H2>
         <P className="mt-2 text-sage-500 text-sm sm:text-base">Browse recipes by cuisine</P>
       </Div>
 
@@ -122,9 +122,9 @@ export function CategoriesSection() {
               >
                 <Div className="flex-1 flex flex-col items-center justify-center">
                   <Div
-                    className={`rounded-full p-3 mb-3 bg-white shadow-sm transition-all duration-300 ${category.borderColor}`}
+                    className={`rounded-full p-2 mb-3 bg-white shadow-sm transition-all duration-300 ${category.borderColor}`}
                   >
-                    <category.icon className={`w-8 h-8 ${category.iconColor}`} />
+                    <category.icon className={`w-6 h-6 ${category.iconColor}`} />
                   </Div>
                   <P
                     className={`font-semibold text-center ${category.textColor} transition-all duration-300`}
