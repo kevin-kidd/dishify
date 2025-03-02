@@ -32,8 +32,17 @@ export interface Env extends ValidatedEnv {
   RECIPE_QUEUE: Queue<RecipeQueueMessage>;
 }
 
+// Bindings type for Cloudflare Workers
+export type Bindings = Env & {
+  DB: D1Database;
+  AI: Ai;
+  RECIPE_STATE: KVNamespace;
+  AuthKV: KVNamespace;
+};
+
 export interface RecipeQueueMessage {
   recipeId: string;
   dishName?: string;
   hasImage: boolean;
+  type?: "recipe" | "featured"; // Type of generation, defaults to 'recipe' if not specified
 }
