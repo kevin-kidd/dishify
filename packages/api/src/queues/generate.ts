@@ -1,32 +1,23 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import type { Ai, BaseAiTextGenerationModels } from "@cloudflare/workers-types";
-import { EnglishRecipeNameTable, EnglishRecipesTable } from "./db/schema/recipes";
+import type { Ai } from "@cloudflare/workers-types";
+import { EnglishRecipeNameTable, EnglishRecipesTable } from "../db/schema/recipes";
 import { eq, and, ne } from "drizzle-orm";
-import { type RecipeResponse, RecipeResponseSchema } from "../schemas/recipe-response";
+import { type RecipeResponse, RecipeResponseSchema } from "../../schemas/recipe-response";
 import { createGroq } from "@ai-sdk/groq";
 import { type CoreMessage, generateObject, generateText } from "ai";
 import { createWorkersAI } from "workers-ai-provider";
-import type * as recipeSchema from "./db/schema/recipes";
-import type * as userSchema from "./db/schema/user";
-import type { RecipeQueueMessage } from "./types";
+import type * as recipeSchema from "../db/schema/recipes";
+import type * as userSchema from "../db/schema/user";
+import type { Bindings, RecipeQueueMessage } from "../types";
 import { tryCatch } from "@dishify/app/utils/helpers";
 
 const RECIPE_STATE_PREFIX = "recipe_state:";
 const IMAGE_DATA_PREFIX = "image_data:";
 
-interface Env {
-  DB: D1Database;
-  AI: Ai;
-  GROQ_API_KEY: string;
-  ACCOUNT_ID: string;
-  AI_GATEWAY_ID: string;
-  RECIPE_STATE: KVNamespace;
-}
-
 export async function generateRecipe(
   { recipeId, dishName, hasImage }: RecipeQueueMessage,
   db: DrizzleD1Database<typeof recipeSchema & typeof userSchema>,
-  env: Env,
+  env: Bindings,
 ) {
   let provider = "groq";
   const startTime = Date.now();
