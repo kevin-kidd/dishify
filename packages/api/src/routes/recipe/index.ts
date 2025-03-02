@@ -5,6 +5,7 @@ import { getRecipe, getRecipeBySlug } from "./get";
 import { recipeFavoritesRouter } from "./favorites";
 import { recipeReactionsRouter } from "./reactions";
 import { trending } from "./trending";
+import { getFeaturedRecipe } from "./featured";
 
 export const recipeRouter = router({
   generate,
@@ -14,6 +15,7 @@ export const recipeRouter = router({
   favorites: recipeFavoritesRouter,
   reactions: recipeReactionsRouter,
   trending,
+  featured: getFeaturedRecipe,
 });
 
 export type RecipeRouter = typeof recipeRouter;
