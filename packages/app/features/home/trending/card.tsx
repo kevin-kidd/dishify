@@ -7,7 +7,6 @@ import { Skeleton } from "@dishify/ui";
 import { Link } from "solito/link";
 import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
 import type { RecipeResponse } from "@dishify/api/schemas/recipe-response";
-import { View } from "react-native";
 
 export type TrendingCardProps = {
   dishName: string;
