@@ -3,9 +3,9 @@ import { createDb } from "./db/client";
 import { auth } from "./auth";
 import type { User } from "better-auth/types";
 import type { dbSchema } from "./db/client";
-import type { Bindings } from "./worker";
+import type { Bindings } from "./types";
 import type { CfProperties } from "@cloudflare/workers-types";
-import { EnvSchema, type Env, type ValidatedEnv } from "./types";
+import { EnvSchema, type RecipeQueueMessage, type ValidatedEnv } from "./types";
 import { createGroq, type GroqProvider } from "@ai-sdk/groq";
 import { tryCatch } from "@dishify/app/utils/helpers";
 
@@ -14,8 +14,9 @@ interface ApiContextProps {
   db: DrizzleD1Database<typeof dbSchema>;
   groq: GroqProvider;
   recipeState: KVNamespace;
-  recipeQueue: Queue<{ recipeId: string; dishName?: string; hasImage: boolean }>;
+  recipeQueue: Queue<RecipeQueueMessage>;
   env: ValidatedEnv;
+  ai: Ai;
   cf?: CfProperties<unknown>;
 }
 
@@ -56,6 +57,7 @@ export const createContext = async (
     recipeState: env.RECIPE_STATE,
     recipeQueue: env.RECIPE_QUEUE,
     env: validatedEnv,
+    ai: env.AI,
     cf,
   };
 };
