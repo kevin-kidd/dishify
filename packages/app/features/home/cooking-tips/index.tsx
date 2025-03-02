@@ -8,6 +8,7 @@ import { Knife } from "@dishify/ui/src/icons/knife";
 import { Flame } from "@dishify/ui/src/icons/flame";
 import { Scale } from "@dishify/ui/src/icons/scale";
 import { ChefHat } from "@dishify/ui/src/icons/chef-hat";
+import { MotiView } from "moti";
 
 // Define the type for cooking tips
 type CookingTip = {
@@ -113,21 +114,23 @@ export function CookingTipsSection() {
   const tips = selectedCategory?.tips || [];
 
   return (
-    <Section className="py-12 px-4 sm:px-6 w-full max-w-7xl mx-auto">
-      <Div className="mb-8 px-4 sm:px-6">
-        <H2 className="text-2xl sm:text-3xl font-semibold text-sage-900">Cooking Tips</H2>
+    <Section className="pt-12 pb-8 w-full max-w-7xl mx-auto">
+      <Div className="mb-4 px-4 sm:px-6">
+        <H2 className="text-2xl sm:text-3xl font-semibold text-sage-900 mb-0">Cooking Tips</H2>
         <P className="mt-2 text-sage-500 text-sm sm:text-base">
           Master essential techniques in your kitchen
         </P>
       </Div>
 
-      <Card className="p-0 overflow-hidden shadow-md border-0 rounded-xl hover:shadow-lg transition-all duration-300 mx-4 sm:mx-6">
+      <Card className="p-0 overflow-hidden border-0 rounded-xl shadow-md mx-4 sm:mx-6">
         <Div className={`flex flex-col ${!isMobile ? "sm:flex-row" : ""}`}>
           {/* Sidebar for categories */}
           <Div
             className={`${!isMobile ? "sm:w-1/3 md:w-1/4" : ""} bg-sage-50 border-r border-sage-100`}
           >
-            <Div className={`flex ${isMobile ? "flex-row overflow-x-auto py-3" : "flex-col p-3"}`}>
+            <Div
+              className={`flex ${isMobile ? "flex-row overflow-x-auto py-3" : "flex-col p-3 my-auto"}`}
+            >
               {cookingTips.map((category) => (
                 <Div
                   key={category.id}
@@ -142,7 +145,7 @@ export function CookingTipsSection() {
                       }`}
                     >
                       <Div
-                        className={`mr-3 flex-shrink-0 transition-transform duration-300 ${
+                        className={`mr-3 ml-1 flex-shrink-0 transition-transform duration-300 ${
                           activeCategory === category.id ? "scale-110" : ""
                         }`}
                       >
@@ -165,7 +168,7 @@ export function CookingTipsSection() {
           {/* Content area */}
           <Div className={`${!isMobile ? "sm:w-2/3 md:w-3/4" : ""} p-5 sm:p-6`}>
             {selectedCategory && (
-              <Div className="animate-fadeIn">
+              <Div>
                 <H3 className="text-xl font-medium text-sage-900 mb-4 flex items-center">
                   {selectedCategory.icon && <Div className="mr-2">{selectedCategory.icon}</Div>}
                   {selectedCategory.name}
@@ -174,10 +177,25 @@ export function CookingTipsSection() {
                   {tips.map((tip, index) => (
                     <Div
                       key={tip.id}
-                      className="pb-4 border-b border-sage-100 last:border-0 last:pb-0 transition-all duration-300 hover:translate-x-1"
-                      style={{ animationDelay: `${index * 100}ms` }}
+                      className="pb-4 border-b border-sage-100 last:border-0 last:pb-0"
                     >
-                      <P className="text-sage-700 leading-relaxed">{tip.text}</P>
+                      <MotiView
+                        from={{
+                          opacity: 0,
+                          translateY: 10,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          translateY: 0,
+                        }}
+                        transition={{
+                          type: "timing",
+                          duration: 400,
+                          delay: index * 100, // Staggered delay based on index
+                        }}
+                      >
+                        <P className="text-sage-700 leading-relaxed">{tip.text}</P>
+                      </MotiView>
                     </Div>
                   ))}
                 </Div>
