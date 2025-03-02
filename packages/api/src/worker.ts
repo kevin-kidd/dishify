@@ -5,19 +5,12 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { createDb } from "./db/client";
-import { generateRecipe } from "./queue";
+import { generateRecipe } from "./queues/generate";
 import { auth } from "./auth";
-import type { Env } from "./types";
+import type { Bindings } from "./types";
 import type { RecipeQueueMessage } from "./types";
 import { tryCatch } from "@dishify/app/utils/helpers";
-
-export type Bindings = Env & {
-  DB: D1Database;
-  AI: Ai;
-  RECIPE_STATE: KVNamespace;
-  RECIPE_QUEUE: Queue;
-  AuthKV: KVNamespace;
-};
+import { generateFeaturedRecipe } from "./queues/featured";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -59,13 +52,24 @@ export default {
   async queue(batch: MessageBatch<RecipeQueueMessage>, env: Bindings): Promise<void> {
     const db = createDb(env.DB);
     for (const message of batch.messages) {
-      const { error } = await tryCatch(generateRecipe(message.body, db, env));
-      if (error) {
-        console.error("Failed to process queue message:", {
-          error: error.message,
-          recipeId: message.body.recipeId,
-          dishName: message.body.dishName,
-        });
+      // Check if this is a featured recipe generation or regular recipe generation
+      if (message.body.type === "featured") {
+        const { error } = await tryCatch(generateFeaturedRecipe(env, db));
+        if (error) {
+          console.error("Failed to process featured recipe queue message:", {
+            error: error.message,
+          });
+        }
+      } else {
+        // Regular recipe generation
+        const { error } = await tryCatch(generateRecipe(message.body, db, env));
+        if (error) {
+          console.error("Failed to process recipe queue message:", {
+            error: error.message,
+            recipeId: message.body.recipeId,
+            dishName: message.body.dishName,
+          });
+        }
       }
     }
   },
