@@ -7,6 +7,7 @@ import { Carousel, CarouselContent, CarouselItem } from "@dishify/ui/src/element
 import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 import { trpc } from "@dishify/app/utils/trpc";
 import type { TrendingRecipe } from "@dishify/api/src/routes/recipe/trending";
+import { Div, H2, P, Section } from "@dishify/ui/src";
 
 const LOADING_CARDS: TrendingRecipe[] = Array.from({ length: 4 }, (_, i) => ({
   id: `skeleton-${i}`,
@@ -41,17 +42,19 @@ export function TrendingSection() {
   const recipesToRender: TrendingRecipe[] = isLoading ? LOADING_CARDS : trendingRecipes ?? [];
 
   return (
-    <section className="w-full py-12 max-w-7xl mx-auto">
-      <div className="mx-auto w-full">
-        <div className="mb-8 px-4 sm:px-6">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-sage-900">Trending Recipes</h2>
-          <p className="mt-2 text-sage-500 text-sm sm:text-base">
+    <Section className="w-full pt-12 pb-8 max-w-7xl mx-auto">
+      <Div className="mx-auto w-full">
+        <Div className="mb-8 px-4 sm:px-6">
+          <H2 className="text-2xl sm:text-3xl font-semibold text-sage-900 mb-0">
+            Trending Recipes
+          </H2>
+          <P className="mt-2 text-sage-500 text-sm sm:text-base">
             Discover what others are cooking
-          </p>
-        </div>
+          </P>
+        </Div>
 
-        <div className="relative overflow-hidden">
-          <div className="px-0 sm:px-6">
+        <Div className="relative overflow-hidden">
+          <Div className="px-0 sm:px-6">
             <Carousel
               opts={{
                 loop: true,
@@ -79,17 +82,17 @@ export function TrendingSection() {
                       key={recipe.id}
                       className="pl-4 md:pl-6 basis-4/5 sm:basis-1/2 lg:basis-[40%]"
                     >
-                      <div className="p-4">
+                      <Div className="p-4">
                         <TrendingCard {...cardProps} isLoading={isLoading} />
-                      </div>
+                      </Div>
                     </CarouselItem>
                   );
                 })}
               </CarouselContent>
             </Carousel>
-          </div>
-        </div>
-      </div>
-    </section>
+          </Div>
+        </Div>
+      </Div>
+    </Section>
   );
 }
