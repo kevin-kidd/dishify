@@ -9,7 +9,7 @@ import { Div } from "@dishify/ui/src";
 
 export function HomeScreen() {
   return (
-    <Div className="flex flex-col w-full overflow-x-hidden">
+    <Div className="flex flex-col w-full overflow-x-hidden pt-3">
       <TrendingSection />
       <FeaturedRecipeSection />
       <CategoriesSection />
