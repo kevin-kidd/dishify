@@ -1,14 +1,36 @@
 "use client";
 
-import { Button, Card, Div, H2, P, Skeleton, Span } from "@dishify/ui/src";
-import { Image, useWindowDimensions } from "react-native";
-import { ArrowRight } from "lucide-react-native";
+import { Button, Card, Div, H2, P, Skeleton, Span, Text, cn } from "@dishify/ui/src";
+import { Image, useWindowDimensions, View } from "react-native";
+import { ArrowRight, ChevronRight, DollarSign, Utensils } from "lucide-react-native";
 import { trpc } from "@dishify/app/utils/trpc";
 import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import type { RecipeResponse } from "@dishify/api/schemas/recipe-response";
 import { useRouter } from "solito/navigation";
 import type { FeaturedRecipeResponse } from "@dishify/api/src/queues/featured";
+import { Badge } from "@dishify/ui";
+import { getCostIndicators } from "../../dish/cost-indicators";
+import { MotiView } from "moti";
+
+// Extended type for featured recipe with additional properties
+type ExtendedFeaturedRecipe = {
+  id: string;
+  recipeId: string;
+  slug: string;
+  dishName: string;
+  description: string;
+  imageUrl: string;
+  cuisine: RecipeResponse["cuisine"];
+  difficulty: string;
+  cookingTime: string;
+  servings: string;
+  keyIngredients: string[];
+  createdAt: string;
+  estimatedCosts?: any;
+  category?: string;
+  reactions?: Record<string, { count: number; hasReacted: boolean }>;
+};
 
 export function FeaturedRecipeSection() {
   const {
@@ -30,7 +52,10 @@ export function FeaturedRecipeSection() {
       {isLoading || error || !featuredRecipe ? (
         <FeaturedRecipeCardSkeleton isMobile={isMobile} />
       ) : (
-        <FeaturedRecipeCard featuredRecipe={featuredRecipe} isMobile={isMobile} />
+        <FeaturedRecipeCard
+          featuredRecipe={featuredRecipe as ExtendedFeaturedRecipe}
+          isMobile={isMobile}
+        />
       )}
     </Div>
   );
@@ -40,19 +65,65 @@ function FeaturedRecipeCard({
   featuredRecipe,
   isMobile,
 }: {
-  featuredRecipe: FeaturedRecipeResponse;
+  featuredRecipe: ExtendedFeaturedRecipe;
   isMobile: boolean;
 }) {
   // Ensure cuisine is one of the valid types for CuisineLabel
   const router = useRouter();
   const cuisine = featuredRecipe.cuisine as RecipeResponse["cuisine"];
+
   function handleViewRecipe() {
     router.push(`/dish/${featuredRecipe.slug}`);
   }
+
+  function handleCategoryClick() {
+    if (featuredRecipe.category) {
+      // Find category ID based on name
+      const categoryId = categories.find((c) => c.name === featuredRecipe.category)?.id;
+      if (categoryId) {
+        router.push(`/category/${categoryId}`);
+      }
+    }
+  }
+
+  // Get difficulty color
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy":
+        return "text-green-500";
+      case "Medium":
+        return "text-yellow-500";
+      case "Hard":
+        return "text-red-500";
+      default:
+        return "text-gray-500";
+    }
+  };
+
+  // Get cost indicators
+  const costIndicators = featuredRecipe.estimatedCosts
+    ? getCostIndicators(featuredRecipe.estimatedCosts)
+    : null;
+
+  // Get reactions
+  const reactions = featuredRecipe.reactions || {};
+  const sortedReactions = Object.entries(reactions)
+    .filter(([_, data]) => data.count > 0)
+    .map(([emoji, data]) => ({
+      emoji,
+      count: data.count,
+    }))
+    .slice(0, 3); // Show at most 3 reactions
+
   return (
-    <Card className="w-full overflow-hidden bg-white border-0 rounded-2xl shadow-lg mx-4 sm:mx-6">
-      <Div className={`flex ${isMobile ? "flex-col" : "flex-row"} w-full`}>
-        <Div className={`${isMobile ? "w-full aspect-video" : "w-2/5"} relative`}>
+    <Card
+      className={cn(
+        "w-full overflow-hidden bg-white border-0 rounded-2xl shadow-lg sm:mx-6",
+        "transition-all duration-300 hover:shadow-xl",
+      )}
+    >
+      <Div className={cn("flex w-full", isMobile ? "flex-col" : "flex-row")}>
+        <Div className={cn("relative", isMobile ? "w-full aspect-video" : "w-2/5")}>
           <Div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-transparent z-10" />
           <Image
             source={{ uri: featuredRecipe.imageUrl }}
@@ -61,36 +132,77 @@ function FeaturedRecipeCard({
             resizeMode="cover"
             accessibilityLabel={featuredRecipe.dishName}
           />
-          <Div className="absolute top-4 left-4 z-20">
-            <CuisineLabel cuisine={cuisine} />
-          </Div>
         </Div>
 
         <Div
-          className={`${isMobile ? "w-full p-5" : "w-3/5 p-6"} flex flex-col justify-between h-64 bg-white my-2`}
+          className={cn(
+            "flex flex-col justify-between bg-white relative",
+            isMobile ? "w-full p-5" : "w-3/5 p-6 my-2",
+            isMobile ? "h-auto" : "h-72",
+          )}
         >
           <Div className="flex flex-col">
-            <H2 className="text-xl sm:text-2xl font-bold text-sage-900 mb-0">
+            <H2 className="text-xl sm:text-2xl font-bold text-sage-900 mb-2">
               {featuredRecipe.dishName}
             </H2>
-            <Div className="flex flex-row items-center gap-2">
-              <Clock className="h-4 w-4 text-sage-500" />
-              <Span className="text-sm text-sage-600">{featuredRecipe.cookingTime}</Span>
-              <Div className="h-1 w-1 rounded-full bg-sage-300 mx-2" />
-              <Span className="text-sm text-sage-600">
-                {featuredRecipe.difficulty} • {featuredRecipe.servings}
-              </Span>
+
+            <Div className="flex flex-row items-center flex-wrap gap-4 mb-3">
+              <Div className="flex flex-row items-center gap-2">
+                <Clock className="h-4 w-4 text-sage-500" />
+                <Span className="text-sm text-sage-600">{featuredRecipe.cookingTime}</Span>
+              </Div>
+
+              <Div className="flex flex-row items-center gap-2">
+                <Utensils className="h-4 w-4 text-sage-500" />
+                <Span className="text-sm text-sage-600">{featuredRecipe.servings} servings</Span>
+              </Div>
+
+              {costIndicators && (
+                <Div className="flex flex-row items-center gap-1">{costIndicators}</Div>
+              )}
             </Div>
           </Div>
+          <Div className="flex flex-row items-center gap-2">
+            <CuisineLabel cuisine={cuisine} />
+            {featuredRecipe.category && (
+              <Badge
+                className={cn(
+                  "hover:bg-sage-300 transition-colors sm:px-3 sm:py-1.5 py-1 px-2 text-xs font-medium",
+                  "cursor-pointer bg-sage-200 text-sage-800",
+                )}
+                onPress={handleCategoryClick}
+              >
+                {featuredRecipe.category}
+              </Badge>
+            )}
+          </Div>
 
-          <P className="text-sage-700 text-sm sm:text-base py-0 my-0">
+          <P className="text-sage-700 text-sm sm:text-base py-0 my-3">
             {featuredRecipe.description}
           </P>
+
+          {sortedReactions.length > 0 && (
+            <Div className="flex flex-row items-center gap-2 absolute top-4 right-5">
+              {sortedReactions.map(({ emoji, count }) => (
+                <Div
+                  key={emoji}
+                  className="flex flex-row items-center gap-1.5 px-2 py-1 rounded-full bg-gray-100 border border-gray-200"
+                >
+                  <Text className="text-base">{emoji}</Text>
+                  <Text className="text-sm font-medium text-gray-700">{count}</Text>
+                </Div>
+              ))}
+            </Div>
+          )}
 
           <Button
             onClick={handleViewRecipe}
             variant="default"
-            className="flex flex-row items-center justify-center gap-2 w-fit px-6 py-3 bg-sage-600 hover:bg-sage-700 transition-all ease-in-out duration-300 rounded-full shadow-sm hover:shadow transform scale-100 hover:scale-105"
+            className={cn(
+              "flex flex-row items-center justify-center gap-2 w-fit px-6 py-3",
+              "bg-sage-600 hover:bg-sage-700 transition-all ease-in-out duration-300",
+              "rounded-full shadow-sm hover:shadow transform scale-100 hover:scale-105",
+            )}
           >
             <P className="text-white font-medium">View Recipe</P>
             <ArrowRight className="w-4 h-4 text-white ml-1 transition-transform duration-300 ease-in-out group-hover:translate-x-1" />
@@ -104,13 +216,13 @@ function FeaturedRecipeCard({
 function FeaturedRecipeCardSkeleton({ isMobile }: { isMobile: boolean }) {
   return (
     <Card className="w-full overflow-hidden bg-white border-0 rounded-2xl shadow-lg mx-4 sm:mx-6">
-      <Div className={`flex ${isMobile ? "flex-col" : "flex-row"} w-full`}>
+      <Div className={cn("flex w-full", isMobile ? "flex-col" : "flex-row")}>
         <Skeleton
-          className={`${isMobile ? "w-full aspect-video" : "w-2/5"} rounded-none`}
+          className={cn(isMobile ? "w-full aspect-video" : "w-2/5", "rounded-none")}
           style={{ height: isMobile ? undefined : 320 }}
         />
 
-        <Div className={`${isMobile ? "w-full p-5" : "w-3/5 p-6"} flex flex-col justify-between`}>
+        <Div className={cn("flex flex-col justify-between", isMobile ? "w-full p-5" : "w-3/5 p-6")}>
           <Div>
             <Skeleton className="h-8 w-3/4 rounded-lg mb-3" />
             <Skeleton className="h-4 w-1/2 rounded-lg mb-3" />
@@ -125,3 +237,23 @@ function FeaturedRecipeCardSkeleton({ isMobile }: { isMobile: boolean }) {
     </Card>
   );
 }
+
+// Categories data for navigation
+const categories = [
+  { id: "low-carb", name: "Low Carb" },
+  { id: "vegetarian", name: "Vegetarian" },
+  { id: "vegan", name: "Vegan" },
+  { id: "gluten-free", name: "Gluten Free" },
+  { id: "dairy-free", name: "Dairy Free" },
+  { id: "quick-easy", name: "Quick & Easy" },
+  { id: "one-pot", name: "One Pot" },
+  { id: "budget-friendly", name: "Budget Friendly" },
+  { id: "high-protein", name: "High Protein" },
+  { id: "keto", name: "Keto" },
+  { id: "paleo", name: "Paleo" },
+  { id: "mediterranean", name: "Mediterranean" },
+  { id: "kid-friendly", name: "Kid Friendly" },
+  { id: "healthy", name: "Healthy" },
+  { id: "comfort-food", name: "Comfort Food" },
+  { id: "other", name: "Other" },
+];
