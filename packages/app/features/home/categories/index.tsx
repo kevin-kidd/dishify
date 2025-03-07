@@ -35,7 +35,7 @@ const categoryIcons: Record<CategoryName, React.ComponentType<any>> = {
   "One Pot": Pot,
   "Budget Friendly": DollarSign,
   "High Protein": Beef,
-  Keto: Egg,
+  Keto: Beef,
   Paleo: Apple,
   Mediterranean: Fish,
   "Kid Friendly": Baby,
