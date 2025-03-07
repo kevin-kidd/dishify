@@ -1,155 +1,24 @@
 "use client";
 
-import { useEffect, useState, useCallback, Fragment } from "react";
+import { useCallback } from "react";
 import { Card, Div, H2, P, Section } from "@dishify/ui/src";
 import { Image, useWindowDimensions, View } from "react-native";
-import { Link } from "solito/link";
-import { getFoodImageUrl } from "@dishify/app/utils/food-images";
+import { useRouter } from "solito/navigation";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
 import { ArrowRight } from "lucide-react-native";
 import { getCostIndicators } from "../../dish/cost-indicators";
-
-// Determine current season based on the date
-function getCurrentSeason() {
-  const now = new Date();
-  const month = now.getMonth();
-
-  if (month >= 2 && month <= 4) return "spring";
-  if (month >= 5 && month <= 7) return "summer";
-  if (month >= 8 && month <= 10) return "autumn";
-  return "winter";
-}
-
-// Seasonal recipe suggestions with direct image URLs
-const seasonalRecipes = {
-  spring: [
-    {
-      id: "spring-asparagus-risotto",
-      name: "Spring Asparagus Risotto",
-      description: "A creamy rice dish with fresh asparagus and lemon",
-      cookingTime: "35 minutes",
-      difficulty: "Medium",
-      cost: 3000, // Estimated cost in cents
-      searchQuery: "spring asparagus risotto recipe",
-    },
-    {
-      id: "strawberry-spinach-salad",
-      name: "Strawberry Spinach Salad",
-      description: "Fresh spinach with seasonal strawberries and balsamic",
-      cookingTime: "15 minutes",
-      difficulty: "Easy",
-      cost: 2200, // Estimated cost in cents
-      searchQuery: "strawberry spinach salad recipe",
-    },
-    {
-      id: "spring-pea-soup",
-      name: "Spring Pea Soup",
-      description: "Bright and fresh soup with mint and crème fraîche",
-      cookingTime: "25 minutes",
-      difficulty: "Easy",
-      cost: 1800, // Estimated cost in cents
-      searchQuery: "spring pea soup recipe",
-    },
-  ],
-  summer: [
-    {
-      id: "grilled-peach-salad",
-      name: "Grilled Peach Salad",
-      description: "Sweet grilled peaches with arugula and goat cheese",
-      cookingTime: "20 minutes",
-      difficulty: "Easy",
-      cost: 2500, // Estimated cost in cents
-      searchQuery: "grilled peach arugula salad recipe",
-    },
-    {
-      id: "chilled-gazpacho",
-      name: "Chilled Gazpacho",
-      description: "Refreshing Spanish cold soup with summer vegetables",
-      cookingTime: "30 minutes",
-      difficulty: "Medium",
-      cost: 2000, // Estimated cost in cents
-      searchQuery: "chilled gazpacho recipe",
-    },
-    {
-      id: "bbq-corn-on-cob",
-      name: "BBQ Corn on the Cob",
-      description: "Grilled corn with herb butter and spices",
-      cookingTime: "15 minutes",
-      difficulty: "Easy",
-      cost: 1200, // Estimated cost in cents
-      searchQuery: "bbq corn on the cob recipe",
-    },
-  ],
-  autumn: [
-    {
-      id: "pumpkin-soup",
-      name: "Roasted Pumpkin Soup",
-      description: "Creamy, warming soup with roasted pumpkin and spices",
-      cookingTime: "45 minutes",
-      difficulty: "Medium",
-      cost: 2800, // Estimated cost in cents
-      searchQuery: "roasted pumpkin soup recipe",
-    },
-    {
-      id: "apple-crisp",
-      name: "Apple Crisp",
-      description: "Baked apples with a crunchy cinnamon topping",
-      cookingTime: "50 minutes",
-      difficulty: "Medium",
-      cost: 2300, // Estimated cost in cents
-      searchQuery: "apple crisp dessert recipe",
-    },
-    {
-      id: "mushroom-risotto",
-      name: "Wild Mushroom Risotto",
-      description: "Rich and earthy risotto with seasonal mushrooms",
-      cookingTime: "40 minutes",
-      difficulty: "Medium",
-      cost: 3500, // Estimated cost in cents
-      searchQuery: "wild mushroom risotto recipe",
-    },
-  ],
-  winter: [
-    {
-      id: "beef-stew",
-      name: "Hearty Beef Stew",
-      description: "Slow-cooked beef with winter vegetables",
-      cookingTime: "2 hours",
-      difficulty: "Medium",
-      cost: 4500, // Estimated cost in cents
-      searchQuery: "hearty beef stew recipe",
-    },
-    {
-      id: "butternut-squash-soup",
-      name: "Butternut Squash Soup",
-      description: "Smooth, velvety soup with roasted squash",
-      cookingTime: "45 minutes",
-      difficulty: "Easy",
-      cost: 2200, // Estimated cost in cents
-      searchQuery: "butternut squash soup recipe",
-    },
-    {
-      id: "gingerbread-cookies",
-      name: "Gingerbread Cookies",
-      description: "Spiced holiday cookies with molasses",
-      cookingTime: "35 minutes",
-      difficulty: "Medium",
-      cost: 1800, // Estimated cost in cents
-      searchQuery: "gingerbread cookies recipe",
-    },
-  ],
-};
+import { trpc } from "../../../utils/trpc";
+import { Skeleton } from "@dishify/ui/src/elements/skeleton";
+import { Pressable } from "react-native";
 
 export function SeasonalSection() {
-  const [season, setSeason] = useState("winter");
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
+  const router = useRouter();
 
-  // Set the current season on component mount
-  useEffect(() => {
-    setSeason(getCurrentSeason());
-  }, []);
+  // Fetch seasonal recipes from the API
+  const { data, isLoading, error } = trpc.recipe.seasonal.useQuery();
 
   // Function to get color based on difficulty
   const getDifficultyColor = useCallback((difficulty: string) => {
@@ -166,20 +35,10 @@ export function SeasonalSection() {
   }, []);
 
   // Function to generate cost indicators
-  const getCostDisplay = useCallback((cost: number) => {
-    // Create a mock estimatedCosts object with the cost value
-    const mockEstimatedCosts = {
-      us: {
-        cost,
-        updatedAt: new Date().toISOString(),
-        missingIngredientsCount: 0,
-        totalIngredientsCount: 1,
-      },
-    };
-
+  const getCostDisplay = useCallback((estimatedCosts: any) => {
     // Use the shared getCostIndicators function
     return (
-      getCostIndicators(mockEstimatedCosts) || (
+      getCostIndicators(estimatedCosts) || (
         // Fallback if getCostIndicators returns null
         <View className="flex flex-row items-center gap-1">
           <DollarSign className="h-4 w-4 text-[#13a300]" strokeWidth={2.5} />
@@ -188,8 +47,131 @@ export function SeasonalSection() {
     );
   }, []);
 
-  const recipes = seasonalRecipes[season as keyof typeof seasonalRecipes];
+  // Handle navigation to dish page
+  const handleRecipePress = useCallback(
+    (slug: string) => {
+      router.push(`/dish/${slug}`);
+    },
+    [router],
+  );
+
+  // If loading, show skeleton UI
+  if (isLoading) {
+    return (
+      <Section className="pt-12 pb-8 w-full max-w-7xl mx-auto">
+        <Div className="mb-4 px-4 sm:px-6">
+          <H2 className="text-2xl sm:text-3xl font-semibold text-sage-900 mb-0">
+            Seasonal Favorites
+          </H2>
+          <P className="mt-2 text-sage-500 text-sm sm:text-base">Seasonal dishes to try now</P>
+        </Div>
+
+        <Div
+          className={`grid grid-cols-1 ${
+            isMobile ? "" : "sm:grid-cols-2 md:grid-cols-3"
+          } gap-6 sm:gap-8 px-4 sm:px-6`}
+        >
+          {["skeleton-1", "skeleton-2", "skeleton-3"].map((id) => (
+            <Card
+              key={id}
+              className="overflow-hidden border-0 rounded-xl shadow-md h-full flex flex-col"
+            >
+              <Skeleton className="aspect-video w-full" />
+              <Div className="p-5 flex-1 flex flex-col">
+                <Skeleton className="h-6 w-3/4 mb-1" />
+                <Skeleton className="h-4 w-full mb-4" />
+                <Div className="mt-auto">
+                  <Div className="flex flex-row items-center justify-between mb-3">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-4 w-1/4" />
+                  </Div>
+                  <Skeleton className="h-4 w-full mt-3" />
+                </Div>
+              </Div>
+            </Card>
+          ))}
+        </Div>
+      </Section>
+    );
+  }
+
+  // If error, show error message
+  if (error) {
+    return (
+      <Section className="pt-12 pb-8 w-full max-w-7xl mx-auto">
+        <Div className="mb-4 px-4 sm:px-6">
+          <H2 className="text-2xl sm:text-3xl font-semibold text-sage-900 mb-0">
+            Seasonal Favorites
+          </H2>
+          <P className="mt-2 text-sage-500 text-sm sm:text-base">
+            Unable to load seasonal recipes. Please try again later.
+          </P>
+        </Div>
+      </Section>
+    );
+  }
+
+  // If data is not available, show loading state
+  if (!data) {
+    return (
+      <Section className="pt-12 pb-8 w-full max-w-7xl mx-auto">
+        <Div className="mb-4 px-4 sm:px-6">
+          <H2 className="text-2xl sm:text-3xl font-semibold text-sage-900 mb-0">
+            Seasonal Favorites
+          </H2>
+          <P className="mt-2 text-sage-500 text-sm sm:text-base">Loading seasonal recipes...</P>
+        </Div>
+      </Section>
+    );
+  }
+
+  const { season, recipes, generatingRecipes = [] } = data;
   const seasonName = season.charAt(0).toUpperCase() + season.slice(1);
+
+  // If we have no completed recipes and all are generating, show a more informative message
+  if (recipes.length === 0 && generatingRecipes.length > 0) {
+    return (
+      <Section className="pt-12 pb-8 w-full max-w-7xl mx-auto">
+        <Div className="mb-4 px-4 sm:px-6">
+          <H2 className="text-2xl sm:text-3xl font-semibold text-sage-900 mb-0">
+            {seasonName} Favorites
+          </H2>
+          <P className="mt-2 text-sage-500 text-sm sm:text-base">
+            We're preparing some delicious {seasonName.toLowerCase()} recipes for you. Check back
+            soon!
+          </P>
+        </Div>
+
+        <Div
+          className={`grid grid-cols-1 ${
+            isMobile ? "" : "sm:grid-cols-2 md:grid-cols-3"
+          } gap-6 sm:gap-8 px-4 sm:px-6`}
+        >
+          {generatingRecipes.map((recipeName) => (
+            <Card
+              key={`generating-${recipeName}`}
+              className="overflow-hidden border-0 rounded-xl shadow-md h-full flex flex-col"
+            >
+              <Skeleton className="aspect-video w-full" />
+              <Div className="p-5 flex-1 flex flex-col">
+                <P className="font-semibold text-lg text-sage-900 mb-1">{recipeName}</P>
+                <Skeleton className="h-4 w-full mb-4" />
+                <Div className="mt-auto">
+                  <Div className="flex flex-row items-center justify-between mb-3">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-4 w-1/4" />
+                  </Div>
+                  <Div className="pt-3 border-t border-sage-100">
+                    <P className="text-xs text-sage-500">Generating recipe...</P>
+                  </Div>
+                </Div>
+              </Div>
+            </Card>
+          ))}
+        </Div>
+      </Section>
+    );
+  }
 
   return (
     <Section className="pt-12 pb-8 w-full max-w-7xl mx-auto">
@@ -206,11 +188,14 @@ export function SeasonalSection() {
         } gap-6 sm:gap-8 px-4 sm:px-6`}
       >
         {recipes.map((recipe) => {
-          // Get an appropriate image based on the recipe name and season
-          const imageUrl = getFoodImageUrl(recipe.name, "", season);
+          // Use the imageUrl directly from the recipe data
+          const imageUrl =
+            recipe.imageUrl ||
+            // Fallback image if no image is available
+            "https://placehold.co/600x400/e2e8f0/64748b?text=Image+Coming+Soon";
 
           return (
-            <Link key={recipe.id} href={`/?dishName=${encodeURIComponent(recipe.searchQuery)}`}>
+            <Pressable key={recipe.id} onPress={() => handleRecipePress(recipe.slug)}>
               <Card className="overflow-hidden border-0 rounded-xl shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl h-full flex flex-col group">
                 <Div className="aspect-video relative overflow-hidden">
                   <Div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent z-10" />
@@ -237,7 +222,7 @@ export function SeasonalSection() {
                       </Div>
 
                       <Div className="flex flex-row items-center justify-end">
-                        {recipe.cost > 0 && getCostDisplay(recipe.cost)}
+                        {recipe.estimatedCosts && getCostDisplay(recipe.estimatedCosts)}
                       </Div>
                     </Div>
 
@@ -257,9 +242,33 @@ export function SeasonalSection() {
                   </Div>
                 </Div>
               </Card>
-            </Link>
+            </Pressable>
           );
         })}
+
+        {/* Show skeleton cards for recipes that are still generating */}
+        {generatingRecipes.length > 0 &&
+          generatingRecipes.map((recipeName) => (
+            <Card
+              key={`generating-${recipeName}`}
+              className="overflow-hidden border-0 rounded-xl shadow-md h-full flex flex-col"
+            >
+              <Skeleton className="aspect-video w-full" />
+              <Div className="p-5 flex-1 flex flex-col">
+                <P className="font-semibold text-lg text-sage-900 mb-1">{recipeName}</P>
+                <Skeleton className="h-4 w-full mb-4" />
+                <Div className="mt-auto">
+                  <Div className="flex flex-row items-center justify-between mb-3">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-4 w-1/4" />
+                  </Div>
+                  <Div className="pt-3 border-t border-sage-100">
+                    <P className="text-xs text-sage-500">Generating recipe...</P>
+                  </Div>
+                </Div>
+              </Div>
+            </Card>
+          ))}
       </Div>
     </Section>
   );
