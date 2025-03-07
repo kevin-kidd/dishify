@@ -11,9 +11,9 @@ export function HomeScreen() {
   return (
     <Div className="flex flex-col w-full overflow-x-hidden pt-3">
       <TrendingSection />
+      <SeasonalSection />
       <FeaturedRecipeSection />
       <CategoriesSection />
-      <SeasonalSection />
       <CookingTipsSection />
     </Div>
   );
