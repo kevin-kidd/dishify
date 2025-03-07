@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Div, H2, H3, P, Section } from "@dishify/ui/src";
+import { Card, cn, Div, H2, H3, P, Section } from "@dishify/ui/src";
 import { Pressable, useWindowDimensions } from "react-native";
 import { Link } from "solito/link";
 import { Knife } from "@dishify/ui/src/icons/knife";
@@ -123,38 +123,50 @@ export function CookingTipsSection() {
       </Div>
 
       <Card className="p-0 overflow-hidden border-0 rounded-xl shadow-md mx-4 sm:mx-6">
-        <Div className={`flex flex-col ${!isMobile ? "sm:flex-row" : ""}`}>
+        <Div className={cn("flex flex-col", !isMobile ? "sm:flex-row" : "")}>
           {/* Sidebar for categories */}
           <Div
-            className={`${!isMobile ? "sm:w-1/3 md:w-1/4" : ""} bg-sage-50 border-r border-sage-100`}
+            className={cn(
+              !isMobile ? "sm:w-1/3 md:w-1/4" : "",
+              "bg-sage-50 border-r border-sage-100",
+            )}
           >
             <Div
-              className={`flex ${isMobile ? "flex-row overflow-x-auto py-3" : "flex-col p-3 my-auto"}`}
+              className={cn(
+                "flex",
+                isMobile ? "flex-row flex-wrap justify-center py-3 px-2" : "flex-col p-3 my-auto",
+              )}
             >
               {cookingTips.map((category) => (
                 <Div
                   key={category.id}
-                  className={`${isMobile ? "min-w-[140px] flex-shrink-0 mx-1" : "mb-2 last:mb-0"}`}
+                  className={isMobile ? "w-[calc(50%-8px)] m-1 flex-shrink-0" : "mb-2 last:mb-0"}
                 >
                   <Pressable onPress={() => setActiveCategory(category.id)}>
                     <Div
-                      className={`flex flex-row items-center p-2 rounded-lg cursor-pointer transition-all duration-300 ${
+                      className={cn(
+                        "flex items-center rounded-lg cursor-pointer transition-all duration-300",
+                        isMobile ? "p-1.5 flex-col justify-center" : "p-2 flex-row",
                         activeCategory === category.id
                           ? "bg-white text-sage-900 shadow-sm"
-                          : "text-sage-600 hover:bg-white hover:shadow-sm hover:text-sage-900"
-                      }`}
+                          : "text-sage-600 hover:bg-white hover:shadow-sm hover:text-sage-900",
+                      )}
                     >
                       <Div
-                        className={`mr-3 ml-1 flex-shrink-0 transition-transform duration-300 ${
-                          activeCategory === category.id ? "scale-110" : ""
-                        }`}
+                        className={cn(
+                          isMobile ? "mb-1.5" : "mr-3 ml-1",
+                          "flex-shrink-0 transition-transform duration-300",
+                          activeCategory === category.id ? "scale-110" : "",
+                        )}
                       >
                         {category.icon}
                       </Div>
                       <P
-                        className={`${
-                          activeCategory === category.id ? "font-medium" : ""
-                        } flex-shrink text-sm transition-colors duration-300`}
+                        className={cn(
+                          activeCategory === category.id ? "font-medium" : "",
+                          "flex-shrink transition-colors duration-300",
+                          isMobile ? "text-xs text-center" : "text-sm",
+                        )}
                       >
                         {category.name}
                       </P>
@@ -166,7 +178,7 @@ export function CookingTipsSection() {
           </Div>
 
           {/* Content area */}
-          <Div className={`${!isMobile ? "sm:w-2/3 md:w-3/4" : ""} p-5 sm:p-6`}>
+          <Div className={cn(!isMobile ? "sm:w-2/3 md:w-3/4" : "", "p-5 sm:p-6")}>
             {selectedCategory && (
               <Div>
                 <H3 className="text-xl font-medium text-sage-900 mb-4 flex items-center">
