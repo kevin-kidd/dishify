@@ -129,20 +129,8 @@ export async function generateFeaturedRecipe(
     }
 
     const recipeData = typedRecipeDetails.data as RecipeResponse;
-    const dishName = recipeData.dishName;
-    const cuisine = recipeData.cuisine;
 
-    // Step 2: Generate an engaging description using AI
-    const description = await generateRecipeDescription(dishName, cuisine, env);
-
-    // Step 3: Generate an image using Cloudflare Workers AI
-    const imageUrl = await generateRecipeImage(dishName, cuisine, env);
-
-    // Step 4: Create the featured recipe entry
-    const keyIngredients = recipeData.shoppingList
-      ? recipeData.shoppingList.slice(0, 5).map((item) => item.item)
-      : [];
-
+    // Step 2: Create the featured recipe entry using the recipe's data
     const { data: newFeaturedRecipe, error: insertError } = await tryCatch(
       db
         .insert(FeaturedRecipeTable)
@@ -150,13 +138,13 @@ export async function generateFeaturedRecipe(
           recipeId: selectedRecipeId,
           slug: typedRecipeDetails.slug,
           dishName: recipeData.dishName,
-          description,
-          imageUrl,
+          description: typedRecipeDetails.description || "",
+          imageUrl: typedRecipeDetails.imageUrl || "",
           cuisine: recipeData.cuisine,
           difficulty: recipeData.difficulty,
           cookingTime: recipeData.cookingTime,
           servings: recipeData.servings,
-          keyIngredients,
+          keyIngredients: recipeData.shoppingList.slice(0, 5).map((item) => item.item),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         })
@@ -170,7 +158,7 @@ export async function generateFeaturedRecipe(
 
     const typedNewFeaturedRecipe = newFeaturedRecipe as FeaturedRecipe;
 
-    // Step 5: Update the KV cache
+    // Step 3: Update the KV cache
     const response: FeaturedRecipeResponse = {
       id: typedNewFeaturedRecipe.id,
       recipeId: typedNewFeaturedRecipe.recipeId,
@@ -192,7 +180,7 @@ export async function generateFeaturedRecipe(
     console.log(`Featured recipe generation completed in ${duration}ms`, {
       recipeId: selectedRecipeId,
       featuredRecipeId: typedNewFeaturedRecipe.id,
-      dishName,
+      dishName: recipeData.dishName,
     });
   } catch (error) {
     console.error("Featured recipe generation failed", error);
