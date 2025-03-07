@@ -1,5 +1,4 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import type { Ai } from "@cloudflare/workers-types";
 import { EnglishRecipeNameTable, EnglishRecipesTable } from "../db/schema/recipes";
 import { eq, and, ne } from "drizzle-orm";
 import { type RecipeResponse, RecipeResponseSchema } from "../../schemas/recipe-response";
@@ -632,7 +631,7 @@ function containsUnknown(obj: unknown): boolean {
 }
 
 // Generate an engaging description for the recipe using AI
-async function generateRecipeDescription(
+export async function generateRecipeDescription(
   dishName: string,
   cuisine: RecipeResponse["cuisine"],
   ingredients: Array<{ item: string; quantity: string }>,
@@ -702,7 +701,7 @@ async function generateRecipeDescription(
 }
 
 // Generate an image for the recipe using Cloudflare Workers AI
-async function generateRecipeImage(
+export async function generateRecipeImage(
   dishName: string,
   cuisine: RecipeResponse["cuisine"],
   env: Bindings,
