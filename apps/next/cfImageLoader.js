@@ -1,5 +1,8 @@
 // Docs: https://developers.cloudflare.com/images/url-format
 export default function cloudflareLoader({ src, width, quality }) {
+  if (src.startsWith("http")) {
+    return src;
+  }
   const params = [`width=${width}`, `quality=${quality || 75}`, "format=auto"];
   // const params = [`width=${width}`, `quality=${quality || 75}`]
   const isDev = process.env.NODE_ENV === "development";
