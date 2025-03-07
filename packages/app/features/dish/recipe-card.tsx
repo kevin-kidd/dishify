@@ -13,10 +13,10 @@ import {
   Button,
   Text,
   Section,
-  Image,
   Badge,
   cn,
 } from "@dishify/ui";
+import Image from "next/image";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import { Utensils } from "@dishify/ui/src/icons/utensils";
 import { LoadingSkeleton } from "./loading-skeleton";
@@ -251,27 +251,14 @@ export default function RecipeCard() {
             {hasImage && (
               <View className="absolute inset-0 overflow-hidden rounded-t-lg">
                 <View className="absolute inset-0 bg-black/60 z-10" />
-                {recipeData.imageUrl?.startsWith("http") ? (
-                  // For absolute URLs, use an img tag directly to avoid the SolitoImageProvider loader
-                  <img
-                    width={1000}
-                    height={1000}
-                    src={recipeData.imageUrl}
-                    alt={recipeData.data.dishName}
-                    className="w-full h-full object-cover"
-                    style={{ objectFit: "cover" }}
-                  />
-                ) : (
-                  // For relative URLs, use the Image component which will use the SolitoImageProvider loader
-                  <Image
-                    width={1000}
-                    height={1000}
-                    src={recipeData.imageUrl || ""}
-                    alt={recipeData.data.dishName}
-                    className="w-full h-full object-cover"
-                    style={{ objectFit: "cover" }}
-                  />
-                )}
+                <Image
+                  width={1000}
+                  height={1000}
+                  src={recipeData.imageUrl || ""}
+                  alt={recipeData.data.dishName}
+                  className="w-full h-full object-cover"
+                  style={{ objectFit: "cover" }}
+                />
               </View>
             )}
 
