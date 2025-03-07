@@ -1,14 +1,10 @@
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { View, Pressable } from "react-native";
 import { SmilePlus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@dishify/ui";
 import { MotiView, AnimatePresence } from "moti";
 import { trpc } from "app/utils/trpc";
 import { toast } from "app/utils/toast";
-import { useAtom } from "jotai";
-import { useOnline } from "app/utils/hooks/use-online";
-import { useOfflineSync } from "app/utils/hooks/use-offline-sync";
-import { recipeReactionsAtom, type ReactionState, type RecipeReactions } from "app/atoms/reactions";
 import { authClient } from "app/utils/auth/client";
 import EmojiGrid from "./grid";
 import EmojiCounter from "./counter";
@@ -151,7 +147,7 @@ export const EmojiReactions = ({ slug }: EmojiReactionsProps) => {
           <Pressable
             className={cn(
               "p-2 rounded-full bg-gray-100 active:bg-gray-200 transition-all border border-gray-200 hover:bg-gray-200 hover:scale-105 active:scale-95 duration-200",
-              !isSignedIn && "cursor-not-allowed opacity-50",
+              !isSignedIn && "cursor-not-allowed opacity-70",
             )}
             accessibilityLabel="Add reaction"
           >
