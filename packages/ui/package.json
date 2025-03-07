@@ -18,7 +18,7 @@
     "@rn-primitives/hooks": "1.0.4",
     "@rn-primitives/popover": "~1.0.4",
     "@rn-primitives/portal": "1.0.4",
-    "@rn-primitives/select": "~1.0.4",
+    "@rn-primitives/select": "1.1.0",
     "@rn-primitives/separator": "~1.0.3",
     "@rn-primitives/slot": "~1.0.3",
     "@rn-primitives/types": "~1.0.4",

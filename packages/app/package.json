@@ -35,6 +35,7 @@
     "nativewind": "4.1.23",
     "react-camera-pro": "1.4.0",
     "react-hook-form": "7.53.0",
+    "react-intersection-observer": "^9.16.0",
     "react-native": "0.74.2",
     "react-native-circular-progress": "^1.4.1",
     "react-native-gesture-handler": "^2.22.1",
