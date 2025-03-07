@@ -1,17 +1,15 @@
 "use client";
 
-import { View, useWindowDimensions } from "react-native";
+import { useWindowDimensions } from "react-native";
 import { Link } from "solito/link";
-import { Card, Div, H2, P, Section } from "@dishify/ui";
-import { categories } from "@dishify/api/schemas/category";
+import { Card, Div, H2, P, Section, cn } from "@dishify/ui";
+import { categories, type RecipeCategorySchema } from "@dishify/api/schemas/category";
 import {
-  Utensils,
   Leaf,
   Wheat,
   Milk,
   Clock,
   Pot,
-  PiggyBank,
   Beef,
   Egg,
   Apple,
@@ -23,16 +21,19 @@ import {
 import AutoScroll from "embla-carousel-auto-scroll";
 import { Carousel, CarouselContent, CarouselItem } from "@dishify/ui/src/elements/carousel";
 import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
+import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
+import type { z } from "zod";
 
-const categoryIcons = {
+type CategoryName = Exclude<z.infer<typeof RecipeCategorySchema>, "Other">;
+
+const categoryIcons: Record<CategoryName, React.ComponentType<any>> = {
   "Low Carb": Beef,
   Vegetarian: Leaf,
-  Vegan: Leaf,
   "Gluten Free": Wheat,
   "Dairy Free": Milk,
   "Quick & Easy": Clock,
   "One Pot": Pot,
-  "Budget Friendly": PiggyBank,
+  "Budget Friendly": DollarSign,
   "High Protein": Beef,
   Keto: Egg,
   Paleo: Apple,
@@ -42,10 +43,9 @@ const categoryIcons = {
   "Comfort Food": Soup,
 } as const;
 
-const categoryColors = {
+const categoryColors: Record<CategoryName, string> = {
   "Low Carb": "bg-green-50 border-green-200",
   Vegetarian: "bg-emerald-50 border-emerald-200",
-  Vegan: "bg-teal-50 border-teal-200",
   "Gluten Free": "bg-amber-50 border-amber-200",
   "Dairy Free": "bg-blue-50 border-blue-200",
   "Quick & Easy": "bg-purple-50 border-purple-200",
@@ -60,10 +60,9 @@ const categoryColors = {
   "Comfort Food": "bg-amber-50 border-amber-200",
 } as const;
 
-const categoryIconColors = {
+const categoryIconColors: Record<CategoryName, string> = {
   "Low Carb": "text-green-600",
   Vegetarian: "text-emerald-600",
-  Vegan: "text-teal-600",
   "Gluten Free": "text-amber-600",
   "Dairy Free": "text-blue-600",
   "Quick & Easy": "text-purple-600",
@@ -78,27 +77,25 @@ const categoryIconColors = {
   "Comfort Food": "text-amber-600",
 } as const;
 
-const categoryTextColors = {
-  "Low Carb": "text-green-700",
-  Vegetarian: "text-emerald-700",
-  Vegan: "text-teal-700",
-  "Gluten Free": "text-amber-700",
-  "Dairy Free": "text-blue-700",
-  "Quick & Easy": "text-purple-700",
-  "One Pot": "text-orange-700",
-  "Budget Friendly": "text-yellow-700",
-  "High Protein": "text-red-700",
-  Keto: "text-indigo-700",
-  Paleo: "text-rose-700",
-  Mediterranean: "text-cyan-700",
-  "Kid Friendly": "text-pink-700",
-  Healthy: "text-lime-700",
-  "Comfort Food": "text-amber-700",
+const categoryTextColors: Record<CategoryName, string> = {
+  "Low Carb": "text-green-800",
+  Vegetarian: "text-emerald-800",
+  "Gluten Free": "text-amber-800",
+  "Dairy Free": "text-blue-800",
+  "Quick & Easy": "text-purple-800",
+  "One Pot": "text-orange-800",
+  "Budget Friendly": "text-yellow-800",
+  "High Protein": "text-red-800",
+  Keto: "text-indigo-800",
+  Paleo: "text-rose-800",
+  Mediterranean: "text-cyan-800",
+  "Kid Friendly": "text-pink-800",
+  Healthy: "text-lime-800",
+  "Comfort Food": "text-amber-800",
 } as const;
 
 export function CategoriesSection() {
   const { width } = useWindowDimensions();
-  const isMobile = width < 768;
   const cardSize = width < 640 ? (width - 48) / 2 : 160;
 
   const plugins = [
@@ -132,7 +129,13 @@ export function CategoriesSection() {
               }}
               orientation="horizontal"
               plugins={plugins}
-              className="w-full [mask-image:linear-gradient(to_right,transparent,black_20px,black_calc(100%_-_20px),transparent)] md:[mask-image:linear-gradient(to_right,transparent,black_100px,black_calc(100%_-_100px),transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,black_20px,black_calc(100%_-_20px),transparent)] md:[-webkit-mask-image:linear-gradient(to_right,transparent,black_100px,black_calc(100%_-_100px),transparent)]"
+              className={cn(
+                "w-full",
+                "[mask-image:linear-gradient(to_right,transparent,black_20px,black_calc(100%_-_20px),transparent)]",
+                "md:[mask-image:linear-gradient(to_right,transparent,black_100px,black_calc(100%_-_100px),transparent)]",
+                "[-webkit-mask-image:linear-gradient(to_right,transparent,black_20px,black_calc(100%_-_20px),transparent)]",
+                "md:[-webkit-mask-image:linear-gradient(to_right,transparent,black_100px,black_calc(100%_-_100px),transparent)]",
+              )}
             >
               <CarouselContent className="-ml-4 md:-ml-6 py-4">
                 {filteredCategories.map((category) => {
@@ -144,11 +147,14 @@ export function CategoriesSection() {
                   return (
                     <CarouselItem
                       key={category.id}
-                      className="pl-4 md:pl-6 basis-1/3 sm:basis-1/5 md:basis-1/7 lg:basis-1/9"
+                      className="pl-4 md:pl-6 basis-1/2 sm:basis-1/3 md:basis-1/5 lg:basis-1/7"
                     >
                       <Link href={`/category/${category.id}`}>
                         <Card
-                          className={`${color} border p-4 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:scale-105`}
+                          className={cn(
+                            color,
+                            "border p-4 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:scale-105",
+                          )}
                           style={{
                             width: cardSize,
                             height: cardSize,
@@ -157,17 +163,27 @@ export function CategoriesSection() {
                         >
                           <Div className="flex-1 flex flex-col items-center justify-center">
                             <Div
-                              className={`rounded-full p-2 mb-3 bg-white shadow-sm transition-all duration-300 ${color}`}
+                              className={cn(
+                                "rounded-full p-2 mb-3 shadow-sm transition-all duration-300",
+                                color,
+                                "bg-white",
+                              )}
                             >
-                              <Icon className={`w-6 h-6 ${iconColor}`} />
+                              <Icon className={cn("w-6 h-6", iconColor)} />
                             </Div>
                             <P
-                              className={`font-semibold text-center ${textColor} transition-all duration-300`}
+                              className={cn(
+                                "font-semibold text-center transition-all duration-300",
+                                textColor,
+                              )}
                             >
                               {category.name}
                             </P>
                             <P
-                              className={`text-xs text-center mt-1 ${textColor} opacity-80 transition-all duration-300`}
+                              className={cn(
+                                "text-xs text-center mt-1 opacity-80 transition-all duration-300",
+                                textColor,
+                              )}
                             >
                               {category.description}
                             </P>
