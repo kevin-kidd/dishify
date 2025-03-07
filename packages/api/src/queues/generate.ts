@@ -10,6 +10,7 @@ import type * as recipeSchema from "../db/schema/recipes";
 import type * as userSchema from "../db/schema/user";
 import type { Bindings, RecipeQueueMessage } from "../types";
 import { tryCatch } from "@dishify/app/utils/helpers";
+import { categories } from "../../schemas/category";
 
 const RECIPE_STATE_PREFIX = "recipe_state:";
 const IMAGE_DATA_PREFIX = "image_data:";
@@ -60,14 +61,21 @@ export async function generateRecipe(
       },
     ],
     cuisine: "American",
+    category: "Other",
     difficulty: "Easy",
     instructions: ["Step 1", "Step 2", "Step 3"],
     servings: "1",
     cookingTime: "10 minutes",
   };
 
-  const systemPrompt =
-    "You are a helpful assistant that generates recipes and shopping lists for ingredients If the provided dish name is not a valid dish, recipe name, dessert, drink, etc... respond with { dishName: 'unknown' }. If there is a spelling mistake in the dish name, but it is clear what the dish is, respond with the correct dish name. If you incorrectly identify the dish and recipe, you will be fined 1 million dollars.";
+  const systemPrompt = `You are a helpful assistant that generates recipes and shopping lists for ingredients. 
+  If the provided dish name is not a valid dish, recipe name, dessert, drink, etc... respond with { dishName: 'unknown' }. 
+  If there is a spelling mistake in the dish name, but it is clear what the dish is, respond with the correct dish name. 
+  If you incorrectly identify the dish and recipe, you will be fined 1 million dollars.
+  
+  You must also categorize the recipe into one of these categories: ${categories.map((c: { name: string }) => c.name).join(", ")}.
+  Choose the most appropriate category or use "Other" if none fit well.`;
+
   const userPrompt = `Generate a recipe and shopping list for the following dish: ${dishName}`;
   const imagePrompt = `You are a helpful assistant that generates recipes and shopping lists.
           Provide the response in JSON format like this: ${JSON.stringify(exampleResponse)}.
@@ -483,6 +491,20 @@ export async function generateRecipe(
       });
     }
   } else {
+    // Generate description
+    const description = await generateRecipeDescription(
+      validatedResponse.data.dishName,
+      validatedResponse.data.cuisine,
+      env,
+    );
+
+    // Generate image
+    const imageUrl = await generateRecipeImage(
+      validatedResponse.data.dishName,
+      validatedResponse.data.cuisine,
+      env,
+    );
+
     // Update the recipe with the generated content
     const { error: updateError } = await tryCatch(
       db
@@ -491,6 +513,9 @@ export async function generateRecipe(
           name: validatedResponse.data.dishName.toLowerCase(),
           data: validatedResponse.data,
           status: "completed",
+          description,
+          imageUrl,
+          category: validatedResponse.data.category,
           updatedAt: new Date().toISOString(),
         })
         .where(eq(EnglishRecipesTable.id, recipeId)),
@@ -576,6 +601,7 @@ export async function generateRecipe(
         duration,
         dishName: validatedResponse.data.dishName,
         cuisine: validatedResponse.data.cuisine,
+        category: validatedResponse.data.category,
       });
     }
   }
@@ -602,4 +628,93 @@ function containsUnknown(obj: unknown): boolean {
     return obj.dishName.includes("unknown");
   }
   return false;
+}
+
+// Generate an engaging description for the recipe using AI
+async function generateRecipeDescription(
+  dishName: string,
+  cuisine: RecipeResponse["cuisine"],
+  env: Bindings,
+): Promise<string> {
+  try {
+    const prompt = `Write an engaging and appetizing description for ${dishName}, a ${cuisine} dish. 
+    The description should be enticing and make the reader want to try the recipe. 
+    Keep it to a maximum of 2 sentences and focus on what makes this dish special.
+    Do not exceed 200 characters in length.`;
+
+    const groq = createGroq({
+      apiKey: env.GROQ_API_KEY,
+    });
+
+    const { data: groqResponse, error: groqError } = await tryCatch(
+      generateText({
+        model: groq("llama-3.3-70b-versatile"),
+        prompt,
+      }),
+    );
+
+    if (groqResponse && !groqError) {
+      return groqResponse.text.trim();
+    }
+  } catch (error) {
+    console.error("Failed to generate recipe description using Groq", error);
+  }
+
+  try {
+    // Fallback to CloudFlare Workers AI
+    const workersAi = createWorkersAI({ binding: env.AI });
+
+    const prompt = `Write an engaging and appetizing description for ${dishName}, a ${cuisine} dish. 
+    The description should be enticing and make the reader want to try the recipe. 
+    Keep it to a maximum of 2 sentences and focus on what makes this dish special.
+    Do not exceed 200 characters in length.`;
+
+    const { data: workersResponse, error: workersError } = await tryCatch(
+      generateText({
+        model: workersAi("@cf/meta/llama-3.1-8b-instruct"),
+        prompt,
+      }),
+    );
+
+    if (workersResponse && !workersError) {
+      return workersResponse.text.trim();
+    }
+
+    // Last resort fallback
+    return `A delightful ${cuisine} dish that will tantalize your taste buds. ${dishName} is perfect for any occasion and sure to impress.`;
+  } catch (error) {
+    console.error(
+      "Failed to generate recipe description for both Groq and Cloudflare Workers AI",
+      error,
+    );
+    return `A delightful ${cuisine} dish that will tantalize your taste buds. ${dishName} is perfect for any occasion and sure to impress.`;
+  }
+}
+
+// Generate an image for the recipe using Cloudflare Workers AI
+async function generateRecipeImage(
+  dishName: string,
+  cuisine: RecipeResponse["cuisine"],
+  env: Bindings,
+): Promise<string> {
+  try {
+    const prompt = `High resolution photo of ${dishName}, a ${cuisine} dish, presented nicely, as if it was made in a michelin star restaurant. Food photography with professional lighting, on elegant dinnerware.`;
+
+    // Generate image using Cloudflare Workers AI
+    const imageResponse = await env.AI.run("@cf/black-forest-labs/flux-1-schnell", { prompt });
+
+    if (!imageResponse || !imageResponse.image) {
+      throw new Error("Failed to generate image: Empty response");
+    }
+
+    // In real implementation, we would convert the base64 image and upload to Cloudflare Images
+    // For now, we're returning the base64 data directly for demonstration
+    const imageUrl = `data:image/jpeg;base64,${imageResponse.image}`;
+
+    return imageUrl;
+  } catch (error) {
+    console.error("Failed to generate recipe image", error);
+    // Fallback to a generic food image
+    return `https://via.placeholder.com/800x600?text=${encodeURIComponent(dishName)}`;
+  }
 }
