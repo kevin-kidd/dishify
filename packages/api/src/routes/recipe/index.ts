@@ -6,12 +6,15 @@ import { recipeFavoritesRouter } from "./favorites";
 import { recipeReactionsRouter } from "./reactions";
 import { trending } from "./trending";
 import { getFeaturedRecipe } from "./featured";
+import { getRecipesByCategory, getRecipesByCategoryCount } from "./category";
 
 export const recipeRouter = router({
   generate,
   autocomplete,
-  getRecipe,
+  get: getRecipe,
   getRecipeBySlug,
+  getRecipesByCategory,
+  getRecipesByCategoryCount,
   favorites: recipeFavoritesRouter,
   reactions: recipeReactionsRouter,
   trending,
