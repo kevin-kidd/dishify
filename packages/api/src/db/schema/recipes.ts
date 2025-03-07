@@ -4,6 +4,7 @@ import { sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 import type { RecipeResponse } from "../../../schemas/recipe-response";
 import { UserTable } from "./user";
+import { nanoid } from "nanoid";
 // English recipe name table
 export const EnglishRecipeNameTable = sqliteTable(
   "english_recipes",
@@ -255,56 +256,14 @@ export type InsertRecipeReaction = InferInsertModel<typeof RecipeReactionsTable>
 export const insertRecipeReactionSchema = createInsertSchema(RecipeReactionsTable);
 export const selectRecipeReactionSchema = createSelectSchema(RecipeReactionsTable);
 
-// Featured Recipe table
+// Featured Recipe Table - stores only the reference to the recipe
 export const FeaturedRecipeTable = sqliteTable("featured_recipes", {
   id: text("id")
     .primaryKey()
-    .$defaultFn(() => createId()),
+    .$defaultFn(() => nanoid()),
   recipeId: text("recipe_id")
     .notNull()
     .references(() => EnglishRecipesTable.id),
-  slug: text("slug").notNull(),
-  dishName: text("dish_name").notNull(),
-  description: text("description").notNull(),
-  imageUrl: text("image_url").notNull(),
-  cuisine: text("cuisine", {
-    enum: [
-      "British",
-      "Mexican",
-      "Italian",
-      "Japanese",
-      "Chinese",
-      "Indian",
-      "French",
-      "Spanish",
-      "German",
-      "American",
-      "Thai",
-      "Vietnamese",
-      "Brazilian",
-      "Moroccan",
-      "Turkish",
-      "Korean",
-      "Russian",
-      "Greek",
-      "Dutch",
-      "Portuguese",
-      "Belgian",
-      "Swedish",
-      "Norwegian",
-      "Danish",
-      "Finnish",
-      "Czech",
-      "Polish",
-      "Hungarian",
-      "Other",
-      "Unknown",
-    ],
-  }).notNull(),
-  difficulty: text("difficulty").notNull(),
-  cookingTime: text("cooking_time").notNull(),
-  servings: text("servings").notNull(),
-  keyIngredients: text("key_ingredients", { mode: "json" }).$type<string[]>(),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
@@ -313,14 +272,5 @@ export const FeaturedRecipeTable = sqliteTable("featured_recipes", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
-export const FeaturedRecipeTableRelations = relations(FeaturedRecipeTable, ({ one }) => ({
-  recipe: one(EnglishRecipesTable, {
-    fields: [FeaturedRecipeTable.recipeId],
-    references: [EnglishRecipesTable.id],
-  }),
-}));
-
 export type FeaturedRecipe = InferSelectModel<typeof FeaturedRecipeTable>;
 export type InsertFeaturedRecipe = InferInsertModel<typeof FeaturedRecipeTable>;
-export const insertFeaturedRecipeSchema = createInsertSchema(FeaturedRecipeTable);
-export const selectFeaturedRecipeSchema = createSelectSchema(FeaturedRecipeTable);
