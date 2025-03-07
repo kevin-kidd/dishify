@@ -41,13 +41,10 @@ module.exports = () => {
   /** @type {import('next').NextConfig} */
   let config = {
     // Uncomment if you want to use Cloudflare's Paid Image Resizing w/ Next/Image
-    // images: {
-    //   loader: 'custom',
-    //   loaderFile: './cfImageLoader.js',
-    // },
-    // Using Solito image loader without Cloudflare's Paid Image Resizing
-
-    images: {},
+    images: {
+      loader: "custom",
+      loaderFile: "./cfImageLoader.js",
+    },
     typescript: {
       ignoreBuildErrors: true,
     },
