@@ -3,7 +3,6 @@ import { z } from "zod";
 export const RecipeCategorySchema = z.enum([
   "Low Carb",
   "Vegetarian",
-  "Vegan",
   "Gluten Free",
   "Dairy Free",
   "Quick & Easy",
@@ -24,7 +23,6 @@ export type RecipeCategory = z.infer<typeof RecipeCategorySchema>;
 export const categories = [
   { id: "low-carb", name: "Low Carb", description: "Low carbohydrate recipes" },
   { id: "vegetarian", name: "Vegetarian", description: "Meat-free recipes" },
-  { id: "vegan", name: "Vegan", description: "Plant-based recipes" },
   { id: "gluten-free", name: "Gluten Free", description: "No gluten recipes" },
   { id: "dairy-free", name: "Dairy Free", description: "No dairy recipes" },
   { id: "quick-easy", name: "Quick & Easy", description: "30 minutes or less" },
