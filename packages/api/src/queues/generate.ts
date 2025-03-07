@@ -495,6 +495,7 @@ export async function generateRecipe(
     const description = await generateRecipeDescription(
       validatedResponse.data.dishName,
       validatedResponse.data.cuisine,
+      validatedResponse.data.shoppingList,
       env,
     );
 
@@ -634,11 +635,16 @@ function containsUnknown(obj: unknown): boolean {
 async function generateRecipeDescription(
   dishName: string,
   cuisine: RecipeResponse["cuisine"],
+  ingredients: Array<{ item: string; quantity: string }>,
   env: Bindings,
 ): Promise<string> {
   try {
+    const ingredientsList = ingredients.map((ing) => ing.item).join(", ");
+
     const prompt = `Write an engaging and appetizing description for ${dishName}, a ${cuisine} dish. 
+    The dish contains these key ingredients: ${ingredientsList}.
     The description should be enticing and make the reader want to try the recipe. 
+    Mention 1-2 of the most distinctive ingredients that make this dish special.
     Keep it to a maximum of 2 sentences and focus on what makes this dish special.
     Do not exceed 200 characters in length.`;
 
@@ -664,8 +670,12 @@ async function generateRecipeDescription(
     // Fallback to CloudFlare Workers AI
     const workersAi = createWorkersAI({ binding: env.AI });
 
+    const ingredientsList = ingredients.map((ing) => ing.item).join(", ");
+
     const prompt = `Write an engaging and appetizing description for ${dishName}, a ${cuisine} dish. 
+    The dish contains these key ingredients: ${ingredientsList}.
     The description should be enticing and make the reader want to try the recipe. 
+    Mention 1-2 of the most distinctive ingredients that make this dish special.
     Keep it to a maximum of 2 sentences and focus on what makes this dish special.
     Do not exceed 200 characters in length.`;
 
@@ -707,11 +717,63 @@ async function generateRecipeImage(
       throw new Error("Failed to generate image: Empty response");
     }
 
-    // In real implementation, we would convert the base64 image and upload to Cloudflare Images
-    // For now, we're returning the base64 data directly for demonstration
-    const imageUrl = `data:image/jpeg;base64,${imageResponse.image}`;
+    try {
+      // Convert base64 to binary
+      const imageData = Buffer.from(imageResponse.image, "base64");
 
-    return imageUrl;
+      // Upload to Cloudflare Images
+      const formData = new FormData();
+      const fileName = `${dishName.replace(/\s+/g, "-").toLowerCase()}.jpg`;
+
+      // Use File constructor instead of Blob
+      formData.append("file", new File([imageData], fileName, { type: "image/jpeg" }));
+      formData.append(
+        "metadata",
+        JSON.stringify({
+          dishName,
+          cuisine,
+          generatedAt: new Date().toISOString(),
+        }),
+      );
+
+      // Upload to Cloudflare Images API
+      const uploadResponse = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/images/v1`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${env.CF_IMAGES_API_TOKEN}`,
+          },
+          body: formData,
+        },
+      );
+
+      const uploadResult = (await uploadResponse.json()) as {
+        success: boolean;
+        result?: {
+          id: string;
+          filename: string;
+          uploaded: string;
+          requireSignedURLs: boolean;
+          variants: string[];
+        };
+        errors?: Array<{ code: number; message: string }>;
+      };
+
+      if (!uploadResponse.ok || !uploadResult.success || !uploadResult.result) {
+        console.error("Failed to upload image to Cloudflare Images", uploadResult);
+        throw new Error("Failed to upload image to Cloudflare Images");
+      }
+
+      // Return the Cloudflare Images URL
+      const imageUrl = `https://imagedelivery.net/${env.CF_IMAGES_ACCOUNT_HASH}/${uploadResult.result.id}/public`;
+
+      return imageUrl;
+    } catch (uploadError) {
+      console.error("Failed to upload image to Cloudflare Images", uploadError);
+      // If upload fails, return the base64 data as fallback
+      return `data:image/jpeg;base64,${imageResponse.image}`;
+    }
   } catch (error) {
     console.error("Failed to generate recipe image", error);
     // Fallback to a generic food image
