@@ -56,6 +56,28 @@ export const EnglishRecipesTable = sqliteTable(
     errorMessage: text("error_message"),
     searchQuery: text("search_query"),
     imageQuery: text("image_query", { enum: ["true", "false"] }),
+    imageUrl: text("image_url"),
+    description: text("description"),
+    category: text("category", {
+      enum: [
+        "Low Carb",
+        "Vegetarian",
+        "Vegan",
+        "Gluten Free",
+        "Dairy Free",
+        "Quick & Easy",
+        "One Pot",
+        "Budget Friendly",
+        "High Protein",
+        "Keto",
+        "Paleo",
+        "Mediterranean",
+        "Kid Friendly",
+        "Healthy",
+        "Comfort Food",
+        "Other",
+      ],
+    }),
     createdAt: text("created_at")
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
