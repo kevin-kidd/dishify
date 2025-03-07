@@ -2,12 +2,13 @@
 
 import { useEffect, useState, useCallback, Fragment } from "react";
 import { Card, Div, H2, P, Section } from "@dishify/ui/src";
-import { Image, useWindowDimensions } from "react-native";
+import { Image, useWindowDimensions, View } from "react-native";
 import { Link } from "solito/link";
 import { getFoodImageUrl } from "@dishify/app/utils/food-images";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
 import { ArrowRight } from "lucide-react-native";
+import { getCostIndicators } from "../../dish/cost-indicators";
 
 // Determine current season based on the date
 function getCurrentSeason() {
@@ -166,8 +167,25 @@ export function SeasonalSection() {
 
   // Function to generate cost indicators
   const getCostDisplay = useCallback((cost: number) => {
-    const count = cost > 10000 ? 4 : cost > 5000 ? 3 : cost > 2500 ? 2 : 1;
-    return Array(count).fill(<DollarSign className="h-4 w-4 text-[#13a300]" strokeWidth={2.5} />);
+    // Create a mock estimatedCosts object with the cost value
+    const mockEstimatedCosts = {
+      us: {
+        cost,
+        updatedAt: new Date().toISOString(),
+        missingIngredientsCount: 0,
+        totalIngredientsCount: 1,
+      },
+    };
+
+    // Use the shared getCostIndicators function
+    return (
+      getCostIndicators(mockEstimatedCosts) || (
+        // Fallback if getCostIndicators returns null
+        <View className="flex flex-row items-center gap-1">
+          <DollarSign className="h-4 w-4 text-[#13a300]" strokeWidth={2.5} />
+        </View>
+      )
+    );
   }, []);
 
   const recipes = seasonalRecipes[season as keyof typeof seasonalRecipes];
@@ -219,16 +237,7 @@ export function SeasonalSection() {
                       </Div>
 
                       <Div className="flex flex-row items-center justify-end">
-                        {recipe.cost > 0 &&
-                          getCostDisplay(recipe.cost).map((item, index) => (
-                            <Div
-                              key={`dollar-${recipe.id}-${index}`}
-                              className="transition-all duration-300 transform group-hover:scale-110"
-                              style={{ transitionDelay: `${index * 50}ms` }}
-                            >
-                              {item}
-                            </Div>
-                          ))}
+                        {recipe.cost > 0 && getCostDisplay(recipe.cost)}
                       </Div>
                     </Div>
 
