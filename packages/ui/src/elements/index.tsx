@@ -17,3 +17,4 @@ export * from "./skeleton";
 export * from "./icon-button";
 export * from "./sheet";
 export * from "./drawer";
+export * from "./badge";
