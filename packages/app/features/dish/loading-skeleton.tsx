@@ -4,7 +4,7 @@ import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
 
 export function LoadingSkeleton() {
   return (
-    <Section className="max-w-6xl mx-auto px-4 pt-14">
+    <Section className="max-w-6xl mx-auto px-4 pt-14 w-full">
       <Animated.View
         entering={FadeIn}
         layout={LinearTransition.springify().mass(0.8).damping(15).stiffness(100)}
