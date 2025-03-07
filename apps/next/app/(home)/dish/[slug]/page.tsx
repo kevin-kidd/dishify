@@ -1,4 +1,4 @@
-import RecipeCard from "app/features/dish/recipe-card";
+import DishScreen from "@dishify/app/features/dish/screen";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { serverClient } from "utils/trpc";
@@ -22,7 +22,7 @@ export default async function RecipePage({ params }: { params: { slug: string } 
       // Let the client component handle loading and error states
     }
   }
-  return <RecipeCard />;
+  return <DishScreen />;
 }
 
 export async function generateMetadata({
