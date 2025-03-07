@@ -26,16 +26,6 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 export type FeaturedRecipeResponse = {
   id: string;
   recipeId: string;
-  slug: string;
-  dishName: string;
-  description: string;
-  imageUrl: string;
-  cuisine: RecipeResponse["cuisine"];
-  difficulty: string;
-  cookingTime: string;
-  servings: string;
-  keyIngredients: string[];
-  createdAt: string;
 };
 
 /**
@@ -109,42 +99,12 @@ export async function generateFeaturedRecipe(
       throw new Error("Failed to select a recipe for featuring");
     }
 
-    // Get the recipe details
-    const { data: recipeDetails, error: detailsError } = await tryCatch(
-      db
-        .select()
-        .from(EnglishRecipesTable)
-        .where(eq(EnglishRecipesTable.id, selectedRecipeId))
-        .get(),
-    );
-
-    if (!recipeDetails || detailsError) {
-      throw new Error(`Failed to get recipe details for recipe ID: ${selectedRecipeId}`);
-    }
-
-    const typedRecipeDetails = recipeDetails as EnglishRecipe;
-
-    if (!typedRecipeDetails.data) {
-      throw new Error(`Recipe data is missing for recipe ID: ${selectedRecipeId}`);
-    }
-
-    const recipeData = typedRecipeDetails.data as RecipeResponse;
-
-    // Step 2: Create the featured recipe entry using the recipe's data
+    // Step 2: Create the featured recipe entry using just the recipe ID
     const { data: newFeaturedRecipe, error: insertError } = await tryCatch(
       db
         .insert(FeaturedRecipeTable)
         .values({
           recipeId: selectedRecipeId,
-          slug: typedRecipeDetails.slug,
-          dishName: recipeData.dishName,
-          description: typedRecipeDetails.description || "",
-          imageUrl: typedRecipeDetails.imageUrl || "",
-          cuisine: recipeData.cuisine,
-          difficulty: recipeData.difficulty,
-          cookingTime: recipeData.cookingTime,
-          servings: recipeData.servings,
-          keyIngredients: recipeData.shoppingList.slice(0, 5).map((item) => item.item),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         })
@@ -158,20 +118,10 @@ export async function generateFeaturedRecipe(
 
     const typedNewFeaturedRecipe = newFeaturedRecipe as FeaturedRecipe;
 
-    // Step 3: Update the KV cache
+    // Step 3: Update the KV cache with just the ID reference
     const response: FeaturedRecipeResponse = {
       id: typedNewFeaturedRecipe.id,
       recipeId: typedNewFeaturedRecipe.recipeId,
-      slug: typedNewFeaturedRecipe.slug,
-      dishName: typedNewFeaturedRecipe.dishName,
-      description: typedNewFeaturedRecipe.description,
-      imageUrl: typedNewFeaturedRecipe.imageUrl,
-      cuisine: typedNewFeaturedRecipe.cuisine,
-      difficulty: typedNewFeaturedRecipe.difficulty,
-      cookingTime: typedNewFeaturedRecipe.cookingTime,
-      servings: typedNewFeaturedRecipe.servings,
-      keyIngredients: typedNewFeaturedRecipe.keyIngredients || [],
-      createdAt: typedNewFeaturedRecipe.createdAt,
     };
 
     await recipeState.put(CACHE_KEY, JSON.stringify(response), { expirationTtl: CACHE_TTL });
@@ -180,7 +130,6 @@ export async function generateFeaturedRecipe(
     console.log(`Featured recipe generation completed in ${duration}ms`, {
       recipeId: selectedRecipeId,
       featuredRecipeId: typedNewFeaturedRecipe.id,
-      dishName: recipeData.dishName,
     });
   } catch (error) {
     console.error("Featured recipe generation failed", error);
