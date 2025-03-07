@@ -4,11 +4,11 @@ import { Button, Card, Div, H2, P, Skeleton, Span } from "@dishify/ui/src";
 import { Image, useWindowDimensions } from "react-native";
 import { ArrowRight } from "lucide-react-native";
 import { trpc } from "@dishify/app/utils/trpc";
-import { Link } from "solito/link";
 import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import type { RecipeResponse } from "@dishify/api/schemas/recipe-response";
 import { useRouter } from "solito/navigation";
+import type { FeaturedRecipeResponse } from "@dishify/api/src/queues/featured";
 
 export function FeaturedRecipeSection() {
   const {
@@ -40,7 +40,7 @@ function FeaturedRecipeCard({
   featuredRecipe,
   isMobile,
 }: {
-  featuredRecipe: any;
+  featuredRecipe: FeaturedRecipeResponse;
   isMobile: boolean;
 }) {
   // Ensure cuisine is one of the valid types for CuisineLabel
