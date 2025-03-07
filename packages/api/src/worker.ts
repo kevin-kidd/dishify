@@ -7,10 +7,10 @@ import { logger } from "hono/logger";
 import { createDb } from "./db/client";
 import { generateRecipe } from "./queues/generate";
 import { auth } from "./auth";
-import type { Bindings } from "./types";
-import type { RecipeQueueMessage } from "./types";
+import type { Bindings, RecipeQueueMessage } from "./types";
 import { tryCatch } from "@dishify/app/utils/helpers";
 import { generateFeaturedRecipe } from "./queues/featured";
+import { updateRecipe } from "./queues/update";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -52,8 +52,18 @@ export default {
   async queue(batch: MessageBatch<RecipeQueueMessage>, env: Bindings): Promise<void> {
     const db = createDb(env.DB);
     for (const message of batch.messages) {
-      // Check if this is a featured recipe generation or regular recipe generation
-      if (message.body.type === "featured") {
+      // Check the type of queue message
+      if (message.body.type === "update") {
+        // Recipe update queue
+        const { error } = await tryCatch(updateRecipe(message.body, db, env));
+        if (error) {
+          console.error("Failed to process recipe update queue message:", {
+            error: error.message,
+            recipeId: message.body.recipeId,
+          });
+        }
+      } else if (message.body.type === "featured") {
+        // Featured recipe generation
         const { error } = await tryCatch(generateFeaturedRecipe(env, db));
         if (error) {
           console.error("Failed to process featured recipe queue message:", {
