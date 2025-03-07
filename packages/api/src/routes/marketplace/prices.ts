@@ -13,6 +13,7 @@ import { MarketplaceError, type MarketplacePrice, type GetIngredientPriceRespons
 import { fetchSerperPrice } from "./serper";
 import { generateObject } from "ai";
 import { tryCatch } from "@dishify/app/utils/helpers";
+import type { Context } from "../../context";
 
 // One week in milliseconds
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
@@ -256,12 +257,42 @@ function calculateProportionalCost(
 }
 
 // Helper function to update estimated costs for a recipe
-async function updateEstimatedCosts(
-  ctx: any,
+export async function updateEstimatedCosts(
+  ctx: Context,
   recipeId: string,
   region: string,
   shoppingList: { item: string; quantity: string }[],
 ) {
+  // Get current recipe data first to check if estimatedCosts already exists
+  const { data: recipe, error: recipeError } = await tryCatch(
+    ctx.db.select().from(EnglishRecipesTable).where(eq(EnglishRecipesTable.id, recipeId)).get(),
+  );
+
+  if (recipeError) {
+    console.error("Failed to fetch recipe for cost estimation:", {
+      error: recipeError.message,
+      recipeId,
+    });
+    return;
+  }
+
+  if (!recipe) {
+    console.error("Recipe not found:", recipeId);
+    return;
+  }
+
+  const recipeData = recipe as any;
+
+  // If estimatedCosts already exists and has data for this region, don't update
+  if (
+    recipeData.estimatedCosts &&
+    typeof recipeData.estimatedCosts === "object" &&
+    recipeData.estimatedCosts[region] &&
+    recipeData.estimatedCosts[region].cost > 0
+  ) {
+    return;
+  }
+
   // Get all prices for this recipe's ingredients in this region
   const { data: prices, error: pricesError } = await tryCatch(
     ctx.db
@@ -291,6 +322,7 @@ async function updateEstimatedCosts(
   // Calculate total cost and missing ingredients
   let totalCost = 0;
   const pricesArray = (prices as any[]) || [];
+
   const missingIngredientsCount =
     shoppingList.length - new Set(pricesArray.map((p) => p.ingredient)).size;
   const totalIngredientsCount = shoppingList.length;
@@ -298,11 +330,8 @@ async function updateEstimatedCosts(
   // Track ingredients we've already processed to avoid duplicates
   const processedIngredients = new Set<string>();
 
-  // Only update if we have prices for at least 70% of ingredients
-  if (
-    pricesArray.length > 0 &&
-    totalIngredientsCount - missingIngredientsCount >= totalIngredientsCount * 0.7
-  ) {
+  // Calculate costs if we have prices
+  if (pricesArray.length > 0) {
     // Group prices by ingredient
     const pricesByIngredient = new Map<string, any[]>();
     for (const price of pricesArray) {
@@ -331,14 +360,6 @@ async function updateEstimatedCosts(
         cheapestPrice.price,
       );
 
-      // Log the calculation for debugging
-      console.debug(`Cost calculation for ${ingredient}:`, {
-        recipeQuantity: item.quantity,
-        productQuantity: cheapestPrice.unit,
-        fullPrice: cheapestPrice.price,
-        proportionalCost: cheapestProportionalCost,
-      });
-
       for (let i = 1; i < ingredientPrices.length; i++) {
         const currentPrice = ingredientPrices[i];
         const currentProportionalCost = calculateProportionalCost(
@@ -346,15 +367,6 @@ async function updateEstimatedCosts(
           currentPrice.unit, // Using unit as product quantity
           currentPrice.price,
         );
-
-        // Log each comparison for debugging
-        console.debug(`Comparing price option ${i} for ${ingredient}:`, {
-          recipeQuantity: item.quantity,
-          productQuantity: currentPrice.unit,
-          fullPrice: currentPrice.price,
-          proportionalCost: currentProportionalCost,
-          isCheaper: currentProportionalCost < cheapestProportionalCost,
-        });
 
         if (currentProportionalCost < cheapestProportionalCost) {
           cheapestPrice = currentPrice;
@@ -365,48 +377,42 @@ async function updateEstimatedCosts(
       // Add to total cost
       totalCost += cheapestProportionalCost;
     }
+  } else {
+    // If no prices found, estimate based on number of ingredients
+    // This is a simple heuristic: more ingredients = higher cost
+    // Average cost per ingredient is around 300 cents ($3)
+    totalCost = shoppingList.length * 300;
+  }
 
-    // Get current estimated costs
-    const { data: recipe, error: recipeError } = await tryCatch(
-      ctx.db.select().from(EnglishRecipesTable).where(eq(EnglishRecipesTable.id, recipeId)).get(),
-    );
+  // Get current estimated costs
+  const currentEstimatedCosts = recipeData.estimatedCosts || {};
 
-    if (recipeError) {
-      console.error("Failed to fetch recipe for cost estimation:", {
-        error: recipeError.message,
-        recipeId,
-      });
-      return;
-    }
+  // Update estimated costs for this region
+  const newEstimatedCosts = {
+    ...currentEstimatedCosts,
+    [region]: {
+      cost: totalCost,
+      updatedAt: new Date().toISOString(),
+      missingIngredientsCount,
+      totalIngredientsCount,
+    },
+  };
 
-    const recipeData = (recipe as any) || {};
-    const currentEstimatedCosts = recipeData.estimatedCosts || {};
+  const { error: updateError } = await tryCatch(
+    ctx.db
+      .update(EnglishRecipesTable)
+      .set({
+        estimatedCosts: newEstimatedCosts,
+      })
+      .where(eq(EnglishRecipesTable.id, recipeId)),
+  );
 
-    // Update estimated costs for this region
-    const { error: updateError } = await tryCatch(
-      ctx.db
-        .update(EnglishRecipesTable)
-        .set({
-          estimatedCosts: {
-            ...currentEstimatedCosts,
-            [region]: {
-              cost: totalCost,
-              updatedAt: new Date().toISOString(),
-              missingIngredientsCount,
-              totalIngredientsCount,
-            },
-          },
-        })
-        .where(eq(EnglishRecipesTable.id, recipeId)),
-    );
-
-    if (updateError) {
-      console.error("Failed to update recipe estimated costs:", {
-        error: updateError.message,
-        recipeId,
-        region,
-      });
-    }
+  if (updateError) {
+    console.error("Failed to update recipe estimated costs:", {
+      error: updateError.message,
+      recipeId,
+      region,
+    });
   }
 }
 
