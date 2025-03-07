@@ -106,12 +106,12 @@ export function ShareButton({ title, url, className }: ShareButtonProps) {
       >
         <Button
           className={cn(
-            "flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100",
+            "flex items-center justify-center h-9 w-9 rounded-full hover:bg-white hover:scale-105 active:scale-95 transition-all duration-200",
             className,
           )}
           onPress={handleNativeShare}
         >
-          <Share2 className="h-4 w-4 text-gray-600" />
+          <Share2 className="h-4 w-4 text-white hover:text-gray-800 group-hover:text-gray-800" />
         </Button>
       </MotiView>
     );
@@ -124,11 +124,11 @@ export function ShareButton({ title, url, className }: ShareButtonProps) {
           <PopoverTrigger>
             <Div
               className={cn(
-                "items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-200",
+                "items-center justify-center h-9 w-9 rounded-full group hover:bg-white hover:scale-105 active:scale-95 transition-all duration-200",
                 className,
               )}
             >
-              <Share2 className="h-4 w-4 text-gray-600" />
+              <Share2 className="h-4 w-4 text-white group-hover:text-gray-800" />
               <span className="sr-only">Share Recipe</span>
             </Div>
           </PopoverTrigger>

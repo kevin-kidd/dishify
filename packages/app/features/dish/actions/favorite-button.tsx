@@ -89,8 +89,8 @@ export function FavoriteButton({
         <Button
           variant="none"
           className={cn(
-            "flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all duration-200",
-            !isSignedIn && "cursor-not-allowed opacity-50 hover:scale-100 active:scale-100",
+            "flex items-center justify-center h-9 w-9 rounded-full group hover:bg-white disabled:opacity-80 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all duration-200",
+            !isSignedIn && "cursor-not-allowed hover:scale-100 active:scale-100",
             className,
           )}
           onPress={handleToggleFavorite}
@@ -99,7 +99,9 @@ export function FavoriteButton({
           <Star
             className={cn(
               "h-4 w-4 transition-colors duration-200",
-              isFavorited ? "fill-yellow-500 text-yellow-500" : "text-gray-500",
+              isFavorited
+                ? "fill-yellow-500 text-yellow-500"
+                : "text-white group-hover:text-gray-800",
             )}
             strokeWidth={2}
           />
