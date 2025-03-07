@@ -19,6 +19,7 @@ const LOADING_CARDS: TrendingRecipe[] = Array.from({ length: 4 }, (_, i) => ({
     shoppingList: [],
     instructions: [],
     servings: "",
+    category: "Other",
   },
   slug: "",
   trendingScore: 0,
