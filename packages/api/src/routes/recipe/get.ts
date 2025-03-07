@@ -1,13 +1,49 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure } from "../../trpc";
-import { EnglishRecipesTable } from "../../db/schema/recipes";
+import { type EnglishRecipe, EnglishRecipesTable } from "../../db/schema/recipes";
 import { eq } from "drizzle-orm";
 import { tryCatch } from "@dishify/app/utils/helpers";
 import { updateEstimatedCosts } from "../marketplace/prices";
+import type { RecipeQueueMessage } from "../../types";
+import type { Context } from "../../context";
 
 const RECIPE_STATE_PREFIX = "recipe_state:";
 const STALE_TIMEOUT = 15000; // 15 seconds
+
+// Helper function to check and queue recipe updates if needed
+async function checkAndQueueRecipeUpdate(ctx: Context, recipe: EnglishRecipe) {
+  // Only check completed recipes with data
+  if (recipe.status === "completed" && recipe.data) {
+    const needsImageUpdate = !recipe.imageUrl || recipe.imageUrl.trim() === "";
+    const needsDescriptionUpdate = !recipe.description || recipe.description.trim() === "";
+
+    // If either image or description is missing, queue an update
+    if (needsImageUpdate || needsDescriptionUpdate) {
+      try {
+        const updateMessage: RecipeQueueMessage = {
+          recipeId: recipe.id,
+          updateImage: needsImageUpdate,
+          updateDescription: needsDescriptionUpdate,
+          type: "update",
+        };
+
+        await ctx.recipeQueue.send(updateMessage);
+
+        console.log("Queued recipe update for missing content:", {
+          recipeId: recipe.id,
+          updateImage: needsImageUpdate,
+          updateDescription: needsDescriptionUpdate,
+        });
+      } catch (error) {
+        console.error("Failed to queue recipe update:", {
+          error: (error as Error).message,
+          recipeId: recipe.id,
+        });
+      }
+    }
+  }
+}
 
 export const getRecipe = publicProcedure
   .input(z.object({ id: z.string() }))
@@ -70,6 +106,9 @@ export const getRecipe = publicProcedure
       }
     }
 
+    // Check if recipe needs image or description update
+    await checkAndQueueRecipeUpdate(ctx, recipe);
+
     return recipe;
   });
 
@@ -129,15 +168,20 @@ export const getRecipeBySlug = publicProcedure
         );
 
         if (updatedRecipe) {
+          // Check if recipe needs image or description update
+          await checkAndQueueRecipeUpdate(ctx, updatedRecipe);
+
           return updatedRecipe;
         }
       } catch (error) {
         console.error("Failed to update estimated costs:", {
-          error: error instanceof Error ? error.message : String(error),
+          error: (error as Error).message,
           recipeId: recipe.id,
         });
-        // Continue with the original recipe if update fails
       }
+    } else {
+      // Check if recipe needs image or description update
+      await checkAndQueueRecipeUpdate(ctx, recipe);
     }
 
     // If recipe is in generating state, check if it's actually being generated
