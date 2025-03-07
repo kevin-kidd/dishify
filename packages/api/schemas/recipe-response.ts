@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { RecipeCategorySchema } from "./category";
 
 export const RecipeResponseSchema = z.object({
-  dishName: z.string().or(z.literal("unknown")),
+  dishName: z.string(),
   shoppingList: z.array(
     z.object({
       item: z.string(),
@@ -40,6 +41,7 @@ export const RecipeResponseSchema = z.object({
     "Other",
     "Unknown",
   ]),
+  category: RecipeCategorySchema,
   difficulty: z.enum(["Easy", "Medium", "Hard"]),
   instructions: z.array(z.string()),
   servings: z.string(),
