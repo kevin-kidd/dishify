@@ -46,6 +46,8 @@ export type Bindings = Env & {
 export interface RecipeQueueMessage {
   recipeId: string;
   dishName?: string;
-  hasImage: boolean;
-  type?: "recipe" | "featured"; // Type of generation, defaults to 'recipe' if not specified
+  hasImage?: boolean;
+  updateImage?: boolean;
+  updateDescription?: boolean;
+  type?: "recipe" | "featured" | "update"; // Type of operation
 }
