@@ -18,6 +18,9 @@ export const EnvSchema = z
     GOOGLE_CLIENT_SECRET: z.string(),
     MICROSOFT_CLIENT_ID: z.string(),
     MICROSOFT_CLIENT_SECRET: z.string(),
+    // Cloudflare Images
+    CF_IMAGES_API_TOKEN: z.string(),
+    CF_IMAGES_ACCOUNT_HASH: z.string(),
 
     RESEND_API_KEY: z.string(),
   })
