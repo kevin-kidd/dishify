@@ -43,7 +43,7 @@ const EmojiCounter = ({
           "bg-gray-100 active:bg-gray-200 hover:bg-gray-200",
           "border border-gray-200",
           isSelected && "bg-gray-200 border-gray-300",
-          !isSignedIn && "cursor-not-allowed opacity-50",
+          !isSignedIn && "cursor-not-allowed opacity-70",
         )}
       >
         <Text className="text-base">{emoji}</Text>
