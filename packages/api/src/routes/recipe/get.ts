@@ -4,6 +4,7 @@ import { publicProcedure } from "../../trpc";
 import { EnglishRecipesTable } from "../../db/schema/recipes";
 import { eq } from "drizzle-orm";
 import { tryCatch } from "@dishify/app/utils/helpers";
+import { updateEstimatedCosts } from "../marketplace/prices";
 
 const RECIPE_STATE_PREFIX = "recipe_state:";
 const STALE_TIMEOUT = 15000; // 15 seconds
@@ -103,6 +104,40 @@ export const getRecipeBySlug = publicProcedure
         code: "NOT_FOUND",
         message: "Recipe not found",
       });
+    }
+
+    // If recipe is completed and doesn't have estimatedCosts, update them
+    if (
+      recipe.status === "completed" &&
+      (!recipe.estimatedCosts ||
+        typeof recipe.estimatedCosts !== "object" ||
+        Object.keys(recipe.estimatedCosts || {}).length === 0) &&
+      recipe.data?.shoppingList &&
+      Array.isArray(recipe.data.shoppingList)
+    ) {
+      try {
+        // Run this synchronously to ensure the estimatedCosts are updated before returning the recipe
+        await updateEstimatedCosts(ctx, recipe.id, "us", recipe.data.shoppingList);
+
+        // Fetch the updated recipe
+        const { data: updatedRecipe } = await tryCatch(
+          ctx.db
+            .select()
+            .from(EnglishRecipesTable)
+            .where(eq(EnglishRecipesTable.id, recipe.id))
+            .get(),
+        );
+
+        if (updatedRecipe) {
+          return updatedRecipe;
+        }
+      } catch (error) {
+        console.error("Failed to update estimated costs:", {
+          error: error instanceof Error ? error.message : String(error),
+          recipeId: recipe.id,
+        });
+        // Continue with the original recipe if update fails
+      }
     }
 
     // If recipe is in generating state, check if it's actually being generated
