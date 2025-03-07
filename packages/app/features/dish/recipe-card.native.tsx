@@ -1,7 +1,19 @@
 "use client";
 
-import { Text, Card, CardHeader, CardTitle, CardContent, Skeleton, Button } from "@dishify/ui";
-import { View, RefreshControl, ScrollView } from "react-native";
+import {
+  Text,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Skeleton,
+  Button,
+  Image,
+  Badge,
+  Section,
+  cn,
+} from "@dishify/ui";
+import { View, RefreshControl, ScrollView, Pressable, Platform } from "react-native";
 import { useParams, useRouter } from "solito/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { trpc } from "app/utils/trpc";
@@ -13,7 +25,10 @@ import { EmojiReactions } from "./emoji-reactions/index";
 import { FavoriteButton, ShareButton } from "./actions";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import { Utensils } from "@dishify/ui/src/icons/utensils";
-import { IngredientPrices, useTotalCost } from "./ingredient-prices";
+import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
+import { getCostIndicators } from "./cost-indicators";
+import { IngredientMarketplaceLinks } from "./ingredient-marketplace-links";
+import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
 
 function toTitleCase(str: string) {
   return str
@@ -50,8 +65,33 @@ export default function RecipeCard() {
     },
   );
 
-  // Calculate total cost from individual ingredient prices
-  const costData = useTotalCost(recipe?.data?.shoppingList, recipe?.id);
+  // Get cost indicators from estimatedCosts
+  const costIndicators = useMemo(() => {
+    const indicators = getCostIndicators(recipe?.estimatedCosts);
+    if (indicators) return indicators;
+
+    // Fallback: If no estimatedCosts, show a default indicator based on the number of ingredients
+    if (recipe?.data?.shoppingList) {
+      const ingredientCount = recipe.data.shoppingList.length;
+      // Simple heuristic: more ingredients = higher cost
+      const count =
+        ingredientCount > 15 ? 4 : ingredientCount > 10 ? 3 : ingredientCount > 5 ? 2 : 1;
+
+      return (
+        <View className="flex flex-row items-center gap-1">
+          {Array.from({ length: count }, (_, i) => (
+            <DollarSign
+              key={`fallback-${recipe.id || "unknown"}-${i}`}
+              className="h-4 w-4 text-[#13a300]"
+              strokeWidth={2.5}
+            />
+          ))}
+        </View>
+      );
+    }
+
+    return null;
+  }, [recipe?.estimatedCosts, recipe?.data?.shoppingList, recipe?.id]);
 
   // Handle pull-to-refresh
   const onRefresh = useCallback(async () => {
@@ -95,15 +135,35 @@ export default function RecipeCard() {
     if (!recipe?.data || recipe.status !== "completed") return null;
 
     const { data } = recipe;
+    // Check if image is a valid URL or base64 data
+    const hasValidImage =
+      !!recipe.imageUrl &&
+      (recipe.imageUrl.startsWith("https") || recipe.imageUrl.startsWith("data:image"));
+    const hasImage = hasValidImage;
+    const hasCategory = !!recipe.category;
 
     return (
       <Card className="overflow-visible border-0 shadow-lg">
-        <CardHeader className="pt-5 pb-3 px-6 border-b border-sage-100">
-          <View className="flex flex-col">
+        <CardHeader
+          className={`pt-5 pb-3 px-6 border-b border-sage-100 relative ${hasImage ? "min-h-[200px]" : ""}`}
+        >
+          {hasImage && (
+            <View className="absolute inset-0 overflow-hidden rounded-t-lg">
+              <View className="absolute inset-0 bg-sage-900/60 z-10" />
+              <Image
+                src={recipe.imageUrl || ""}
+                alt={data.dishName}
+                className="w-full h-full object-cover"
+                style={{ objectFit: "cover" }}
+              />
+            </View>
+          )}
+
+          <View className={`flex flex-col relative z-20 ${hasImage ? "text-white" : ""}`}>
             <View className="flex flex-row items-center justify-between w-full mb-3">
               <CardTitle className="flex-1 min-w-0">
                 <Text
-                  className="text-2xl font-bold text-sage-900 truncate block w-full"
+                  className={`text-2xl font-bold ${hasImage ? "text-white" : "text-sage-900"} truncate block w-full`}
                   numberOfLines={1}
                 >
                   {toTitleCase(data.dishName)}
@@ -119,17 +179,43 @@ export default function RecipeCard() {
               </View>
             </View>
 
+            <View className="flex flex-row items-center gap-2 mt-2">
+              <CuisineLabel cuisine={data.cuisine} />
+
+              {hasCategory && (
+                <Pressable
+                  onPress={() =>
+                    router.push(`/category/${recipe.category?.toLowerCase().replace(/\s+/g, "-")}`)
+                  }
+                >
+                  <Badge variant="default">{recipe.category}</Badge>
+                </Pressable>
+              )}
+            </View>
+
+            {recipe.description && (
+              <Text
+                className={`mt-3 text-sm ${hasImage ? "text-white/90" : "text-sage-600"} leading-relaxed`}
+              >
+                {recipe.description}
+              </Text>
+            )}
+
             <View className="mt-6 flex flex-row items-center justify-between w-full">
               <View className="flex flex-row items-center flex-wrap gap-4">
                 <View className="flex flex-row items-center gap-2">
-                  <Clock className="h-4 w-4 text-sage-500" />
-                  <Text className="text-sm">{data.cookingTime}</Text>
+                  <Clock className={`h-4 w-4 ${hasImage ? "text-white/80" : "text-sage-500"}`} />
+                  <Text className={`text-sm ${hasImage ? "text-white" : ""}`}>
+                    {data.cookingTime}
+                  </Text>
                 </View>
                 <View className="flex flex-row items-center gap-2">
-                  <Utensils className="h-4 w-4 text-sage-500" />
-                  <Text className="text-sm">{data.servings} servings</Text>
+                  <Utensils className={`h-4 w-4 ${hasImage ? "text-white/80" : "text-sage-500"}`} />
+                  <Text className={`text-sm ${hasImage ? "text-white" : ""}`}>
+                    {data.servings} servings
+                  </Text>
                 </View>
-                <View className="flex flex-row items-center gap-1">{costData?.indicators}</View>
+                <View className="flex flex-row items-center gap-1">{costIndicators}</View>
               </View>
               <View className="flex-shrink-0">
                 <EmojiReactions slug={recipe.slug} />
@@ -168,11 +254,10 @@ export default function RecipeCard() {
                       <Text className="text-base text-sage-900">{item.quantity}</Text>
                       <Text className="text-sm text-sage-600">{item.item}</Text>
                     </View>
-                    <IngredientPrices
+                    <IngredientMarketplaceLinks
                       ingredient={item.item}
                       quantity={item.quantity}
                       recipeId={recipe.id}
-                      shoppingList={data.shoppingList}
                     />
                   </View>
                 ))}
@@ -182,7 +267,7 @@ export default function RecipeCard() {
         </CardContent>
       </Card>
     );
-  }, [recipe, costData?.indicators]);
+  }, [recipe, costIndicators, router]);
 
   // Show loading state while recipe is being generated
   if (recipe?.status === "generating" || isLoading) {
