@@ -2,11 +2,13 @@ import { Card, cn } from "@dishify/ui/src";
 import { ChevronRight } from "@dishify/ui/src/icons/chevron-right";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
-import { Fragment, useCallback } from "react";
+import { useCallback } from "react";
 import { Skeleton } from "@dishify/ui";
 import { Link } from "solito/link";
 import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
 import type { RecipeResponse } from "@dishify/api/schemas/recipe-response";
+import { getCostIndicators } from "../../dish/cost-indicators";
+import { View } from "react-native";
 
 export type TrendingCardProps = {
   dishName: string;
@@ -40,10 +42,28 @@ export default function TrendingCard({
     }
   }, []);
 
-  const getCostDisplay = useCallback((cost: TrendingCardProps["cost"]) => {
-    const count = cost > 10000 ? 4 : cost > 5000 ? 3 : cost > 2500 ? 2 : 1;
-    return Array(count).fill(
-      <DollarSign className="sm:h-4 sm:w-4 h-[14px] w-[14px] text-[#13a300]" strokeWidth={2.5} />,
+  const getCostDisplay = useCallback((costValue: number) => {
+    // Create a mock estimatedCosts object with the cost value
+    const mockEstimatedCosts = {
+      us: {
+        cost: costValue,
+        updatedAt: new Date().toISOString(),
+        missingIngredientsCount: 0,
+        totalIngredientsCount: 1,
+      },
+    };
+
+    // Use the shared getCostIndicators function
+    return (
+      getCostIndicators(mockEstimatedCosts) || (
+        // Fallback if getCostIndicators returns null
+        <View className="flex flex-row items-center gap-1">
+          <DollarSign
+            className="sm:h-4 sm:w-4 h-[14px] w-[14px] text-[#13a300]"
+            strokeWidth={2.5}
+          />
+        </View>
+      )
     );
   }, []);
 
@@ -83,10 +103,7 @@ export default function TrendingCard({
           </div>
 
           <div className="flex items-center justify-end w-full">
-            {cost > 0 &&
-              getCostDisplay(cost).map((item) => (
-                <Fragment key={`dollar-${dishName}-${crypto.randomUUID()}`}>{item}</Fragment>
-              ))}
+            {cost > 0 && getCostDisplay(cost)}
           </div>
         </div>
 
