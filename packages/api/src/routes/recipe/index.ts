@@ -7,6 +7,7 @@ import { recipeReactionsRouter } from "./reactions";
 import { trending } from "./trending";
 import { getFeaturedRecipe } from "./featured";
 import { getRecipesByCategory, getRecipesByCategoryCount } from "./category";
+import { getSeasonalRecipes } from "./seasonal";
 
 export const recipeRouter = router({
   generate,
@@ -19,6 +20,7 @@ export const recipeRouter = router({
   reactions: recipeReactionsRouter,
   trending,
   featured: getFeaturedRecipe,
+  seasonal: getSeasonalRecipes,
 });
 
 export type RecipeRouter = typeof recipeRouter;
