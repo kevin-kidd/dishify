@@ -1,23 +1,14 @@
-import { and, eq, gte } from "drizzle-orm";
 import type { z } from "zod";
 import { publicProcedure } from "../../trpc";
-import {
-  EnglishRecipesTable,
-  type EstimatedCosts,
-  RecipeReactionsTable,
-} from "../../db/schema/recipes";
-import { RecipeResponseSchema } from "../../../schemas/recipe-response";
-import type { Region } from "../marketplace/types";
-import type { RegionSchema } from "../../../schemas/marketplace";
-import { TRPCError } from "@trpc/server";
+import type { EstimatedCosts } from "../../db/schema/recipes";
+import type { RecipeResponseSchema } from "../../../schemas/recipe-response";
 import { tryCatch } from "@dishify/app/utils/helpers";
+import type { Context } from "../../context";
 
 const CACHE_KEY = "trending-recipes";
-const CACHE_TTL = 300; // 5 minutes in seconds
-const TRENDING_LIMIT = 10;
-const HOURS_24 = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const RATE_LIMIT_KEY = "trending-refresh-in-progress";
 
-// Define the trending recipe type
+// Define the trending recipe type using schema-defined types
 export type TrendingRecipe = {
   id: string;
   slug: string;
@@ -27,29 +18,54 @@ export type TrendingRecipe = {
 };
 
 /**
- * Calculates trending score based on reactions and their timestamps
- * Score formula:
- * - Base points for each reaction (positive/negative)
- * - Time decay factor based on reaction age
- * - Extra weight for reactions in last 24 hours
+ * Checks if a trending refresh is needed and queues a refresh job if necessary
  */
-const calculateTrendingScore = (reactions: { emoji: string; timestamp: string }[]) => {
-  const now = Date.now();
-  return reactions.reduce((score, { emoji, timestamp }) => {
-    const reactionTime = new Date(timestamp).getTime();
-    const hoursSinceReaction = (now - reactionTime) / (60 * 60 * 1000);
+const checkAndQueueRefresh = async (ctx: Context, cached: string | null) => {
+  // Check if a refresh is already in progress
+  const { data: inProgress, error: lockError } = await tryCatch(
+    ctx.recipeState.get(RATE_LIMIT_KEY),
+  );
 
-    // Time decay factor (1.0 to 0.1) over 7 days
-    const timeDecay = Math.max(0.1, 1 - hoursSinceReaction / (24 * 7));
+  if (lockError) {
+    console.error("Failed to check trending refresh lock:", {
+      error: lockError.message,
+    });
+  } else if (inProgress) {
+    console.log("Trending refresh already in progress, skipping queue");
+    return;
+  }
 
-    // Extra weight for recent reactions (last 24h)
-    const recencyBonus = now - reactionTime <= HOURS_24 ? 2 : 1;
+  // Queue a job to refresh the trending recipes
+  const { error: queueError } = await tryCatch(
+    ctx.recipeQueue.send({
+      recipeId: "trending", // Using a placeholder ID since we don't have a specific recipe ID
+      type: "trending-refresh",
+      timestamp: Date.now(),
+    }),
+  );
 
-    // Base points (-1 for negative reactions, +1 for positive)
-    const basePoints = ["👎", "🤢", "🤮"].includes(emoji) ? -1 : 1;
+  if (queueError) {
+    console.error("Failed to queue trending refresh:", {
+      error: queueError.message,
+    });
+  } else {
+    console.log("Successfully queued trending refresh");
+  }
+};
 
-    return score + basePoints * timeDecay * recencyBonus;
-  }, 0);
+/**
+ * Generates trending recipes on-demand when no cache exists
+ * This is only used when there's no cache at all, to avoid showing an empty list
+ */
+const generateTrendingRecipesOnDemand = async (ctx: Context): Promise<TrendingRecipe[]> => {
+  console.log("No cache exists, generating trending recipes on-demand");
+
+  // Queue a refresh in the background
+  await checkAndQueueRefresh(ctx, null);
+
+  // Return an empty array - the background job will populate the cache
+  // This is better than making users wait for the full computation
+  return [];
 };
 
 export const trending = publicProcedure.query(async ({ ctx }): Promise<TrendingRecipe[]> => {
@@ -60,113 +76,32 @@ export const trending = publicProcedure.query(async ({ ctx }): Promise<TrendingR
     console.error("Failed to fetch trending recipes from cache:", {
       error: cacheError.message,
     });
-    // Continue execution, we'll fetch fresh data
-  } else if (cached) {
+    // Queue a refresh in the background
+    await checkAndQueueRefresh(ctx, null);
+  } else if (!cached) {
+    // No cache exists yet, generate trending recipes on-demand
+    // This should only happen on the first request after deployment
+    return await generateTrendingRecipesOnDemand(ctx);
+  } else {
     try {
+      // We have valid cached data, queue a refresh in the background if needed
+      await checkAndQueueRefresh(ctx, cached);
+
+      // Return the cached data
       return JSON.parse(cached) as TrendingRecipe[];
     } catch (parseError) {
       console.error("Failed to parse cached trending recipes:", {
         error: parseError instanceof Error ? parseError.message : String(parseError),
       });
-      // Continue execution, we'll fetch fresh data
+
+      // Queue a refresh in the background
+      await checkAndQueueRefresh(ctx, null);
+
+      // Return an empty array - the background job will populate the cache
+      return [];
     }
   }
 
-  const detectedRegion = ctx.cf?.country;
-  const region = (detectedRegion ?? "US") as z.infer<typeof RegionSchema>;
-
-  // Get recipes with their reactions from the last 7 days
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-  const { data: recipesWithReactions, error: fetchError } = await tryCatch(
-    ctx.db
-      .select({
-        id: EnglishRecipesTable.id,
-        name: EnglishRecipesTable.name,
-        slug: EnglishRecipesTable.slug,
-        data: EnglishRecipesTable.data,
-        estimatedCosts: EnglishRecipesTable.estimatedCosts,
-        emoji: RecipeReactionsTable.emoji,
-        reactionTime: RecipeReactionsTable.createdAt,
-      })
-      .from(EnglishRecipesTable)
-      .leftJoin(
-        RecipeReactionsTable,
-        and(
-          eq(EnglishRecipesTable.id, RecipeReactionsTable.recipeId),
-          gte(RecipeReactionsTable.createdAt, sevenDaysAgo),
-        ),
-      )
-      .where(eq(EnglishRecipesTable.status, "completed")),
-  );
-
-  if (fetchError) {
-    console.error("Failed to fetch trending recipes:", {
-      error: fetchError.message,
-    });
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to fetch trending recipes",
-    });
-  }
-
-  // Group reactions by recipe
-  const recipeReactions = (recipesWithReactions || []).reduce<
-    Record<string, TrendingRecipe & { reactions: { emoji: string; timestamp: string }[] }>
-  >((acc, row) => {
-    if (!acc[row.id]) {
-      // Ensure data is not null before creating the recipe entry
-      if (!row.data) return acc;
-
-      const parsed = RecipeResponseSchema.safeParse(row.data);
-      if (!parsed.success) {
-        console.error(`Invalid recipe data for ${row.id}:`, parsed.error);
-        return acc;
-      }
-
-      acc[row.id] = {
-        id: row.id,
-        slug: row.slug,
-        data: parsed.data,
-        estimatedCost: row.estimatedCosts?.[region] ?? null,
-        trendingScore: 0,
-        reactions: [],
-      };
-    }
-    if (row.emoji && row.reactionTime) {
-      acc[row.id].reactions.push({
-        emoji: row.emoji,
-        timestamp: row.reactionTime,
-      });
-    }
-    return acc;
-  }, {});
-
-  // Calculate trending scores and sort
-  const trendingRecipes: TrendingRecipe[] = Object.values(recipeReactions)
-    .map((recipe) => ({
-      id: recipe.id,
-      slug: recipe.slug,
-      data: recipe.data,
-      trendingScore: calculateTrendingScore(recipe.reactions),
-      estimatedCost: recipe.estimatedCost,
-    }))
-    .sort((a, b) => b.trendingScore - a.trendingScore)
-    .slice(0, TRENDING_LIMIT);
-
-  // Cache the results in KV with expiration
-  const { error: cacheWriteError } = await tryCatch(
-    ctx.recipeState.put(CACHE_KEY, JSON.stringify(trendingRecipes), {
-      expirationTtl: CACHE_TTL,
-    }),
-  );
-
-  if (cacheWriteError) {
-    console.error("Failed to cache trending recipes:", {
-      error: cacheWriteError.message,
-    });
-    // Continue execution, caching failure is not critical
-  }
-
-  return trendingRecipes;
+  // If we reach here, it means we had a cache error but we should still try to return something
+  return [];
 });
