@@ -1,6 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations, type InferInsertModel, type InferSelectModel } from "drizzle-orm";
-import { sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, uniqueIndex, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-valibot";
 import type { RecipeResponse } from "../../../schemas/recipe-response";
 import { UserTable } from "./user";
@@ -274,3 +274,55 @@ export const FeaturedRecipeTable = sqliteTable("featured_recipes", {
 
 export type FeaturedRecipe = InferSelectModel<typeof FeaturedRecipeTable>;
 export type InsertFeaturedRecipe = InferInsertModel<typeof FeaturedRecipeTable>;
+
+// Trending Recipes Table - stores trending recipes and refresh status
+export const TrendingRecipesTable = sqliteTable("trending_recipes", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  recipeId: text("recipe_id")
+    .notNull()
+    .references(() => EnglishRecipesTable.id),
+  slug: text("slug").notNull(),
+  data: text("data", { mode: "json" }).$type<RecipeResponse>(),
+  trendingScore: integer("trending_score").notNull(),
+  estimatedCost: text("estimated_cost", { mode: "json" }).$type<
+    EstimatedCosts[keyof EstimatedCosts] | null
+  >(),
+  rank: integer("rank").notNull(), // Position in the trending list
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+export const TrendingRecipesTableRelations = relations(TrendingRecipesTable, ({ one }) => ({
+  recipe: one(EnglishRecipesTable, {
+    fields: [TrendingRecipesTable.recipeId],
+    references: [EnglishRecipesTable.id],
+  }),
+}));
+
+export type TrendingRecipeRow = InferSelectModel<typeof TrendingRecipesTable>;
+export type InsertTrendingRecipe = InferInsertModel<typeof TrendingRecipesTable>;
+export const insertTrendingRecipeSchema = createInsertSchema(TrendingRecipesTable);
+export const selectTrendingRecipeSchema = createSelectSchema(TrendingRecipesTable);
+
+// Trending Status Table - stores the status of trending refresh
+export const TrendingStatusTable = sqliteTable("trending_status", {
+  id: text("id").primaryKey().default("singleton"), // Only one row in this table
+  refreshInProgress: integer("refresh_in_progress", { mode: "boolean" }).notNull().default(false),
+  lastRefreshStarted: text("last_refresh_started"), // ISO string
+  lastRefreshCompleted: text("last_refresh_completed"), // ISO string
+  lastError: text("last_error"), // Error message from the last failed refresh
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+export type TrendingStatus = InferSelectModel<typeof TrendingStatusTable>;
+export type InsertTrendingStatus = InferInsertModel<typeof TrendingStatusTable>;
+export const insertTrendingStatusSchema = createInsertSchema(TrendingStatusTable);
+export const selectTrendingStatusSchema = createSelectSchema(TrendingStatusTable);
