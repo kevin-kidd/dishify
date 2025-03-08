@@ -105,12 +105,8 @@
           "name": "account_userId_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -185,12 +181,8 @@
           "name": "session_userId_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -331,16 +323,12 @@
       "indexes": {
         "english_recipes_id_unique": {
           "name": "english_recipes_id_unique",
-          "columns": [
-            "id"
-          ],
+          "columns": ["id"],
           "isUnique": true
         },
         "english_name_idx": {
           "name": "english_name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },
@@ -476,30 +464,22 @@
       "indexes": {
         "english_recipe_details_name_unique": {
           "name": "english_recipe_details_name_unique",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         },
         "english_recipe_details_slug_unique": {
           "name": "english_recipe_details_slug_unique",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "isUnique": true
         },
         "english_recipe_name_idx": {
           "name": "english_recipe_name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         },
         "english_recipe_slug_idx": {
           "name": "english_recipe_slug_idx",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "isUnique": true
         }
       },
@@ -557,10 +537,7 @@
       "indexes": {
         "user_recipe_idx": {
           "name": "user_recipe_idx",
-          "columns": [
-            "user_id",
-            "recipe_id"
-          ],
+          "columns": ["user_id", "recipe_id"],
           "isUnique": true
         }
       },
@@ -569,12 +546,8 @@
           "name": "favorites_user_id_user_id_fk",
           "tableFrom": "favorites",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -582,12 +555,8 @@
           "name": "favorites_recipe_id_english_recipe_details_id_fk",
           "tableFrom": "favorites",
           "tableTo": "english_recipe_details",
-          "columnsFrom": [
-            "recipe_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["recipe_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -634,12 +603,8 @@
           "name": "featured_recipes_recipe_id_english_recipe_details_id_fk",
           "tableFrom": "featured_recipes",
           "tableTo": "english_recipe_details",
-          "columnsFrom": [
-            "recipe_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["recipe_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -669,16 +634,12 @@
       "indexes": {
         "french_recipes_id_unique": {
           "name": "french_recipes_id_unique",
-          "columns": [
-            "id"
-          ],
+          "columns": ["id"],
           "isUnique": true
         },
         "french_name_idx": {
           "name": "french_name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },
@@ -708,16 +669,12 @@
       "indexes": {
         "german_recipes_id_unique": {
           "name": "german_recipes_id_unique",
-          "columns": [
-            "id"
-          ],
+          "columns": ["id"],
           "isUnique": true
         },
         "german_name_idx": {
           "name": "german_name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },
@@ -747,16 +704,12 @@
       "indexes": {
         "italian_recipes_id_unique": {
           "name": "italian_recipes_id_unique",
-          "columns": [
-            "id"
-          ],
+          "columns": ["id"],
           "isUnique": true
         },
         "italian_name_idx": {
           "name": "italian_name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },
@@ -807,11 +760,7 @@
       "indexes": {
         "user_recipe_emoji_idx": {
           "name": "user_recipe_emoji_idx",
-          "columns": [
-            "user_id",
-            "recipe_id",
-            "emoji"
-          ],
+          "columns": ["user_id", "recipe_id", "emoji"],
           "isUnique": true
         }
       },
@@ -820,12 +769,8 @@
           "name": "recipe_reactions_recipe_id_english_recipe_details_id_fk",
           "tableFrom": "recipe_reactions",
           "tableTo": "english_recipe_details",
-          "columnsFrom": [
-            "recipe_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["recipe_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -833,12 +778,8 @@
           "name": "recipe_reactions_user_id_user_id_fk",
           "tableFrom": "recipe_reactions",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -868,16 +809,12 @@
       "indexes": {
         "spanish_recipes_id_unique": {
           "name": "spanish_recipes_id_unique",
-          "columns": [
-            "id"
-          ],
+          "columns": ["id"],
           "isUnique": true
         },
         "spanish_name_idx": {
           "name": "spanish_name_idx",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },
@@ -963,11 +900,7 @@
       "indexes": {
         "marketplace_ingredient_region_idx": {
           "name": "marketplace_ingredient_region_idx",
-          "columns": [
-            "marketplace_slug",
-            "ingredient",
-            "region"
-          ],
+          "columns": ["marketplace_slug", "ingredient", "region"],
           "isUnique": true
         }
       },
@@ -1032,10 +965,7 @@
       "indexes": {
         "user_marketplace_idx": {
           "name": "user_marketplace_idx",
-          "columns": [
-            "user_id",
-            "marketplace_slug"
-          ],
+          "columns": ["user_id", "marketplace_slug"],
           "isUnique": true
         }
       },
