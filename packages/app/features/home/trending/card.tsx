@@ -1,4 +1,4 @@
-import { Card, cn } from "@dishify/ui/src";
+import { Card, cn, H3, Span } from "@dishify/ui/src";
 import { ChevronRight } from "@dishify/ui/src/icons/chevron-right";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import { DollarSign } from "@dishify/ui/src/icons/dollar-sign";
@@ -83,41 +83,43 @@ export default function TrendingCard({
         role="button"
         aria-label={`View recipe for ${dishName}`}
       >
-        <div className="absolute right-4 top-4">
+        <View className="absolute right-4 top-4">
           <ChevronRight className="h-5 w-5 text-primary/80 transition-transform duration-300 group-hover:translate-x-1" />
-        </div>
+        </View>
 
-        <div className="flex flex-col gap-2 h-[60%] w-full">
-          <div className="w-full overflow-hidden">
-            <h3 className="text-lg sm:text-xl font-semibold tracking-tight select-none truncate text-left">
+        <View className="flex flex-col gap-2 h-[60%] w-full">
+          <View className="w-full overflow-hidden">
+            <H3 className="text-lg sm:text-xl font-semibold tracking-tight py-0 my-0 select-none truncate text-left">
               {dishName}
-            </h3>
-          </div>
+            </H3>
+          </View>
           <CuisineLabel cuisine={cuisine} />
-        </div>
+        </View>
 
-        <div className="grid grid-cols-2 w-full h-[40%]">
-          <div className="flex items-center gap-2">
+        <View className="grid grid-cols-2 w-full mb-2">
+          <View className="flex flex-row items-center gap-2 w-full">
             <Clock className="h-4 w-4 text-primary/80" />
-            <span className="text-xs sm:text-sm text-gray-600 select-none">{prepTime}</span>
-          </div>
+            <Span className="text-xs sm:text-sm text-gray-600 select-none w-full text-left">
+              {prepTime}
+            </Span>
+          </View>
 
-          <div className="flex items-center justify-end w-full">
+          <View className="flex flex-row items-center justify-end w-full">
             {cost > 0 && getCostDisplay(cost)}
-          </div>
-        </div>
+          </View>
+        </View>
 
-        <div className="mt-2 flex-1 flex items-center justify-between border-t border-border w-full pt-3">
-          <span
+        <View className="mt-2 flex flex-row items-center justify-between border-t border-border w-full pt-3">
+          <Span
             className={cn(
               "text-xs sm:text-sm font-medium select-none",
               getDifficultyColor(difficulty),
             )}
           >
             {difficulty}
-          </span>
-          <span className="text-xs text-primary/80 select-none">Tap to view recipe</span>
-        </div>
+          </Span>
+          <Span className="text-xs text-primary/80 select-none">Tap to view recipe</Span>
+        </View>
       </Card>
     </Link>
   );
