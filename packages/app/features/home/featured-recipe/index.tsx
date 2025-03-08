@@ -2,16 +2,14 @@
 
 import { Button, Card, Div, H2, P, Skeleton, Span, Text, cn } from "@dishify/ui/src";
 import { Image, useWindowDimensions, View } from "react-native";
-import { ArrowRight, ChevronRight, DollarSign, Utensils } from "lucide-react-native";
+import { ArrowRight, Utensils } from "lucide-react-native";
 import { trpc } from "@dishify/app/utils/trpc";
 import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
 import { Clock } from "@dishify/ui/src/icons/clock";
 import type { RecipeResponse } from "@dishify/api/schemas/recipe-response";
 import { useRouter } from "solito/navigation";
-import type { FeaturedRecipeResponse } from "@dishify/api/src/queues/featured";
 import { Badge } from "@dishify/ui";
 import { getCostIndicators } from "../../dish/cost-indicators";
-import { MotiView } from "moti";
 
 // Extended type for featured recipe with additional properties
 type ExtendedFeaturedRecipe = {
@@ -85,20 +83,6 @@ function FeaturedRecipeCard({
       }
     }
   }
-
-  // Get difficulty color
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Easy":
-        return "text-green-500";
-      case "Medium":
-        return "text-yellow-500";
-      case "Hard":
-        return "text-red-500";
-      default:
-        return "text-gray-500";
-    }
-  };
 
   // Get cost indicators
   const costIndicators = featuredRecipe.estimatedCosts
