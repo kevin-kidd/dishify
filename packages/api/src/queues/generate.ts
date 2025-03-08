@@ -630,7 +630,9 @@ function containsUnknown(obj: unknown): boolean {
   return false;
 }
 
-// Generate an engaging description for the recipe using AI
+/**
+ * Generates an engaging description for the recipe using AI
+ */
 export async function generateRecipeDescription(
   dishName: string,
   cuisine: RecipeResponse["cuisine"],
@@ -666,7 +668,6 @@ export async function generateRecipeDescription(
   }
 
   try {
-    // Fallback to CloudFlare Workers AI
     const workersAi = createWorkersAI({ binding: env.AI });
 
     const ingredientsList = ingredients.map((ing) => ing.item).join(", ");
@@ -689,7 +690,6 @@ export async function generateRecipeDescription(
       return workersResponse.text.trim();
     }
 
-    // Last resort fallback
     return `A delightful ${cuisine} dish that will tantalize your taste buds. ${dishName} is perfect for any occasion and sure to impress.`;
   } catch (error) {
     console.error(
@@ -700,7 +700,9 @@ export async function generateRecipeDescription(
   }
 }
 
-// Generate an image for the recipe using Cloudflare Workers AI
+/**
+ * Generates an image for the recipe using Cloudflare Workers AI
+ */
 export async function generateRecipeImage(
   dishName: string,
   cuisine: RecipeResponse["cuisine"],
@@ -709,7 +711,6 @@ export async function generateRecipeImage(
   try {
     const prompt = `High resolution photo of ${dishName}, a ${cuisine} dish, presented nicely, as if it was made in a michelin star restaurant. Food photography with professional lighting, on elegant dinnerware.`;
 
-    // Generate image using Cloudflare Workers AI
     const imageResponse = await env.AI.run("@cf/black-forest-labs/flux-1-schnell", { prompt });
 
     if (!imageResponse || !imageResponse.image) {
@@ -717,14 +718,10 @@ export async function generateRecipeImage(
     }
 
     try {
-      // Convert base64 to binary
       const imageData = Buffer.from(imageResponse.image, "base64");
-
-      // Upload to Cloudflare Images
       const formData = new FormData();
       const fileName = `${dishName.replace(/\s+/g, "-").toLowerCase()}.jpg`;
 
-      // Use File constructor instead of Blob
       formData.append("file", new File([imageData], fileName, { type: "image/jpeg" }));
       formData.append(
         "metadata",
@@ -735,7 +732,6 @@ export async function generateRecipeImage(
         }),
       );
 
-      // Upload to Cloudflare Images API
       const uploadResponse = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/images/v1`,
         {
@@ -749,33 +745,26 @@ export async function generateRecipeImage(
 
       const uploadResult = (await uploadResponse.json()) as {
         success: boolean;
-        result?: {
-          id: string;
-          filename: string;
-          uploaded: string;
-          requireSignedURLs: boolean;
-          variants: string[];
-        };
-        errors?: Array<{ code: number; message: string }>;
+        errors: Array<{ code: number; message: string }>;
+        result: { id: string; variants: string[] };
       };
 
-      if (!uploadResponse.ok || !uploadResult.success || !uploadResult.result) {
-        console.error("Failed to upload image to Cloudflare Images", uploadResult);
-        throw new Error("Failed to upload image to Cloudflare Images");
+      if (!uploadResult.success) {
+        throw new Error(
+          `Failed to upload image: ${uploadResult.errors.map((e) => e.message).join(", ")}`,
+        );
       }
 
-      // Return the Cloudflare Images URL
-      const imageUrl = `https://imagedelivery.net/${env.CF_IMAGES_ACCOUNT_HASH}/${uploadResult.result.id}/public`;
+      const imageId = uploadResult.result.id;
+      const imageUrl = `https://imagedelivery.net/${env.CF_IMAGES_ACCOUNT_HASH}/${imageId}/public`;
 
       return imageUrl;
     } catch (uploadError) {
-      console.error("Failed to upload image to Cloudflare Images", uploadError);
-      // If upload fails, return the base64 data as fallback
+      console.error("Failed to upload image to Cloudflare Images:", uploadError);
       return `data:image/jpeg;base64,${imageResponse.image}`;
     }
   } catch (error) {
     console.error("Failed to generate recipe image", error);
-    // Fallback to a generic food image
     return `https://via.placeholder.com/800x600?text=${encodeURIComponent(dishName)}`;
   }
 }
