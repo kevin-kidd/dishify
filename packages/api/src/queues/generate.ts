@@ -639,16 +639,16 @@ export async function generateRecipeDescription(
   ingredients: Array<{ item: string; quantity: string }>,
   env: Bindings,
 ): Promise<string> {
-  try {
-    const ingredientsList = ingredients.map((ing) => ing.item).join(", ");
+  const ingredientsList = ingredients.map((ing) => ing.item).join(", ");
 
-    const prompt = `Write an engaging and appetizing description for ${dishName}, a ${cuisine} dish. 
+  const prompt = `Write an engaging and appetizing description for ${dishName}, a ${cuisine} dish. 
     The dish contains these key ingredients: ${ingredientsList}.
     The description should be enticing and make the reader want to try the recipe. 
     Mention 1-2 of the most distinctive ingredients that make this dish special.
     Keep it to a maximum of 2 sentences and focus on what makes this dish special.
-    Do not exceed 200 characters in length.`;
-
+    Do not exceed 200 characters in length.
+    Only respond with the description, nothing else.`;
+  try {
     const groq = createGroq({
       apiKey: env.GROQ_API_KEY,
     });
@@ -669,15 +669,6 @@ export async function generateRecipeDescription(
 
   try {
     const workersAi = createWorkersAI({ binding: env.AI });
-
-    const ingredientsList = ingredients.map((ing) => ing.item).join(", ");
-
-    const prompt = `Write an engaging and appetizing description for ${dishName}, a ${cuisine} dish. 
-    The dish contains these key ingredients: ${ingredientsList}.
-    The description should be enticing and make the reader want to try the recipe. 
-    Mention 1-2 of the most distinctive ingredients that make this dish special.
-    Keep it to a maximum of 2 sentences and focus on what makes this dish special.
-    Do not exceed 200 characters in length.`;
 
     const { data: workersResponse, error: workersError } = await tryCatch(
       generateText({
