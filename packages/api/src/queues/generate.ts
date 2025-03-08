@@ -215,7 +215,7 @@ export async function generateRecipe(
     } else {
       const { data: workersResponse, error: workersError } = await tryCatch(
         generateObject({
-          model: workersAi("@cf/meta/llama-3.1-8b-instruct"),
+          model: workersAi("@cf/meta/llama-3.3-70b-instruct-fp8-fast"),
           schema: RecipeResponseSchema,
           messages,
         }),
@@ -681,7 +681,7 @@ export async function generateRecipeDescription(
 
     const { data: workersResponse, error: workersError } = await tryCatch(
       generateText({
-        model: workersAi("@cf/meta/llama-3.1-8b-instruct"),
+        model: workersAi("@cf/meta/llama-3.3-70b-instruct-fp8-fast"),
         prompt,
       }),
     );
