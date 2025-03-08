@@ -497,10 +497,6 @@ export const getIngredientPrice = publicProcedure
         .from(MarketplacePricesTable)
         .where(
           and(
-            inArray(
-              MarketplacePricesTable.marketplaceSlug,
-              marketplaces.map((m) => m.slug),
-            ),
             eq(MarketplacePricesTable.ingredient, ingredient),
             eq(MarketplacePricesTable.region, region),
             gte(MarketplacePricesTable.lastUpdated, cacheExpiration),
@@ -521,29 +517,39 @@ export const getIngredientPrice = publicProcedure
       });
     }
 
-    // If we have valid cached prices for all marketplaces, return them
-    if (cachedPrices && cachedPrices.length === marketplaces.length) {
-      const prices: MarketplacePrice[] = cachedPrices.map((price) => {
-        const marketplace = marketplaces.find((m) => m.slug === price.marketplaceSlug);
-        if (!marketplace) {
-          throw new Error(`Marketplace ${price.marketplaceSlug} not found in registry`);
-        }
-        return {
-          price: price.price,
-          url: price.url,
-          currency: marketplace.defaultCurrency[region as keyof typeof marketplace.defaultCurrency],
-          unit: price.unit,
-          marketplaceName: marketplace.name,
-          marketplaceLogo: marketplace.logo,
-          marketplaceSlug: marketplace.slug,
-          title: price.title,
-        };
-      });
+    // If we have valid cached prices for this ingredient, return them
+    if (cachedPrices && cachedPrices.length > 0) {
+      console.debug(`Found ${cachedPrices.length} cached prices for ${ingredient} in ${region}`);
 
-      return {
-        prices,
-        region,
-      };
+      const prices: MarketplacePrice[] = cachedPrices
+        .map((price) => {
+          const marketplace = marketplaces.find((m) => m.slug === price.marketplaceSlug);
+          if (!marketplace) {
+            console.warn(
+              `Marketplace ${price.marketplaceSlug} not found in registry, skipping cached price`,
+            );
+            return null;
+          }
+          return {
+            price: price.price,
+            url: price.url,
+            currency:
+              marketplace.defaultCurrency[region as keyof typeof marketplace.defaultCurrency],
+            unit: price.unit,
+            marketplaceName: marketplace.name,
+            marketplaceLogo: marketplace.logo,
+            marketplaceSlug: marketplace.slug,
+            title: price.title,
+          };
+        })
+        .filter(Boolean) as MarketplacePrice[];
+
+      if (prices.length > 0) {
+        return {
+          prices,
+          region,
+        };
+      }
     }
 
     // Fetch fresh prices from Serper API
