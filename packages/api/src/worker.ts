@@ -11,6 +11,7 @@ import type { Bindings, RecipeQueueMessage } from "./types";
 import { tryCatch } from "@dishify/app/utils/helpers";
 import { generateFeaturedRecipe } from "./queues/featured";
 import { updateRecipe } from "./queues/update";
+import { refreshTrendingRecipes } from "./queues/trending";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -68,6 +69,15 @@ export default {
         if (error) {
           console.error("Failed to process featured recipe queue message:", {
             error: error.message,
+          });
+        }
+      } else if (message.body.type === "trending-refresh") {
+        // Trending recipes refresh
+        const { error } = await tryCatch(refreshTrendingRecipes(message.body, db, env));
+        if (error) {
+          console.error("Failed to process trending refresh queue message:", {
+            error: error.message,
+            timestamp: message.body.timestamp,
           });
         }
       } else {
