@@ -26,6 +26,26 @@ const LOADING_CARDS: TrendingRecipe[] = Array.from({ length: 4 }, (_, i) => ({
   estimatedCost: null,
 }));
 
+/**
+ * Formats the preparation time to ensure consistent display
+ * Checks if the time string already contains time units, and only adds "minutes" if none are found
+ * @param time - The raw cooking/preparation time string
+ * @returns Properly formatted time string
+ */
+function formatPrepTime(time: string): string {
+  // Check if time already contains any time-related words
+  const timeWords = ["minute", "minutes", "hour", "hours", "hr", "hrs", "min", "mins"];
+  const hasTimeUnit = timeWords.some((word) => time.toLowerCase().includes(word));
+
+  // If time already has a time unit, return as is
+  if (hasTimeUnit) {
+    return time;
+  }
+
+  // Otherwise, append "minutes" as the default unit
+  return `${time} minutes`;
+}
+
 export function TrendingSection() {
   const { data: trendingRecipes, isLoading } = trpc.recipe.trending.useQuery();
 
@@ -73,9 +93,7 @@ export function TrendingSection() {
                     cost: recipe.estimatedCost?.cost ?? 0,
                     difficulty: recipeData.difficulty ?? "Medium",
                     cuisine: recipeData.cuisine,
-                    prepTime: recipeData.cookingTime.includes("minutes")
-                      ? recipeData.cookingTime
-                      : `${recipeData.cookingTime} minutes`,
+                    prepTime: formatPrepTime(recipeData.cookingTime),
                     href: `/dish/${recipe.slug}`,
                   };
                   return (
