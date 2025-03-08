@@ -4,24 +4,23 @@ import type { z } from "zod";
 import {
   EnglishRecipesTable,
   RecipeReactionsTable,
+  TrendingRecipesTable,
+  TrendingStatusTable,
   type EstimatedCosts,
 } from "../db/schema/recipes";
 import type * as recipeSchema from "../db/schema/recipes";
 import type * as userSchema from "../db/schema/user";
-import { RecipeResponseSchema } from "../../schemas/recipe-response";
+import type { RecipeResponseSchema } from "../../schemas/recipe-response";
 import type { RegionSchema } from "../../schemas/marketplace";
 import type { Bindings, RecipeQueueMessage } from "../types";
 import { tryCatch } from "@dishify/app/utils/helpers";
 import type { TrendingRecipe } from "../routes/recipe/trending";
 
 // Constants
-const CACHE_KEY = "trending-recipes";
-const CACHE_TTL = 300; // 5 minutes in seconds
 const TRENDING_LIMIT = 10;
 const HOURS_24 = 24 * 60 * 60 * 1000;
 const WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_TIME_WINDOWS = 3;
-const RATE_LIMIT_KEY = "trending-refresh-in-progress";
 
 type RecipeWithReactions = TrendingRecipe & {
   reactions: { emoji: string; timestamp: string }[];
@@ -58,15 +57,6 @@ const calculateTrendingScore = (reactions: { emoji: string; timestamp: string }[
     return score + basePoints * timeDecay * recencyBonus;
   }, 0);
 };
-
-/**
- * Creates a backward compatible schema for validation
- */
-const createBackwardCompatibleSchema = () => {
-  return RecipeResponseSchema.merge(RecipeResponseSchema.partial());
-};
-
-const BackwardCompatibleRecipeSchema = createBackwardCompatibleSchema();
 
 /**
  * Fetches recipes with reactions from a specific time window
@@ -111,20 +101,10 @@ const processRecipesWithReactions = (recipesWithReactions: RecipeReactionRow[], 
     if (!acc[row.id]) {
       if (!row.data) return acc;
 
-      const parsed = BackwardCompatibleRecipeSchema.safeParse(row.data);
-      if (!parsed.success) {
-        console.error(`Invalid recipe data for ${row.id}:`, parsed.error);
-        console.error(
-          `Validation errors for recipe ${row.id}:`,
-          JSON.stringify(parsed.error.format()),
-        );
-        return acc;
-      }
-
       acc[row.id] = {
         id: row.id,
         slug: row.slug,
-        data: parsed.data as NonNullable<z.infer<typeof RecipeResponseSchema>>,
+        data: row.data as NonNullable<z.infer<typeof RecipeResponseSchema>>,
         estimatedCost: row.estimatedCosts?.[region as keyof typeof row.estimatedCosts] ?? null,
         trendingScore: 0,
         reactions: [],
@@ -173,25 +153,56 @@ const fetchRandomRecipes = async (
   }
 
   if (!additionalRecipes || !Array.isArray(additionalRecipes) || additionalRecipes.length === 0) {
+    console.log("No additional recipes found in the database");
     return [];
   }
 
-  return additionalRecipes
-    .filter((row) => !existingIds.has(row.id) && row.data)
-    .map((row) => {
-      const parsed = BackwardCompatibleRecipeSchema.safeParse(row.data);
-      if (!parsed.success) return null;
+  console.log(`Found ${additionalRecipes.length} random recipes, filtering and mapping`);
 
-      return {
-        id: row.id,
-        slug: row.slug,
-        data: parsed.data as NonNullable<z.infer<typeof RecipeResponseSchema>>,
-        trendingScore: 0,
-        estimatedCost: row.estimatedCosts?.[region as keyof typeof row.estimatedCosts] ?? null,
-      };
-    })
-    .filter((recipe): recipe is TrendingRecipe => recipe !== null)
+  // Filter out recipes that are already in the trending list and have valid data
+  const filteredRecipes = additionalRecipes
+    .filter((row) => !existingIds.has(row.id) && row.data)
+    .map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      data: row.data as NonNullable<z.infer<typeof RecipeResponseSchema>>,
+      trendingScore: 0,
+      estimatedCost: row.estimatedCosts?.[region as keyof typeof row.estimatedCosts] ?? null,
+    }))
     .slice(0, neededCount);
+
+  console.log(`Returning ${filteredRecipes.length} random recipes`);
+  return filteredRecipes;
+};
+
+/**
+ * Ensures the trending status is reset to not in progress
+ * This is a safety function to make sure we don't get stuck
+ */
+const resetTrendingStatus = async (
+  db: DrizzleD1Database<typeof recipeSchema & typeof userSchema>,
+  error?: Error,
+) => {
+  console.log("Resetting trending status to not in progress");
+
+  try {
+    await db
+      .update(TrendingStatusTable)
+      .set({
+        refreshInProgress: false,
+        lastRefreshCompleted: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        ...(error && { lastError: error.message }),
+      })
+      .where(eq(TrendingStatusTable.id, "singleton"));
+
+    console.log("Successfully reset trending status");
+  } catch (resetError) {
+    console.error("Failed to reset trending status:", {
+      error: resetError instanceof Error ? resetError.message : String(resetError),
+      originalError: error?.message,
+    });
+  }
 };
 
 /**
@@ -206,36 +217,61 @@ export async function refreshTrendingRecipes(
     return;
   }
 
-  console.log("Starting trending recipes refresh");
+  console.log("[Queue Handler] Trending refresh triggered");
 
-  const { data: inProgress, error: lockError } = await tryCatch(
-    env.RECIPE_STATE.get(RATE_LIMIT_KEY),
+  // Check if a refresh is already in progress
+  const { data: statusRow, error: statusError } = await tryCatch(
+    db.select().from(TrendingStatusTable).where(eq(TrendingStatusTable.id, "singleton")).get(),
   );
 
-  if (lockError) {
-    console.error("Failed to check trending refresh lock:", {
-      error: lockError.message,
-    });
-  } else if (inProgress) {
-    console.log("Trending refresh already in progress, skipping");
+  if (statusError) {
+    console.error("Failed to check trending refresh status:", statusError);
     return;
   }
 
-  const { error: setLockError } = await tryCatch(
-    env.RECIPE_STATE.put(RATE_LIMIT_KEY, "true", { expirationTtl: 300 }),
+  const currentTime = Date.now();
+  if (statusRow?.refreshInProgress && statusRow.lastRefreshStarted) {
+    const elapsedTime = currentTime - new Date(statusRow.lastRefreshStarted).getTime();
+
+    if (elapsedTime < 60000) {
+      // 60 seconds
+      console.log(
+        `[Queue Handler] Refresh already in progress for ${elapsedTime / 1000} seconds, skipping.`,
+      );
+      return;
+    }
+
+    console.warn(`[Queue Handler] Refresh stuck for ${elapsedTime / 1000} seconds, proceeding.`);
+  }
+
+  // Explicitly set refreshInProgress to true at the start
+  const { error: updateError } = await tryCatch(
+    db
+      .update(TrendingStatusTable)
+      .set({
+        refreshInProgress: true,
+        lastRefreshStarted: new Date(currentTime).toISOString(),
+        updatedAt: new Date(currentTime).toISOString(),
+        lastError: null,
+      })
+      .where(eq(TrendingStatusTable.id, "singleton")),
   );
 
-  if (setLockError) {
-    console.error("Failed to set trending refresh lock:", {
-      error: setLockError.message,
-    });
+  if (updateError) {
+    console.error("Failed to set refreshInProgress status:", updateError);
+    return;
   }
+
+  let processingError: Error | undefined;
 
   try {
     const region = "US" as z.infer<typeof RegionSchema>;
+    let trendingRecipes: TrendingRecipe[] = [];
+
+    // First try to get recipes with reactions
+    console.log("[Queue Handler] Fetching recipes with reactions");
     let lookbackPeriods = 1;
     let recipeReactions: Record<string, RecipeWithReactions> = {};
-    let trendingRecipes: TrendingRecipe[] = [];
 
     while (lookbackPeriods <= MAX_TIME_WINDOWS) {
       const { data: recipesWithReactions, error: fetchError } = await fetchRecipesWithReactions(
@@ -247,26 +283,41 @@ export async function refreshTrendingRecipes(
         console.error(`Failed to fetch trending recipes for lookback period ${lookbackPeriods}:`, {
           error: fetchError.message,
         });
+        // Don't break here, continue to try random recipes
         break;
       }
 
-      recipeReactions = processRecipesWithReactions(
-        Array.isArray(recipesWithReactions) ? (recipesWithReactions as RecipeReactionRow[]) : [],
-        region,
-      );
+      if (
+        recipesWithReactions &&
+        Array.isArray(recipesWithReactions) &&
+        recipesWithReactions.length > 0
+      ) {
+        console.log(`Found ${recipesWithReactions.length} recipes with potential reactions`);
 
-      trendingRecipes = Object.values(recipeReactions)
-        .map((recipe) => ({
-          id: recipe.id,
-          slug: recipe.slug,
-          data: recipe.data,
-          trendingScore: calculateTrendingScore(recipe.reactions),
-          estimatedCost: recipe.estimatedCost,
-        }))
-        .sort((a, b) => b.trendingScore - a.trendingScore);
+        recipeReactions = processRecipesWithReactions(
+          recipesWithReactions as RecipeReactionRow[],
+          region,
+        );
 
-      if (trendingRecipes.length >= TRENDING_LIMIT) {
-        break;
+        const recipesWithScores = Object.values(recipeReactions)
+          .map((recipe) => ({
+            id: recipe.id,
+            slug: recipe.slug,
+            data: recipe.data,
+            trendingScore: calculateTrendingScore(recipe.reactions),
+            estimatedCost: recipe.estimatedCost,
+          }))
+          .filter((recipe) => recipe.trendingScore > 0) // Only include recipes with positive scores
+          .sort((a, b) => b.trendingScore - a.trendingScore);
+
+        console.log(`Found ${recipesWithScores.length} recipes with positive trending scores`);
+        trendingRecipes = recipesWithScores;
+
+        if (trendingRecipes.length >= TRENDING_LIMIT) {
+          break;
+        }
+      } else {
+        console.log(`No recipes with reactions found for lookback period ${lookbackPeriods}`);
       }
 
       lookbackPeriods++;
@@ -276,40 +327,118 @@ export async function refreshTrendingRecipes(
       `Found ${trendingRecipes.length} trending recipes with reactions after ${lookbackPeriods} lookback periods`,
     );
 
+    // If we don't have enough trending recipes with reactions, fill with random recipes
     if (trendingRecipes.length < TRENDING_LIMIT) {
       const existingIds = new Set(trendingRecipes.map((recipe) => recipe.id));
       const neededCount = TRENDING_LIMIT - trendingRecipes.length;
 
+      console.log(`Need ${neededCount} more recipes to reach the limit of ${TRENDING_LIMIT}`);
       const randomRecipes = await fetchRandomRecipes(db, region, neededCount, existingIds);
-      trendingRecipes = [...trendingRecipes, ...randomRecipes];
+
+      if (randomRecipes.length > 0) {
+        console.log(`Adding ${randomRecipes.length} random recipes to trending list`);
+        trendingRecipes = [...trendingRecipes, ...randomRecipes];
+      } else {
+        console.log("No random recipes found to add to trending list");
+      }
+    }
+
+    // If we still don't have any trending recipes, try one more time with a larger limit
+    if (trendingRecipes.length === 0) {
+      console.log("No trending recipes found, trying one more time with a larger limit");
+
+      const { data: allRecipes, error: allRecipesError } = await tryCatch(
+        db
+          .select({
+            id: EnglishRecipesTable.id,
+            name: EnglishRecipesTable.name,
+            slug: EnglishRecipesTable.slug,
+            data: EnglishRecipesTable.data,
+            estimatedCosts: EnglishRecipesTable.estimatedCosts,
+          })
+          .from(EnglishRecipesTable)
+          .where(eq(EnglishRecipesTable.status, "completed"))
+          .limit(TRENDING_LIMIT * 3),
+      );
+
+      if (allRecipesError) {
+        console.error("Failed to fetch all recipes:", {
+          error: allRecipesError.message,
+        });
+      } else if (allRecipes && Array.isArray(allRecipes) && allRecipes.length > 0) {
+        console.log(`Found ${allRecipes.length} total recipes, using as trending`);
+
+        trendingRecipes = allRecipes
+          .filter((row) => row.data)
+          .map((row) => ({
+            id: row.id,
+            slug: row.slug,
+            data: row.data as NonNullable<z.infer<typeof RecipeResponseSchema>>,
+            trendingScore: 0,
+            estimatedCost: row.estimatedCosts?.[region as keyof typeof row.estimatedCosts] ?? null,
+          }))
+          .slice(0, TRENDING_LIMIT);
+      }
     }
 
     trendingRecipes = trendingRecipes.slice(0, TRENDING_LIMIT);
 
-    const { error: cacheWriteError } = await tryCatch(
-      env.RECIPE_STATE.put(CACHE_KEY, JSON.stringify(trendingRecipes), {
-        expirationTtl: CACHE_TTL,
-      }),
+    console.log(
+      `[Queue Handler] Found ${trendingRecipes.length} recipes after reactions and random fetch`,
     );
 
-    if (cacheWriteError) {
-      console.error("Failed to cache trending recipes:", {
-        error: cacheWriteError.message,
+    // Check if we have any trending recipes to store
+    if (trendingRecipes.length === 0) {
+      console.error("No trending recipes to store, something went wrong");
+      processingError = new Error("No trending recipes to store");
+      return;
+    }
+
+    // First, check if we have any existing trending recipes
+    const { data: existingTrending, error: countError } = await tryCatch(
+      db.select().from(TrendingRecipesTable).all(),
+    );
+
+    if (countError) {
+      console.error("Failed to check existing trending recipes:", {
+        error: countError.message,
       });
+      processingError = countError;
     } else {
-      console.log(`Successfully cached ${trendingRecipes.length} trending recipes`);
+      console.log(
+        `Found ${existingTrending?.length || 0} existing trending recipes in the database`,
+      );
+    }
+
+    // Use a batch operation to ensure atomicity
+    console.log("[Queue Handler] Starting batch operation to store trending recipes");
+    try {
+      await db.batch([
+        db.delete(TrendingRecipesTable),
+        ...trendingRecipes.map((recipe, i) =>
+          db.insert(TrendingRecipesTable).values({
+            recipeId: recipe.id,
+            slug: recipe.slug,
+            data: recipe.data,
+            trendingScore: recipe.trendingScore,
+            estimatedCost: recipe.estimatedCost,
+            rank: i + 1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }),
+        ),
+      ]);
+
+      console.log("[Queue Handler] Batch operation completed successfully");
+    } catch (batchError) {
+      console.error("Batch operation failed:", batchError);
+      processingError = batchError as Error;
     }
   } catch (error) {
-    console.error("Error during trending recipes refresh:", {
-      error: (error as Error).message,
-    });
+    console.error("[Queue Handler] Error during trending recipes refresh:", error);
+    processingError = error as Error;
   } finally {
-    const { error: clearLockError } = await tryCatch(env.RECIPE_STATE.delete(RATE_LIMIT_KEY));
-
-    if (clearLockError) {
-      console.error("Failed to clear trending refresh lock:", {
-        error: clearLockError.message,
-      });
-    }
+    console.log("[Queue Handler] Resetting trending status");
+    await resetTrendingStatus(db, processingError);
   }
 }
