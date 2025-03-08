@@ -14,6 +14,8 @@ import { fetchSerperPrice } from "./serper";
 import { generateObject } from "ai";
 import { tryCatch } from "@dishify/app/utils/helpers";
 import type { Context } from "../../context";
+import { createWorkersAI } from "workers-ai-provider";
+import type { Message } from "ai";
 
 // One week in milliseconds
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000;
@@ -566,14 +568,11 @@ export const getIngredientPrice = publicProcedure
         results: serperResponse?.shopping.slice(0, 5) || [], // Only take first 5 results
       };
 
-      // Use AI to structure prices
-      const { data: response, error: aiError } = await tryCatch(
-        generateObject({
-          model: ctx.groq("llama-3.3-70b-versatile"),
-          messages: [
-            {
-              role: "system",
-              content: `You are a helpful assistant that structures product prices from shopping search results. You will:
+      // Create shared messages for both AI models
+      const messages = [
+        {
+          role: "system" as const,
+          content: `You are a helpful assistant that structures product prices from shopping search results. You will:
 1. Extract prices and convert them to cents (smallest currency unit)
    - Remove currency symbols and convert string prices like "$1.99" to cents (199)
    - Handle various price formats (e.g., "$1.99", "$1,99", "1.99 USD")
@@ -590,10 +589,10 @@ export const getIngredientPrice = publicProcedure
 4. Structure the data according to our schema
 
 Skip any results where you cannot confidently extract a valid price.`,
-            },
-            {
-              role: "user",
-              content: `Valid marketplaces for region ${region}:
+        },
+        {
+          role: "user" as const,
+          content: `Valid marketplaces for region ${region}:
 ${marketplaces.map((m) => `- ${m.name} (slug: ${m.slug})`).join("\n")}
 
 Structure these shopping results:
@@ -602,19 +601,65 @@ Ingredient: ${shoppingResultsData.ingredient}
 Quantity Needed: ${shoppingResultsData.quantity}
 Search Results:
 ${JSON.stringify(shoppingResultsData.results, null, 2)}`,
-            },
-          ],
+        },
+      ];
+
+      // Use Groq AI to structure the prices
+      const { data: response, error: aiError } = await tryCatch(
+        generateObject({
+          model: ctx.groq("llama-3.3-70b-versatile"),
+          messages,
           schema: IngredientPriceResponseSchema,
         }),
       );
 
+      let structuredResponse = response;
+
       if (aiError) {
-        console.error("Failed to structure prices with AI:", {
+        console.error("Failed to structure prices with Groq AI:", {
           error: aiError.message,
           ingredient,
           region,
         });
-        throw new MarketplaceError("Failed to structure prices", "API_ERROR", "ai");
+
+        // Fallback to Workers AI
+        try {
+          const workersAi = createWorkersAI({ binding: ctx.env.AI as any });
+
+          const { data: workersResponse, error: workersError } = await tryCatch(
+            generateObject({
+              model: workersAi("@cf/meta/llama-3.3-70b-instruct-fp8-fast"),
+              messages,
+              schema: IngredientPriceResponseSchema,
+            }),
+          );
+
+          if (workersError) {
+            console.error("Failed to structure prices with Workers AI:", {
+              error: workersError.message,
+              ingredient,
+              region,
+            });
+            throw new MarketplaceError(
+              "Failed to structure prices with both Groq and Workers AI",
+              "API_ERROR",
+              "ai",
+            );
+          }
+
+          structuredResponse = workersResponse;
+        } catch (error) {
+          console.error("Failed to structure prices with both Groq and Workers AI:", {
+            error,
+            ingredient,
+            region,
+          });
+          throw new MarketplaceError(
+            "Failed to structure prices with both Groq and Workers AI",
+            "API_ERROR",
+            "ai",
+          );
+        }
       }
 
       // Filter and store prices
@@ -624,8 +669,8 @@ ${JSON.stringify(shoppingResultsData.results, null, 2)}`,
         z.infer<typeof IngredientPriceResponseSchema>["prices"][number]
       >();
 
-      if (response?.object?.prices) {
-        for (const price of response.object.prices) {
+      if (structuredResponse?.object?.prices) {
+        for (const price of structuredResponse.object.prices) {
           if (!Object.keys(marketplaceRegistry).includes(price.marketplaceSlug)) {
             continue;
           }
