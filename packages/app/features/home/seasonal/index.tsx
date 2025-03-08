@@ -18,7 +18,9 @@ export function SeasonalSection() {
   const router = useRouter();
 
   // Fetch seasonal recipes from the API
-  const { data, isLoading, error } = trpc.recipe.seasonal.useQuery();
+  const { data, isLoading, error } = trpc.recipe.seasonal.useQuery(undefined, {
+    meta: { skipErrorToast: true },
+  });
 
   // Function to get color based on difficulty
   const getDifficultyColor = useCallback((difficulty: string) => {
