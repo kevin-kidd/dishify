@@ -47,7 +47,11 @@ function formatPrepTime(time: string): string {
 }
 
 export function TrendingSection() {
-  const { data: trendingRecipes, isLoading } = trpc.recipe.trending.useQuery();
+  const { data: trendingRecipes, isLoading } = trpc.recipe.trending.useQuery(undefined, {
+    meta: {
+      skipErrorToast: true,
+    },
+  });
 
   const plugins = [
     WheelGesturesPlugin({ forceWheelAxis: "x" }),
@@ -60,7 +64,15 @@ export function TrendingSection() {
     }),
   ];
 
-  const recipesToRender: TrendingRecipe[] = isLoading ? LOADING_CARDS : trendingRecipes ?? [];
+  // Show loading cards if:
+  // 1. The query is still loading, OR
+  // 2. We have data but it's an empty array (indicating a refresh is in progress)
+  const shouldShowLoadingCards = isLoading || (trendingRecipes && trendingRecipes.length === 0);
+
+  // Use loading cards when appropriate, otherwise use the actual trending recipes
+  const recipesToRender: TrendingRecipe[] = shouldShowLoadingCards
+    ? LOADING_CARDS
+    : trendingRecipes ?? [];
 
   return (
     <Section className="w-full pt-12 pb-8 max-w-7xl mx-auto">
@@ -102,7 +114,7 @@ export function TrendingSection() {
                       className="pl-4 md:pl-6 basis-4/5 sm:basis-1/2 lg:basis-[40%]"
                     >
                       <Div className="p-4">
-                        <TrendingCard {...cardProps} isLoading={isLoading} />
+                        <TrendingCard {...cardProps} isLoading={shouldShowLoadingCards} />
                       </Div>
                     </CarouselItem>
                   );
