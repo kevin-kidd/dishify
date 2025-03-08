@@ -2,7 +2,6 @@ import { desc, eq } from "drizzle-orm";
 import { publicProcedure } from "../../trpc";
 import {
   FeaturedRecipeTable,
-  type FeaturedRecipe,
   EnglishRecipesTable,
   RecipeReactionsTable,
 } from "../../db/schema/recipes";
@@ -196,6 +195,26 @@ export const getFeaturedRecipe = publicProcedure.query(async ({ ctx }) => {
         message: "Featured recipe is being generated",
       });
     }
+
+    // Check if we've already queued a generation recently
+    const { data: queuedRecently, error: queueCheckError } = await tryCatch(
+      recipeState.get(`${FEATURED_RECIPE_STATE_PREFIX}queued`),
+    );
+
+    if (queuedRecently && !queueCheckError) {
+      console.log("Featured recipe generation was recently queued, not queueing again");
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Featured recipe is being generated",
+      });
+    }
+
+    // Set a flag to indicate we've queued a generation
+    await tryCatch(
+      recipeState.put(`${FEATURED_RECIPE_STATE_PREFIX}queued`, "true", {
+        expirationTtl: 60, // 1 minute TTL to prevent duplicate queueing
+      }),
+    );
 
     // Start background generation via the queue
     const queueMessage: RecipeQueueMessage = {
