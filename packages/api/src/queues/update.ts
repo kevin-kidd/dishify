@@ -9,8 +9,6 @@ import { generateRecipeDescription, generateRecipeImage } from "./generate";
 
 /**
  * Updates a recipe with missing image or description
- * This function is called by the queue worker when a recipe is found to be missing
- * an image or description during a get request
  */
 export async function updateRecipe(
   { recipeId, updateImage, updateDescription }: RecipeQueueMessage,
@@ -23,7 +21,6 @@ export async function updateRecipe(
     updateDescription,
   });
 
-  // Fetch the recipe to get necessary data for generation
   const { data: recipe, error: recipeError } = await tryCatch(
     db.select().from(EnglishRecipesTable).where(eq(EnglishRecipesTable.id, recipeId)).get(),
   );
@@ -36,7 +33,6 @@ export async function updateRecipe(
     return;
   }
 
-  // Skip if recipe is not completed
   if (recipe.status !== "completed") {
     console.log("Skipping update for non-completed recipe:", {
       recipeId,
@@ -45,7 +41,6 @@ export async function updateRecipe(
     return;
   }
 
-  // Skip if recipe doesn't have data
   if (!recipe.data) {
     console.log("Skipping update for recipe without data:", {
       recipeId,
@@ -57,7 +52,6 @@ export async function updateRecipe(
     updatedAt: new Date().toISOString(),
   };
 
-  // Generate description if needed
   if (updateDescription && (!recipe.description || recipe.description.trim() === "")) {
     try {
       if (recipe.data.shoppingList && Array.isArray(recipe.data.shoppingList)) {
@@ -84,7 +78,6 @@ export async function updateRecipe(
     }
   }
 
-  // Generate image if needed
   if (updateImage && (!recipe.imageUrl || recipe.imageUrl.trim() === "")) {
     try {
       const imageUrl = await generateRecipeImage(recipe.data.dishName, recipe.data.cuisine, env);
@@ -104,9 +97,7 @@ export async function updateRecipe(
     }
   }
 
-  // Update the recipe if we have changes
   if (Object.keys(updateData).length > 1) {
-    // More than just updatedAt
     const { error: updateError } = await tryCatch(
       db.update(EnglishRecipesTable).set(updateData).where(eq(EnglishRecipesTable.id, recipeId)),
     );
