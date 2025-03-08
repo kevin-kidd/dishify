@@ -49,5 +49,6 @@ export interface RecipeQueueMessage {
   hasImage?: boolean;
   updateImage?: boolean;
   updateDescription?: boolean;
-  type?: "recipe" | "featured" | "update"; // Type of operation
+  type?: "recipe" | "featured" | "update" | "trending-refresh"; // Type of operation
+  timestamp?: number; // For trending-refresh type
 }
