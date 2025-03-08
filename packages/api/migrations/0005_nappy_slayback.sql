@@ -1,0 +1,1 @@
+ALTER TABLE `trending_status` ADD `last_error` text;

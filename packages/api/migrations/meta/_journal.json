@@ -29,6 +29,20 @@
       "when": 1741314120667,
       "tag": "0003_handy_network",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1741412383225,
+      "tag": "0004_daffy_strong_guy",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1741413217111,
+      "tag": "0005_nappy_slayback",
+      "breakpoints": true
     }
   ]
 }
