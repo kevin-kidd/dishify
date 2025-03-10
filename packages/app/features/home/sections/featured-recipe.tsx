@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Card, Div, H2, P, Skeleton, Span, Text, cn } from "@dishify/ui/src";
-import { Image, useWindowDimensions, View } from "react-native";
+import { Image, useWindowDimensions } from "react-native";
 import { ArrowRight, Utensils } from "lucide-react-native";
 import { trpc } from "@dishify/app/utils/trpc";
 import CuisineLabel from "@dishify/ui/src/elements/cuisine-label";
@@ -199,7 +199,7 @@ function FeaturedRecipeCard({
 
 function FeaturedRecipeCardSkeleton({ isMobile }: { isMobile: boolean }) {
   return (
-    <Card className="w-full overflow-hidden bg-white border-0 rounded-2xl shadow-lg mx-4 sm:mx-6">
+    <Card className="w-full overflow-hidden bg-white border-0 rounded-2xl shadow-lg sm:mx-6">
       <Div className={cn("flex w-full", isMobile ? "flex-col" : "flex-row")}>
         <Skeleton
           className={cn(isMobile ? "w-full aspect-video" : "w-2/5", "rounded-none")}
