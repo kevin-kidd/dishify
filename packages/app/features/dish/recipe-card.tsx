@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useEffect, useCallback } from "react";
+import React, { useMemo, useEffect, useCallback, useState } from "react";
 import { View } from "react-native";
 import { useParams, useRouter } from "solito/navigation";
 import { trpc } from "app/utils/trpc";
@@ -64,7 +64,8 @@ export default function RecipeCard() {
       enabled: !!slug && !isLocalStorage,
       refetchInterval: (query) => {
         if (!query?.state?.data?.status) return false;
-        return query.state.data.status === "generating" ? 1000 : false;
+        // Refetch every second if the recipe is still generating or generating an image
+        return ["generating", "generating_image"].includes(query.state.data.status) ? 1000 : false;
       },
       refetchIntervalInBackground: true,
       retry: (failureCount, error) => {
@@ -157,6 +158,8 @@ export default function RecipeCard() {
     }
   }, [recipe?.status, recipe?.movedToSlug, router]);
 
+  const [imageLoaded, setImageLoaded] = useState(false);
+
   // Show loading state while recipe is being generated
   if (recipeData?.status === "generating" || isLoading) {
     return <LoadingSkeleton />;
@@ -236,39 +239,71 @@ export default function RecipeCard() {
   const hasCategory = !!recipeData.category;
 
   return (
-    <Section className="max-w-6xl mx-auto px-2 sm:px-4 pt-14">
+    <Section className="max-w-6xl w-full mx-auto px-2 sm:px-4 pt-14">
       <Animated.View
         entering={FadeIn}
         layout={LinearTransition.springify().mass(0.8).damping(15).stiffness(100)}
+        className="w-full"
       >
-        <Card className="overflow-visible border-0 shadow-lg">
+        <Card className="overflow-visible border-0 shadow-lg w-full">
           <CardHeader
             className={cn(
-              "pt-5 pb-3 px-6 sm:pt-8 sm:pb-5 sm:px-10 border-b border-sage-100 relative",
+              "pt-7 pb-4 px-6 sm:pt-8 sm:pb-5 sm:px-10 border-b border-sage-100 relative",
               hasImage && "min-h-[240px] sm:min-h-[250px]",
             )}
           >
             {hasImage && (
               <View className="absolute inset-0 overflow-hidden rounded-t-lg">
-                <View className="absolute inset-0 bg-black/60 z-10" />
-                <Image
-                  width={1000}
-                  height={1000}
-                  src={recipeData.imageUrl || ""}
-                  alt={recipeData.data.dishName}
-                  className="w-full h-full object-cover"
-                  style={{ objectFit: "cover" }}
-                />
+                {/* Only show dark overlay and image when fully loaded */}
+                {imageLoaded && recipeData.imageUrl && (
+                  <>
+                    <View className="absolute inset-0 bg-black/60 z-10 animate-in fade-in duration-300" />
+                    <Image
+                      width={1000}
+                      height={1000}
+                      src={recipeData.imageUrl}
+                      alt={recipeData.data.dishName}
+                      className="w-full h-full object-cover"
+                      style={{ objectFit: "cover" }}
+                      priority={true}
+                    />
+                  </>
+                )}
+                {/* Hidden image for preloading */}
+                {recipeData.imageUrl && !imageLoaded && (
+                  <Image
+                    width={1000}
+                    height={1000}
+                    src={recipeData.imageUrl}
+                    alt={recipeData.data.dishName}
+                    className="opacity-0 absolute"
+                    onLoad={() => setImageLoaded(true)}
+                    priority={true}
+                  />
+                )}
               </View>
             )}
 
-            <View className={cn("flex flex-col relative z-20 h-full", hasImage && "text-white")}>
+            <View className="sm:hidden absolute top-0 right-2 flex-row items-center gap-1">
+              <PrintButton recipe={recipeData} />
+              <ShareButton title={recipeData.name} url={window.location.href} />
+              <FavoriteButton recipe={recipeData} />
+            </View>
+
+            <View
+              className={cn(
+                "flex flex-col relative z-20 h-full",
+                imageLoaded && hasImage && recipeData.imageUrl ? "text-white" : "text-sage-900",
+              )}
+            >
               <View className="flex flex-row items-center justify-between w-full mb-3">
                 <CardTitle className="flex-1 min-w-0">
                   <Text
                     className={cn(
                       "text-2xl sm:text-4xl font-bold truncate block w-full",
-                      hasImage ? "text-white" : "text-sage-900",
+                      imageLoaded && hasImage && recipeData.imageUrl
+                        ? "text-white"
+                        : "text-sage-900",
                     )}
                     numberOfLines={1}
                   >
@@ -291,7 +326,7 @@ export default function RecipeCard() {
                 {hasCategory && (
                   <Badge
                     className={cn(
-                      "hover:bg-sage-200 transition-colors sm:px-3 sm:py-1.5 py-1 px-2 text-xs font-medium",
+                      "hidden sm:flex hover:bg-sage-200 transition-colors sm:px-3 sm:py-1.5 py-1 px-2 text-xs font-medium",
                       categoryId && "cursor-pointer",
                     )}
                     onPress={handleCategoryClick}
@@ -304,39 +339,70 @@ export default function RecipeCard() {
               {recipeData.description && (
                 <Text
                   className={cn(
-                    "mt-3 text-sm leading-relaxed",
-                    hasImage ? "text-white/90" : "text-sage-600",
+                    "mt-0 sm:mt-3 text-sm leading-relaxed w-full sm:w-1/2 lg:w-1/3 text-wrap",
+                    imageLoaded && hasImage && recipeData.imageUrl
+                      ? "text-white/90"
+                      : "text-sage-600",
                   )}
                 >
                   {recipeData.description}
                 </Text>
               )}
 
-              <View className="sm:hidden flex-1 flex-row items-center justify-between w-full mt-3">
+              <View className="sm:hidden flex-1 flex-row items-center gap-2 w-full mt-3">
                 <CuisineLabel cuisine={recipeData.data.cuisine} />
-
-                <View className="flex-row items-center gap-1.5">
-                  <PrintButton recipe={recipeData} />
-                  <ShareButton title={recipeData.name} url={window.location.href} />
-                  <FavoriteButton recipe={recipeData} />
-                </View>
+                {hasCategory && (
+                  <Badge
+                    className={cn(
+                      "hover:bg-sage-200 transition-colors sm:px-3 sm:py-1.5 py-1 px-2 text-xs font-medium",
+                      categoryId && "cursor-pointer",
+                    )}
+                    onPress={handleCategoryClick}
+                  >
+                    {recipeData.category}
+                  </Badge>
+                )}
               </View>
 
               <View className="mt-6 flex sm:flex-row gap-y-4 sm:items-center sm:justify-between flex-col w-full">
                 <View className="flex flex-row items-center flex-wrap gap-4">
                   <View className="flex flex-row items-center gap-2">
                     <Clock
-                      className={cn("h-4 w-4", hasImage ? "text-white/80" : "text-sage-500")}
+                      className={cn(
+                        "h-4 w-4",
+                        imageLoaded && hasImage && recipeData.imageUrl
+                          ? "text-white/80"
+                          : "text-sage-500",
+                      )}
                     />
-                    <Text className={cn("text-sm", hasImage && "text-white")}>
+                    <Text
+                      className={cn(
+                        "text-sm",
+                        imageLoaded && hasImage && recipeData.imageUrl
+                          ? "text-white"
+                          : "text-sage-500",
+                      )}
+                    >
                       {recipeData.data.cookingTime}
                     </Text>
                   </View>
                   <View className="flex flex-row items-center gap-2">
                     <Utensils
-                      className={cn("h-4 w-4", hasImage ? "text-white/80" : "text-sage-500")}
+                      className={cn(
+                        "h-4 w-4",
+                        imageLoaded && hasImage && recipeData.imageUrl
+                          ? "text-white/80"
+                          : "text-sage-500",
+                      )}
                     />
-                    <Text className={cn("text-sm", hasImage && "text-white")}>
+                    <Text
+                      className={cn(
+                        "text-sm",
+                        imageLoaded && hasImage && recipeData.imageUrl
+                          ? "text-white"
+                          : "text-sage-500",
+                      )}
+                    >
                       {recipeData.data.servings} servings
                     </Text>
                   </View>
@@ -351,7 +417,7 @@ export default function RecipeCard() {
 
           <CardContent className="grid gap-12 p-8 lg:grid-cols-[1fr_400px]">
             <View className="space-y-8">
-              <Text className="mb-6 text-xl font-semibold text-sage-900">Instructions</Text>
+              <Text className="mb-3 text-xl font-semibold text-sage-900">Instructions</Text>
               <View className="relative space-y-4">
                 {recipeData.data.instructions.map((instruction, index) => (
                   <Animated.View
