@@ -11,12 +11,12 @@ import {
   Clock,
   Pot,
   Beef,
-  Egg,
-  Apple,
   Fish,
+  Olive,
   Baby,
   Heart,
   Soup,
+  Egg,
 } from "@dishify/ui/src/icons";
 import AutoScroll from "embla-carousel-auto-scroll";
 import { Carousel, CarouselContent, CarouselItem } from "@dishify/ui/src/elements/carousel";
@@ -35,9 +35,9 @@ const categoryIcons: Record<CategoryName, React.ComponentType<any>> = {
   "One Pot": Pot,
   "Budget Friendly": DollarSign,
   "High Protein": Beef,
-  Keto: Beef,
-  Paleo: Apple,
-  Mediterranean: Fish,
+  Keto: Egg,
+  Paleo: Fish,
+  Mediterranean: Olive,
   "Kid Friendly": Baby,
   Healthy: Heart,
   "Comfort Food": Soup,
@@ -45,11 +45,11 @@ const categoryIcons: Record<CategoryName, React.ComponentType<any>> = {
 
 const categoryColors: Record<CategoryName, string> = {
   "Low Carb": "bg-green-50 border-green-200",
-  Vegetarian: "bg-emerald-50 border-emerald-200",
+  Vegetarian: "bg-orange-50 border-orange-200",
   "Gluten Free": "bg-amber-50 border-amber-200",
   "Dairy Free": "bg-blue-50 border-blue-200",
   "Quick & Easy": "bg-purple-50 border-purple-200",
-  "One Pot": "bg-orange-50 border-orange-200",
+  "One Pot": "bg-emerald-50 border-emerald-200",
   "Budget Friendly": "bg-yellow-50 border-yellow-200",
   "High Protein": "bg-red-50 border-red-200",
   Keto: "bg-indigo-50 border-indigo-200",
@@ -62,11 +62,11 @@ const categoryColors: Record<CategoryName, string> = {
 
 const categoryIconColors: Record<CategoryName, string> = {
   "Low Carb": "text-green-600",
-  Vegetarian: "text-emerald-600",
+  Vegetarian: "text-orange-600",
   "Gluten Free": "text-amber-600",
   "Dairy Free": "text-blue-600",
   "Quick & Easy": "text-purple-600",
-  "One Pot": "text-orange-600",
+  "One Pot": "text-emerald-600",
   "Budget Friendly": "text-yellow-600",
   "High Protein": "text-red-600",
   Keto: "text-indigo-600",
