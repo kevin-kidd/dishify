@@ -46,6 +46,7 @@ export const RecipeResponseSchema = z.object({
   instructions: z.array(z.string()),
   servings: z.string(),
   cookingTime: z.string(),
+  description: z.string().optional(),
 });
 
 export type RecipeResponse = z.infer<typeof RecipeResponseSchema>;
