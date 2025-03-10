@@ -43,6 +43,13 @@
       "when": 1741413217111,
       "tag": "0005_nappy_slayback",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1741629748202,
+      "tag": "0006_pale_gideon",
+      "breakpoints": true
     }
   ]
 }
