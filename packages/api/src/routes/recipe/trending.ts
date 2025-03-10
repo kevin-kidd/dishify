@@ -1,15 +1,10 @@
 import type { z } from "zod";
 import { publicProcedure } from "../../trpc";
-import {
-  TrendingRecipesTable,
-  TrendingStatusTable,
-  type EstimatedCosts,
-} from "../../db/schema/recipes";
+import { TrendingRecipesTable, type EstimatedCosts } from "../../db/schema/recipes";
 import type { RecipeResponseSchema } from "../../../schemas/recipe-response";
 import { tryCatch } from "@dishify/app/utils/helpers";
 import type { Context } from "../../context";
-import { TRPCError } from "@trpc/server";
-import { desc, eq } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 
 // Define the trending recipe type using schema-defined types
 export type TrendingRecipe = {
@@ -19,9 +14,6 @@ export type TrendingRecipe = {
   trendingScore: number;
   estimatedCost: EstimatedCosts[keyof EstimatedCosts] | null;
 };
-
-// Maximum time a refresh can be in progress before we consider it stuck (10 minutes)
-const MAX_REFRESH_DURATION_MS = 10 * 60 * 1000;
 
 /**
  * Checks if a trending refresh is needed and queues a refresh job if necessary
