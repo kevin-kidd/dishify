@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Card, cn, Div, H2, H3, P, Section } from "@dishify/ui/src";
 import { Pressable, useWindowDimensions } from "react-native";
-import { Link } from "solito/link";
 import { Knife } from "@dishify/ui/src/icons/knife";
 import { Flame } from "@dishify/ui/src/icons/flame";
 import { Scale } from "@dishify/ui/src/icons/scale";
