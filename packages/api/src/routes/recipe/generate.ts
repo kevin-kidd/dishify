@@ -309,39 +309,8 @@ export const generate = publicProcedure
       });
     }
 
-    // Add to KV with expiration
-    const { error: kvError } = await tryCatch(
-      ctx.recipeState.put(RECIPE_STATE_PREFIX + recipeId, "true", {
-        expirationTtl: Math.ceil(GENERATION_TIMEOUT / 1000), // Convert ms to seconds
-      }),
-    );
-
-    if (kvError) {
-      console.error("Failed to add recipe to KV state:", {
-        error: kvError.message,
-        recipeId,
-      });
-      // Continue despite KV error, as the recipe is already in the database
-    }
-
-    // Store image data in KV if present
-    if (image) {
-      const { error: imageKvError } = await tryCatch(
-        ctx.recipeState.put(IMAGE_DATA_PREFIX + recipeId, JSON.stringify(image), {
-          expirationTtl: Math.ceil(GENERATION_TIMEOUT / 1000),
-        }),
-      );
-
-      if (imageKvError) {
-        console.error("Failed to store image data in KV:", {
-          error: imageKvError.message,
-          recipeId,
-        });
-        // Continue despite KV error, but the image processing might fail
-      }
-    }
-
-    // Add to queue with just the reference
+    // Add recipe to queue with just the reference - do this first to minimize latency
+    const queueStartTime = Date.now();
     const queueMessage: RecipeQueueMessage = {
       recipeId,
       dishName,
@@ -349,30 +318,63 @@ export const generate = publicProcedure
     };
 
     const { error: queueError } = await tryCatch(ctx.recipeQueue.send(queueMessage));
+    const queueEndTime = Date.now();
+    console.log(`Recipe queued in ${queueEndTime - queueStartTime}ms`, {
+      recipeId,
+      dishName,
+      hasImage: !!image,
+    });
 
     if (queueError) {
       console.error("Failed to add recipe to queue:", {
         error: queueError.message,
         recipeId,
       });
-
-      // Clean up if queue send fails
-      const { error: cleanupError } = await tryCatch(
-        ctx.recipeState.delete(RECIPE_STATE_PREFIX + recipeId),
-      );
-
-      if (cleanupError) {
-        console.error("Failed to clean up KV state after queue error:", {
-          error: cleanupError.message,
-          recipeId,
-        });
-      }
-
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to start recipe generation. Please try again.",
       });
     }
+
+    // Since the recipe is already queued, we can now do these operations in parallel
+    // which won't block the response to the client
+    Promise.all([
+      // Add to KV with expiration
+      tryCatch(
+        ctx.recipeState.put(RECIPE_STATE_PREFIX + recipeId, "true", {
+          expirationTtl: Math.ceil(GENERATION_TIMEOUT / 1000), // Convert ms to seconds
+        }),
+      ).then(({ error: kvError }) => {
+        if (kvError) {
+          console.error("Failed to add recipe to KV state:", {
+            error: kvError.message,
+            recipeId,
+          });
+        }
+      }),
+
+      // Store image data in KV if present
+      image
+        ? tryCatch(
+            ctx.recipeState.put(IMAGE_DATA_PREFIX + recipeId, JSON.stringify(image), {
+              expirationTtl: Math.ceil(GENERATION_TIMEOUT / 1000),
+            }),
+          ).then(({ error: imageKvError }) => {
+            if (imageKvError) {
+              console.error("Failed to store image data in KV:", {
+                error: imageKvError.message,
+                recipeId,
+              });
+            }
+          })
+        : Promise.resolve(),
+    ]).catch((error) => {
+      // Just log errors here, as the recipe is already queued
+      console.error("Error in background operations:", {
+        error: error?.message || String(error),
+        recipeId,
+      });
+    });
 
     // Return immediately with the recipe ID, slug and generating status
     return {
