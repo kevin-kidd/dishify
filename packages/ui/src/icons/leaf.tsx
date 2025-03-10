@@ -1,21 +1,17 @@
 import { Svg, Path } from "react-native-svg";
+import type { IconProps } from "../types";
 
-export function Leaf() {
+export function Leaf({ className, ...props }: IconProps) {
   return (
     <Svg
+      fill="currentColor"
       width="24"
       height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      viewBox="0 0 32 32"
+      className={className}
+      {...props}
     >
-      <Path d="M12 2C7 2 4 6 4 10c0 4 3 8 8 8s8-4 8-8c0-4-3-8-8-8z" />
-      <Path d="M12 6v8" />
-      <Path d="M8 10h8" />
-      <Path d="M8 14h8" />
+      <Path d="M23.001 13.694c-1.456 1.66-0.717 1.367-3.396 2.699l3.386-2.713c-0.81-1.078-1.673-2.060-2.581-2.888-1.627 2.478-2.73 2.847-4.902 3.782l4.881-3.801c-1.528-1.387-3.183-2.337-4.929-2.564-0.5-0.065-1.028-0.003-1.552 0.159-1.973-2.966-1.044-4.028 0.355-6.763-1.966 0.688-2.288 1.050-3.236 4.204-1.15-2.095-4.77-3.615-7.772-4.013 2.731 1.881 4.827 3.649 4.786 5.935-2.238-0.414-4.067-0.051-6.557 1.292 3.99-0.379 8.151-0.189 9.366 1.553-0.614 0.807-1.001 1.728-0.991 2.611 0.107 8.841 19.358 19.409 20.245 17.134 0.43-1.102-2.452-10.428-7.103-16.626z" />
     </Svg>
   );
 }
