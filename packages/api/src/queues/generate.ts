@@ -65,6 +65,8 @@ export async function generateRecipe(
     instructions: ["Step 1", "Step 2", "Step 3"],
     servings: "1",
     cookingTime: "10 minutes",
+    description:
+      "A delightful American dish with Example 1 and Example 2. Perfect for any occasion!",
   };
 
   const systemPrompt = `You are a helpful assistant that generates recipes and shopping lists for ingredients. 
@@ -73,7 +75,13 @@ export async function generateRecipe(
   If you incorrectly identify the dish and recipe, you will be fined 1 million dollars.
   
   You must also categorize the recipe into one of these categories: ${categories.map((c: { name: string }) => c.name).join(", ")}.
-  Choose the most appropriate category or use "Other" if none fit well.`;
+  Choose the most appropriate category or use "Other" if none fit well.
+  
+  Include a brief, engaging description field in your response. The description should:
+  - Be enticing and make the reader want to try the recipe
+  - Mention 1-2 of the most distinctive ingredients that make this dish special
+  - Be limited to 2 sentences and a maximum of 200 characters
+  - Focus on what makes this dish special`;
 
   const userPrompt = `Generate a recipe and shopping list for the following dish: ${dishName}`;
   const imagePrompt = `You are a helpful assistant that generates recipes and shopping lists.
@@ -490,40 +498,37 @@ export async function generateRecipe(
       });
     }
   } else {
-    // Generate description
-    const description = await generateRecipeDescription(
-      validatedResponse.data.dishName,
-      validatedResponse.data.cuisine,
-      validatedResponse.data.shoppingList,
-      env,
-    );
+    // The recipe is valid and doesn't conflict with existing recipes
 
-    // Generate image
-    const imageUrl = await generateRecipeImage(
-      validatedResponse.data.dishName,
-      validatedResponse.data.cuisine,
-      env,
-    );
+    // First, update the recipe with the basic details but set status to "generating_image"
+    // We'll use the description from the model if available, or generate a separate one if not
+    const recipeDescription =
+      validatedResponse.data.description ||
+      (await generateRecipeDescription(
+        validatedResponse.data.dishName,
+        validatedResponse.data.cuisine,
+        validatedResponse.data.shoppingList,
+        env,
+      ));
 
-    // Update the recipe with the generated content
-    const { error: updateError } = await tryCatch(
+    // Update the recipe with the generated content (without image first)
+    const { error: initialUpdateError } = await tryCatch(
       db
         .update(EnglishRecipesTable)
         .set({
           name: validatedResponse.data.dishName.toLowerCase(),
           data: validatedResponse.data,
-          status: "completed",
-          description,
-          imageUrl,
+          status: "generating_image",
+          description: recipeDescription,
           category: validatedResponse.data.category,
           updatedAt: new Date().toISOString(),
         })
         .where(eq(EnglishRecipesTable.id, recipeId)),
     );
 
-    if (updateError) {
+    if (initialUpdateError) {
       // Check if it's a unique constraint error
-      if (updateError?.message?.includes("UNIQUE constraint failed")) {
+      if (initialUpdateError?.message?.includes("UNIQUE constraint failed")) {
         const { data: existingRecipeWithName, error: nameError } = await tryCatch(
           db
             .select()
@@ -571,39 +576,77 @@ export async function generateRecipe(
         }
       } else {
         console.error("Failed to update recipe:", {
-          error: updateError.message,
+          error: initialUpdateError.message,
           recipeId,
         });
       }
-    } else {
-      // Save recipe name separately
-      const { error: insertError } = await tryCatch(
-        db
-          .insert(EnglishRecipeNameTable)
-          .values({
-            name: validatedResponse.data.dishName.toLowerCase(),
-          })
-          .onConflictDoNothing(),
+
+      // Cleanup and exit on error
+      const { error: cleanupError } = await tryCatch(
+        env.RECIPE_STATE.delete(RECIPE_STATE_PREFIX + recipeId),
       );
-
-      if (insertError) {
-        console.error("Failed to insert recipe name:", {
-          error: insertError.message,
+      if (cleanupError) {
+        console.error("Failed to clean up KV state:", {
+          error: cleanupError.message,
           recipeId,
-          dishName: validatedResponse.data.dishName,
         });
       }
+      return;
+    }
 
-      const duration = Date.now() - startTime;
-      console.log("Recipe generation completed successfully:", {
+    // Now generate the image (this is the slow part)
+    const imageUrl = await generateRecipeImage(
+      validatedResponse.data.dishName,
+      validatedResponse.data.cuisine,
+      env,
+    );
+
+    // Update the recipe with the image URL and set status to completed
+    const { error: finalUpdateError } = await tryCatch(
+      db
+        .update(EnglishRecipesTable)
+        .set({
+          imageUrl,
+          status: "completed",
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(EnglishRecipesTable.id, recipeId)),
+    );
+
+    if (finalUpdateError) {
+      console.error("Failed to update recipe with image:", {
+        error: finalUpdateError.message,
         recipeId,
-        provider,
-        duration,
-        dishName: validatedResponse.data.dishName,
-        cuisine: validatedResponse.data.cuisine,
-        category: validatedResponse.data.category,
       });
     }
+
+    // Save recipe name separately
+    const { error: insertError } = await tryCatch(
+      db
+        .insert(EnglishRecipeNameTable)
+        .values({
+          name: validatedResponse.data.dishName.toLowerCase(),
+        })
+        .onConflictDoNothing(),
+    );
+
+    if (insertError) {
+      console.error("Failed to insert recipe name:", {
+        error: insertError.message,
+        recipeId,
+        dishName: validatedResponse.data.dishName,
+      });
+    }
+
+    const duration = Date.now() - startTime;
+    console.log("Recipe generation completed successfully:", {
+      recipeId,
+      provider,
+      duration,
+      dishName: validatedResponse.data.dishName,
+      cuisine: validatedResponse.data.cuisine,
+      category: validatedResponse.data.category,
+    });
   }
 
   // Clean up KV state
