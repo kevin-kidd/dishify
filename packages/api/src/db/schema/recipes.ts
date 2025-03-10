@@ -258,12 +258,11 @@ export const selectRecipeReactionSchema = createSelectSchema(RecipeReactionsTabl
 
 // Featured Recipe Table - stores only the reference to the recipe
 export const FeaturedRecipeTable = sqliteTable("featured_recipes", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => nanoid()),
+  id: text("id").primaryKey().default("singleton"), // Singleton pattern
   recipeId: text("recipe_id")
     .notNull()
     .references(() => EnglishRecipesTable.id),
+  generating: integer("generating", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
