@@ -284,7 +284,7 @@ export default function RecipeCard() {
               </View>
             )}
 
-            <View className="sm:hidden absolute top-0 right-2 flex-row items-center gap-1">
+            <View className="absolute top-0 right-2 sm:top-2 sm:right-6 flex-row items-center gap-1 sm:gap-1.5">
               <PrintButton recipe={recipeData} />
               <ShareButton title={recipeData.name} url={window.location.href} />
               <FavoriteButton recipe={recipeData} />
@@ -296,27 +296,17 @@ export default function RecipeCard() {
                 imageLoaded && hasImage && recipeData.imageUrl ? "text-white" : "text-sage-900",
               )}
             >
-              <View className="flex flex-row items-center justify-between w-full mb-3">
-                <CardTitle className="flex-1 min-w-0">
-                  <Text
-                    className={cn(
-                      "text-2xl sm:text-4xl font-bold truncate block w-full",
-                      imageLoaded && hasImage && recipeData.imageUrl
-                        ? "text-white"
-                        : "text-sage-900",
-                    )}
-                    numberOfLines={1}
-                  >
-                    {toTitleCase(recipeData.data.dishName)}
-                  </Text>
-                </CardTitle>
-
-                <View className="flex-row items-center gap-1.5 hidden sm:flex">
-                  <PrintButton recipe={recipeData} />
-                  <ShareButton title={recipeData.name} url={window.location.href} />
-                  <FavoriteButton recipe={recipeData} />
-                </View>
-              </View>
+              <CardTitle className="flex-1 min-w-0 mb-3">
+                <Text
+                  className={cn(
+                    "text-2xl sm:text-4xl font-bold truncate block w-full",
+                    imageLoaded && hasImage && recipeData.imageUrl ? "text-white" : "text-sage-900",
+                  )}
+                  numberOfLines={1}
+                >
+                  {toTitleCase(recipeData.data.dishName)}
+                </Text>
+              </CardTitle>
 
               <View className="flex flex-row items-center gap-2 mt-2">
                 <View className="hidden sm:flex">
