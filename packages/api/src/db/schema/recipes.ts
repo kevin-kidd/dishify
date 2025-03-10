@@ -49,7 +49,9 @@ export const EnglishRecipesTable = sqliteTable(
     name: text("name").notNull().unique(),
     slug: text("slug").notNull().unique(),
     data: text("data", { mode: "json" }).$type<RecipeResponse>(),
-    status: text("status", { enum: ["generating", "completed", "error", "moved"] })
+    status: text("status", {
+      enum: ["generating", "generating_image", "completed", "error", "moved"],
+    })
       .notNull()
       .default("generating"),
     movedToRecipeId: text("moved_to_recipe_id"),
