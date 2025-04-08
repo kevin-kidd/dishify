@@ -8,12 +8,152 @@ import { SearchSchema, type SearchValues } from "@dishify/api/schemas/search";
 import { isWeb } from "@tamagui/constants";
 import ImageDropdown from "./image-dropdown";
 import { toast } from "app/utils/toast";
-import { Keyboard, View } from "react-native";
+import { Keyboard, View, Text } from "react-native";
 import { Autocomplete, cn, Form, FormInput, TextInput, Skeleton } from "@dishify/ui";
 import { Search as SearchIcon } from "@dishify/ui/src/icons/search";
 import { useRouter, usePathname } from "solito/navigation";
 import { TRPCClientError } from "@trpc/client";
 import type React from "react";
+import { MotiView, AnimatePresence } from "moti";
+
+const DISH_NAMES = [
+  "Oysters Rockefeller",
+  "Duck L'Orange",
+  "Fresh Herb Fritatta",
+  "Beef Wellington",
+  "Chicken Tikka Masala",
+  "Pad Thai",
+  "Peking Duck",
+  "Neapolitan Pizza",
+  "Ratatouille",
+  "Massaman Curry",
+];
+
+const SimpleAnimatedPlaceholder = ({ isGenerating }: { isGenerating: boolean }) => {
+  const randomInitialIndex = Math.floor(Math.random() * DISH_NAMES.length);
+  const [currentIndex, setCurrentIndex] = useState(randomInitialIndex);
+  const [previousIndex, setPreviousIndex] = useState(randomInitialIndex);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Handle visibility changes
+  useEffect(() => {
+    if (!isWeb) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page is hidden, clear timers
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      } else {
+        // Page is visible again, reset animation state but don't trigger immediate transition
+        setIsTransitioning(false);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      // Cleanup timers
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isGenerating) return;
+
+    // Set a short timeout to turn off the initial load flag
+    // This prevents the first animation from showing the upward motion
+    if (isInitialLoad) {
+      const initialTimeout = setTimeout(() => {
+        setIsInitialLoad(false);
+      }, 500);
+      return () => clearTimeout(initialTimeout);
+    }
+
+    // Clean up existing timers before setting new ones
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    // Start new interval for animations
+    intervalRef.current = setInterval(() => {
+      if (document.hidden && isWeb) return; // Skip animation when page is hidden
+
+      setPreviousIndex(currentIndex);
+      setIsTransitioning(true);
+      setCurrentIndex((prev) => (prev + 1) % DISH_NAMES.length);
+
+      // Reset transitioning state after animation completes
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 800);
+    }, 4000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [isGenerating, currentIndex, isInitialLoad]);
+
+  const text = isGenerating ? "Generating recipe..." : DISH_NAMES[currentIndex];
+  const prevText = DISH_NAMES[previousIndex];
+
+  return (
+    <View className="absolute top-0 right-0 bottom-0 justify-center align-start z-[5] pointer-events-none left-10 sm:left-12">
+      <AnimatePresence>
+        {isTransitioning && !isGenerating && (
+          <MotiView
+            key={`prev-${previousIndex}`}
+            from={{ opacity: 1, translateY: 0 }}
+            animate={{ opacity: 0, translateY: -12 }}
+            exit={{ opacity: 0 }}
+            transition={{ type: "spring", damping: 20, stiffness: 200 }}
+            style={{ position: "absolute", transform: [{ translateY: -12 }] }}
+          >
+            <Text
+              style={{
+                color: "#84a98c",
+                fontSize: 16,
+                lineHeight: 16,
+              }}
+            >
+              {prevText}
+            </Text>
+          </MotiView>
+        )}
+
+        <MotiView
+          key={`current-${currentIndex}`}
+          from={{
+            opacity: isInitialLoad ? 1 : 0,
+            translateY: isInitialLoad ? 0 : 12,
+          }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{
+            type: "spring",
+            damping: 20,
+            stiffness: 200,
+            delay: isTransitioning ? 200 : 0,
+          }}
+          style={{ position: "absolute", transform: [{ translateY: -12 }] }}
+        >
+          <Text
+            style={{
+              color: "#84a98c",
+              fontSize: 16,
+              lineHeight: 16,
+            }}
+          >
+            {text}
+          </Text>
+        </MotiView>
+      </AnimatePresence>
+    </View>
+  );
+};
 
 export default function Search() {
   const router = useRouter();
@@ -70,6 +210,7 @@ export default function Search() {
   });
 
   const dishName = watch("dishName");
+  const shouldShowPlaceholder = !dishName;
 
   const { data: autocompleteOptions, refetch: refetchAutocomplete } =
     trpc.recipe.autocomplete.useQuery(
@@ -206,7 +347,9 @@ export default function Search() {
                   />
                 )}
               </View>
+
               <TextInput
+                ref={inputRef}
                 inputMode="search"
                 id={name}
                 value={value}
@@ -220,15 +363,18 @@ export default function Search() {
                 onSubmitEditing={onSubmit}
                 returnKeyType="search"
                 className={cn(
-                  "text-md sm:text-lgflex border-0 bg-transparent pl-10 sm:pl-12",
+                  "text-md sm:text-lg flex border-0 bg-transparent pl-10 sm:pl-12",
                   "web:focus-visible:ring-0 web:focus-visible:ring-offset-0",
                   "placeholder:text-sage-400 transition-colors duration-200",
                   isGenerating && "text-sage-200",
                 )}
-                placeholder={isGenerating ? "Generating recipe..." : "Search any dish..."}
+                placeholder=""
                 maxLength={80}
                 editable={!isGenerating}
               />
+
+              {shouldShowPlaceholder && <SimpleAnimatedPlaceholder isGenerating={isGenerating} />}
+
               <ImageDropdown
                 setImageData={(imageData: number[] | undefined) => setValue("image", imageData)}
                 watch={watch}
