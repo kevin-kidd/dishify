@@ -222,3 +222,16 @@ export const getRecipeBySlug = publicProcedure
 
     return recipe;
   });
+
+export const getAllRecipeSlugs = publicProcedure.query(async ({ ctx }) => {
+  const recipes = await ctx.db
+    .select({
+      slug: EnglishRecipesTable.slug,
+      updatedAt: EnglishRecipesTable.updatedAt,
+      imageUrl: EnglishRecipesTable.imageUrl,
+    })
+    .from(EnglishRecipesTable)
+    .where(eq(EnglishRecipesTable.status, "completed"))
+    .limit(50000);
+  return recipes;
+});
