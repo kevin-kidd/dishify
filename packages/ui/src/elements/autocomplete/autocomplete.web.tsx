@@ -198,14 +198,6 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
       autocompleteOptions.length > 0 &&
       inputValue.length >= 2;
 
-    console.log("Autocomplete state:", {
-      isInteractive,
-      isOpen,
-      hasOptions: Boolean(autocompleteOptions?.length),
-      inputLength: inputValue.length,
-      shouldShowOptions,
-    });
-
     if (!isMobileSize) {
       return (
         <View ref={ref} className={cn(className, "w-full max-w-2xl mx-auto")}>
@@ -244,7 +236,7 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
         {enhancedChildren}
         <Drawer open={isOpen} onOpenChange={handleDrawerOpenChange}>
           <DrawerTrigger ref={drawerTriggerRef} className="hidden" />
-          <DrawerContent className="h-screen sm:max-w-none w-screen px-4">
+          <DrawerContent className="h-[100svh] sm:max-w-none w-screen px-4">
             <DrawerHeader className="h-0 p-0 m-0">
               <DrawerTitle className="sr-only">Search</DrawerTitle>
             </DrawerHeader>
