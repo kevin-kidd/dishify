@@ -29,7 +29,6 @@ export function LoadingSkeleton() {
                   <Skeleton className="h-5 w-24" />
                   <Skeleton className="h-5 w-20" />
                 </View>
-                <Skeleton className="h-8 w-32" />
               </View>
             </View>
           </CardHeader>
