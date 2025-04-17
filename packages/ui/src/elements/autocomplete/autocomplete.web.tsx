@@ -10,7 +10,14 @@ import { useAutocomplete } from "../../utils/hooks/use-autocomplete";
 import { OptionsList } from "./options-list";
 import type { AutocompleteProps } from "./types";
 import { TextInput } from "../input";
-import { DrawerTrigger, Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../drawer";
+import {
+  DrawerTrigger,
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "../drawer";
 
 interface TextInputElement extends React.ReactElement<any> {
   type: typeof TextInput;
@@ -31,7 +38,10 @@ interface FormElement extends React.ReactElement<any> {
   };
 }
 
-export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, AutocompleteProps>(
+export const Autocomplete = React.forwardRef<
+  React.ComponentRef<typeof View>,
+  AutocompleteProps & { inputRef?: React.Ref<any> }
+>(
   (
     {
       children,
@@ -41,6 +51,7 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
       isInteractive = true,
       className,
       onTemporaryChange,
+      inputRef: externalInputRef,
     },
     ref,
   ) => {
@@ -64,6 +75,7 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
     const { width } = useWindowDimensions();
     const isMobileSize = width < 768;
     const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+    const isOptionClicking = React.useRef(false);
 
     const contentInsets = {
       top: insets.top,
@@ -71,6 +83,9 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
       left: 12,
       right: 12,
     };
+
+    // Use the external inputRef if provided, otherwise fallback to internal inputRef
+    const resolvedInputRef = externalInputRef || inputRef;
 
     // Effect to focus input when sheet opens
     React.useEffect(() => {
@@ -111,27 +126,18 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
                 inputElement.props.onFocus?.(e);
               },
               onBlur: (e: any) => {
-                handleBlur();
-                if (isMobileSize) {
-                  setIsOpen(false);
-                  setIsDrawerOpen(false);
+                // Only close if not clicking an option
+                if (!isOptionClicking.current) {
+                  handleBlur();
+                  if (isMobileSize) {
+                    setIsOpen(false);
+                    setIsDrawerOpen(false);
+                  }
                 }
                 // Call the original onBlur if it exists
                 inputElement.props.onBlur?.(e);
               },
-              ref: (node: any) => {
-                // Forward the ref to both our inputRef and any provided ref
-                if (node) {
-                  // Cast to MutableRefObject to allow assignment
-                  (inputRef as React.MutableRefObject<any>).current = node;
-                  if (typeof inputElement.props.ref === "function") {
-                    inputElement.props.ref(node);
-                  } else if (inputElement.props.ref && "current" in inputElement.props.ref) {
-                    // Cast to MutableRefObject and assign
-                    (inputElement.props.ref as React.MutableRefObject<any>).current = node;
-                  }
-                }
-              },
+              ref: resolvedInputRef,
               onKeyPress: handleKeyPress,
             });
           }
@@ -179,6 +185,7 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
       handleKeyPress,
       isInteractive,
       handleBlur,
+      resolvedInputRef,
     ]);
 
     const handleDrawerOpenChange = (open: boolean) => {
@@ -224,6 +231,9 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
                 options={autocompleteOptions || []}
                 selectedIndex={selectedIndex}
                 onSelect={(option) => handleSelectOption(option, true)}
+                setIsOptionClicking={(val) => {
+                  isOptionClicking.current = val;
+                }}
               />
             </PopoverContent>
           </Popover>
@@ -236,9 +246,15 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
         {enhancedChildren}
         <Drawer open={isOpen} onOpenChange={handleDrawerOpenChange}>
           <DrawerTrigger ref={drawerTriggerRef} className="hidden" />
-          <DrawerContent className="h-[100svh] sm:max-w-none w-screen px-4">
+          <DrawerContent
+            className="h-[80svh] sm:max-w-none w-screen px-4"
+            aria-describedby="search-description"
+          >
             <DrawerHeader className="h-0 p-0 m-0">
               <DrawerTitle className="sr-only">Search</DrawerTitle>
+              <DrawerDescription id="search-description" className="sr-only">
+                Search for a recipe by name or ingredients
+              </DrawerDescription>
             </DrawerHeader>
 
             <View className="fixed inset-x-0 top-0 z-50 bg-background pb-4 mt-14 px-4">
@@ -253,6 +269,9 @@ export const Autocomplete = React.forwardRef<React.ComponentRef<typeof View>, Au
                     handleSelectOption(option, true);
                     setIsOpen(false);
                     setIsDrawerOpen(false);
+                  }}
+                  setIsOptionClicking={(val) => {
+                    isOptionClicking.current = val;
                   }}
                 />
               )}
