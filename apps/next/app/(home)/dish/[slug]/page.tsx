@@ -50,13 +50,29 @@ export async function generateMetadata({
         description: "The recipe you are looking for does not exist",
       };
     }
+    const dishName = recipe.data?.dishName || recipe.name || "Recipe";
+    const servings = recipe.data?.servings;
+    const cookingTime = recipe.data?.cookingTime;
+    const imageUrl = recipe.imageUrl;
+    const description =
+      recipe.description ||
+      `Learn how to make ${dishName}${servings ? ` with ${servings} servings` : ""}${cookingTime ? ` and ${cookingTime} minutes of cooking time` : ""}.`;
+
     return {
       title: {
         template: "%s - Dishify",
-        absolute: `${recipe.data?.dishName} - Dishify`,
+        absolute: `${dishName} - Dishify`,
         default: "Dishify",
       },
-      description: `Learn how to make ${recipe.data?.dishName} with ${recipe.data?.servings} servings and ${recipe.data?.cookingTime} minutes of cooking time.`,
+      description,
+      openGraph: {
+        title: `${dishName} - Dishify`,
+        description,
+        url: `https://dishify.app/dish/${slug}`,
+        ...(imageUrl ? { images: [imageUrl] } : {}),
+        siteName: "Dishify",
+        type: "article",
+      },
     };
   } catch (error) {
     console.error("Failed to fetch recipe data:", error);

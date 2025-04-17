@@ -2,8 +2,13 @@ import { ForgotPasswordScreen } from "@dishify/app/features/account/forgot-passw
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Dishify - Forgot password",
-  description: "Forgot your password? Reset it here",
+  title: "Forgot password - Dishify",
+  description: "Reset your Dishify account password quickly and securely.",
+  openGraph: {
+    title: "Forgot password - Dishify",
+    description: "Reset your Dishify account password quickly and securely.",
+    url: "https://dishify.app/account/forgot-password",
+  },
 };
 
 export default function ForgotPassword() {

@@ -48,5 +48,12 @@ export async function generateMetadata({
       default: "Dishify",
     },
     description: category.description,
+    openGraph: {
+      title: `${category.name} Recipes - Dishify`,
+      description: category.description,
+      url: `https://dishify.app/category/${category.id}`,
+      siteName: "Dishify",
+      type: "website",
+    },
   };
 }
