@@ -10,6 +10,7 @@ import type { RecipeResponse } from "@dishify/api/schemas/recipe-response";
 import { useRouter } from "solito/navigation";
 import { Badge } from "@dishify/ui";
 import { getCostIndicators } from "../../dish/cost-indicators";
+import { Link } from "solito/link";
 
 // Extended type for featured recipe with additional properties
 type ExtendedFeaturedRecipe = {
@@ -69,10 +70,6 @@ function FeaturedRecipeCard({
   // Ensure cuisine is one of the valid types for CuisineLabel
   const router = useRouter();
   const cuisine = featuredRecipe.cuisine as RecipeResponse["cuisine"];
-
-  function handleViewRecipe() {
-    router.push(`/dish/${featuredRecipe.slug}`);
-  }
 
   function handleCategoryClick() {
     if (featuredRecipe.category) {
@@ -178,19 +175,19 @@ function FeaturedRecipeCard({
               ))}
             </Div>
           )}
-
-          <Button
-            onClick={handleViewRecipe}
-            variant="default"
-            className={cn(
-              "flex flex-row items-center justify-center gap-2 w-fit px-6 py-3",
-              "bg-sage-600 hover:bg-sage-700 transition-all ease-in-out duration-300",
-              "rounded-full shadow-sm hover:shadow transform scale-100 hover:scale-105",
-            )}
-          >
-            <P className="text-white font-medium">View Recipe</P>
-            <ArrowRight className="w-4 h-4 text-white ml-1 transition-transform duration-300 ease-in-out group-hover:translate-x-1" />
-          </Button>
+          <Link href={`/dish/${featuredRecipe.slug}`}>
+            <Button
+              variant="default"
+              className={cn(
+                "flex flex-row items-center justify-center gap-2 w-fit px-6 py-3 cursor-pointer",
+                "bg-sage-600 hover:bg-sage-700 transition-all ease-in-out duration-300",
+                "rounded-full shadow-sm hover:shadow transform scale-100 hover:scale-105",
+              )}
+            >
+              <P className="text-white font-medium">View Recipe</P>
+              <ArrowRight className="w-4 h-4 text-white ml-1 transition-transform duration-300 ease-in-out group-hover:translate-x-1" />
+            </Button>
+          </Link>
         </Div>
       </Div>
     </Card>

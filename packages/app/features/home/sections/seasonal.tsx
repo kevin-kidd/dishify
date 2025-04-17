@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { Card, Div, H2, P, Section } from "@dishify/ui/src";
+import { Card, cn, Div, H2, P, Section } from "@dishify/ui/src";
 import { Image, useWindowDimensions, View } from "react-native";
 import { useRouter } from "solito/navigation";
 import { Clock } from "@dishify/ui/src/icons/clock";
@@ -11,6 +11,7 @@ import { getCostIndicators } from "../../dish/cost-indicators";
 import { trpc } from "../../../utils/trpc";
 import { Skeleton } from "@dishify/ui/src/elements/skeleton";
 import { Pressable } from "react-native";
+import { Link } from "solito/link";
 
 export function SeasonalSection() {
   const { width } = useWindowDimensions();
@@ -49,14 +50,6 @@ export function SeasonalSection() {
     );
   }, []);
 
-  // Handle navigation to dish page
-  const handleRecipePress = useCallback(
-    (slug: string) => {
-      router.push(`/dish/${slug}`);
-    },
-    [router],
-  );
-
   // If loading, show skeleton UI
   if (isLoading) {
     return (
@@ -69,9 +62,11 @@ export function SeasonalSection() {
         </Div>
 
         <Div
-          className={`grid grid-cols-1 ${
-            isMobile ? "" : "sm:grid-cols-2 md:grid-cols-3"
-          } gap-6 sm:gap-8 px-4 sm:px-6`}
+          className={cn(
+            "grid grid-cols-1",
+            isMobile ? "" : "sm:grid-cols-2 md:grid-cols-3",
+            "gap-6 sm:gap-8 px-4 sm:px-6",
+          )}
         >
           {["skeleton-1", "skeleton-2", "skeleton-3"].map((id) => (
             <Card
@@ -145,9 +140,11 @@ export function SeasonalSection() {
         </Div>
 
         <Div
-          className={`grid grid-cols-1 ${
-            isMobile ? "" : "sm:grid-cols-2 md:grid-cols-3"
-          } gap-6 sm:gap-8 px-4 sm:px-6`}
+          className={cn(
+            "grid grid-cols-1",
+            isMobile ? "" : "sm:grid-cols-2 md:grid-cols-3",
+            "gap-6 sm:gap-8 px-4 sm:px-6",
+          )}
         >
           {generatingRecipes.map((recipeName) => (
             <Card
@@ -185,9 +182,11 @@ export function SeasonalSection() {
       </Div>
 
       <Div
-        className={`grid grid-cols-1 ${
-          isMobile ? "" : "sm:grid-cols-2 md:grid-cols-3"
-        } gap-6 sm:gap-8 px-4 sm:px-6`}
+        className={cn(
+          "grid grid-cols-1",
+          isMobile ? "" : "sm:grid-cols-2 md:grid-cols-3",
+          "gap-6 sm:gap-8 px-4 sm:px-6",
+        )}
       >
         {recipes.map((recipe) => {
           // Use the imageUrl directly from the recipe data
@@ -197,54 +196,56 @@ export function SeasonalSection() {
             "https://placehold.co/600x400/e2e8f0/64748b?text=Image+Coming+Soon";
 
           return (
-            <Pressable key={recipe.id} onPress={() => handleRecipePress(recipe.slug)}>
-              <Card className="overflow-hidden border-0 rounded-xl shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl h-full flex flex-col group">
-                <Div className="aspect-video relative overflow-hidden">
-                  <Div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent z-10" />
-                  <Image
-                    source={{ uri: imageUrl }}
-                    className="w-full h-full transition-transform duration-700 ease-in-out group-hover:scale-110"
-                    accessibilityLabel={recipe.name}
-                    resizeMode="cover"
-                  />
-                </Div>
-                <Div className="p-5 flex-1 flex flex-col">
-                  <P className="font-semibold text-lg text-sage-900 mb-1 group-hover:text-sage-700 transition-colors duration-300">
-                    {recipe.name}
-                  </P>
-                  <P className="text-sage-600 text-sm mb-4 group-hover:text-sage-500 transition-colors duration-300">
-                    {recipe.description}
-                  </P>
+            <Link href={`/dish/${recipe.slug}`} key={recipe.id}>
+              <Pressable>
+                <Card className="overflow-hidden border-0 rounded-xl shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl h-full flex flex-col group">
+                  <Div className="aspect-video relative overflow-hidden">
+                    <Div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent z-10" />
+                    <Image
+                      source={{ uri: imageUrl }}
+                      className="w-full h-full transition-transform duration-700 ease-in-out group-hover:scale-110"
+                      accessibilityLabel={recipe.name}
+                      resizeMode="cover"
+                    />
+                  </Div>
+                  <Div className="p-5 flex-1 flex flex-col">
+                    <P className="font-semibold text-lg text-sage-900 mb-1 group-hover:text-sage-700 transition-colors duration-300">
+                      {recipe.name}
+                    </P>
+                    <P className="text-sage-600 text-sm mb-4 group-hover:text-sage-500 transition-colors duration-300">
+                      {recipe.description}
+                    </P>
 
-                  <Div className="mt-auto">
-                    <Div className="flex flex-row items-center justify-between mb-3">
-                      <Div className="flex flex-row items-center gap-2">
-                        <Clock className="h-4 w-4 text-sage-500" />
-                        <P className="text-xs text-sage-600">{recipe.cookingTime}</P>
+                    <Div className="mt-auto">
+                      <Div className="flex flex-row items-center justify-between mb-3">
+                        <Div className="flex flex-row items-center gap-2">
+                          <Clock className="h-4 w-4 text-sage-500" />
+                          <P className="text-xs text-sage-600">{recipe.cookingTime}</P>
+                        </Div>
+
+                        <Div className="flex flex-row items-center justify-end">
+                          {recipe.estimatedCosts && getCostDisplay(recipe.estimatedCosts)}
+                        </Div>
                       </Div>
 
-                      <Div className="flex flex-row items-center justify-end">
-                        {recipe.estimatedCosts && getCostDisplay(recipe.estimatedCosts)}
+                      <Div className="pt-3 border-t border-sage-100 flex flex-row items-center justify-between">
+                        <P
+                          className={`text-xs font-medium ${getDifficultyColor(
+                            recipe.difficulty,
+                          )} transition-all duration-300 group-hover:font-semibold`}
+                        >
+                          {recipe.difficulty}
+                        </P>
+                        <P className="text-xs text-sage-500 group-hover:text-sage-700 transition-colors duration-300 flex items-center">
+                          Tap to view recipe
+                          <ArrowRight className="w-3 h-3 ml-1 transition-transform duration-300 group-hover:translate-x-1" />
+                        </P>
                       </Div>
-                    </Div>
-
-                    <Div className="pt-3 border-t border-sage-100 flex flex-row items-center justify-between">
-                      <P
-                        className={`text-xs font-medium ${getDifficultyColor(
-                          recipe.difficulty,
-                        )} transition-all duration-300 group-hover:font-semibold`}
-                      >
-                        {recipe.difficulty}
-                      </P>
-                      <P className="text-xs text-sage-500 group-hover:text-sage-700 transition-colors duration-300 flex items-center">
-                        Tap to view recipe
-                        <ArrowRight className="w-3 h-3 ml-1 transition-transform duration-300 group-hover:translate-x-1" />
-                      </P>
                     </Div>
                   </Div>
-                </Div>
-              </Card>
-            </Pressable>
+                </Card>
+              </Pressable>
+            </Link>
           );
         })}
 

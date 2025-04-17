@@ -2,7 +2,7 @@
 
 import { ScrollView } from "react-native";
 import Search from "./search";
-import { Button, Div, H1, P, Section } from "@dishify/ui/src";
+import { Button, Div, H1, H2, P, Section } from "@dishify/ui/src";
 import { Link } from "solito/link";
 import { ArrowLeft } from "lucide-react-native";
 import ProfileButton from "../account/profile-button";
@@ -37,9 +37,9 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
             Dishify
           </H1>
         </Link>
-        <P className="mt-4 animate-fade-up text-lg text-sage-800 animation-delay-100">
+        <H2 className="mt-4 animate-fade-up font-normal text-lg text-sage-800 animation-delay-100">
           Your AI-powered culinary companion
-        </P>
+        </H2>
       </Section>
 
       <Search />
