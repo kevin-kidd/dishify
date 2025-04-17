@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { RecipeCategorySchema } from "../../../schemas/category";
 import { EnglishRecipesTable } from "../../db/schema/recipes";
-import { and, sql, desc, type SQL } from "drizzle-orm";
+import { and, sql, desc, type SQL, eq } from "drizzle-orm";
 import { costMap, timeMap } from "@dishify/app/utils/recipe-filters";
 import { publicProcedure } from "../../trpc";
 import { tryCatch } from "@dishify/app/utils/helpers";
@@ -58,7 +58,7 @@ export const getRecipesByCategory = publicProcedure
     const query = ctx.db
       .select()
       .from(EnglishRecipesTable)
-      .where(and(...filters))
+      .where(and(...filters, eq(EnglishRecipesTable.status, "completed")))
       .orderBy(
         sortBy === "popular"
           ? desc(sql`${EnglishRecipesTable.ratings}->>'count'`)
