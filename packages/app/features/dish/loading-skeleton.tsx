@@ -10,7 +10,7 @@ export function LoadingSkeleton() {
         layout={LinearTransition.springify().mass(0.8).damping(15).stiffness(100)}
       >
         <Card className="overflow-visible border-0 shadow-lg">
-          <CardHeader className="pt-8 pb-5 px-10 border-b border-sage-100">
+          <CardHeader className="pt-8 pb-5 px-6 sm:px-10 border-b border-sage-100">
             <View className="flex flex-col">
               <View className="flex flex-row items-center justify-between w-full mb-3">
                 <View className="flex-1 min-w-0">
@@ -23,12 +23,10 @@ export function LoadingSkeleton() {
                 </View>
               </View>
               <Skeleton className="h-6 w-24 mt-2" />
-              <View className="mt-6 flex flex-row items-center justify-between w-full">
-                <View className="flex flex-row items-center flex-wrap gap-4">
-                  <Skeleton className="h-5 w-20" />
-                  <Skeleton className="h-5 w-24" />
-                  <Skeleton className="h-5 w-20" />
-                </View>
+              <View className="mt-6 flex flex-row items-center flex-wrap gap-4">
+                <Skeleton className="h-5 w-[28%] sm:w-20" />
+                <Skeleton className="h-5 w-[32%] sm:w-24" />
+                <Skeleton className="h-5 w-[28%] sm:w-20" />
               </View>
             </View>
           </CardHeader>
