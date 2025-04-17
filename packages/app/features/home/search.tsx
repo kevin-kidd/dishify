@@ -320,6 +320,7 @@ export default function Search() {
             // This is for keyboard navigation - just update the field value without triggering validation
             setValue("dishName", text, { shouldValidate: false });
           }}
+          inputRef={inputRef}
         >
           <Form
             ref={formRef}
@@ -349,7 +350,6 @@ export default function Search() {
               </View>
 
               <TextInput
-                ref={inputRef}
                 inputMode="search"
                 id={name}
                 value={value}
