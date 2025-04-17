@@ -1,9 +1,11 @@
 import "./global.css";
 import type { Metadata, Viewport } from "next";
 import { Provider } from "@dishify/app/provider";
+
 const appUrl = `${process.env.NEXT_PUBLIC_APP_URL}`;
-const title = "Dishify";
-const description = `${process.env.NEXT_PUBLIC_METADATA_DESCRIPTION}`;
+const title = "Dishify - AI Powered Recipe Generator";
+const description =
+  "Dishify: Your AI-powered culinary companion. Enter any dish name for instant recipes, ingredient lists, and smart shopping links. Elevate your cooking with personalized instructions and effortless grocery planning.";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
